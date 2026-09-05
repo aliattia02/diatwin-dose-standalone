@@ -1,0 +1,112 @@
+Dynamic (reading-based) model
+Model A
+Anchors your glucose baseline to your most recent blood sugar reading. It strips out all active meal and insulin effects at the time of that reading to find your underlying baseline, then projects forward from there.
+
+How it works — step by step
+1
+Take a reading
+You (or your CGM) records a blood glucose value, e.g. 142 mg/dL at 2:00 PM.
+2
+Calculate what was active at that moment
+The system sums up absorbed carbs × your carb factor, and absorbed insulin × your correction factor — for everything logged before the reading time.
+3
+Reverse-engineer the baseline
+Subtract the net active effect from the reading. What's left is your metabolic baseline for today.
+4
+Project forward
+Baseline + new cumulative effects (meals & insulin since the reading) = current estimated BG.
+baseline = reading − (meal_effects_at_reading − insulin_effects_at_reading)
+estimated_BG_now = baseline + cumulative_net_effects_now
+Confidence decays ~50% every 2 hours after the reading. With CGM it stays near 100% continuously.
+
+Best for
+CGM users · Engaged SMBG (≥4 tests/day) · Anyone who needs day-to-day accuracy
+Watch out for
+Stale readings (6h+) · Unlogged meals · T2D with own insulin secretion
+
+
+Preset (circadian) model
+Model B
+Replaces the reading with a clinically-built 24-hour glucose curve. It knows that T1D patients tend to be lower at 3 AM and higher at 7 AM (dawn phenomenon) — and uses that curve as the baseline at any given time.
+
+Default T1D circadian profile
+● Overnight nadir ~85 mg/dL
+● Dawn phenomenon peak ~120 mg/dL
+● Afternoon plateau ~97 mg/dL
+How it works — step by step
+1
+No reading needed
+Works even if no BG test has been taken — no CGM, no finger-stick required.
+2
+Look up the curve
+Given the current local time, interpolate the pre-set circadian anchor points. At 6 AM → ~108 mg/dL. At 2 PM → ~97 mg/dL.
+3
+Add cumulative effects on top
+Meals and insulin effects are stacked on top of this baseline exactly as in the Dynamic model.
+Best for
+No monitoring · Sensor gaps · Research / A/B testing · New patients
+Watch out for
+Sick days · T2D patients (wrong default curve) · No confidence signal generated
+
+
+Both models share the same pharmacodynamic engine and output identical data shapes. The difference is only in how they determine the baseline value.
+
+Dimension
+Model A — Dynamic
+Model B — Preset
+Needs a BG reading?
+Yes — degrades without one
+No reading needed
+Reacts to sick days / stress?
+Yes — automatically
+No — frozen to curve
+CGM accuracy
+⭐⭐⭐⭐⭐ Excellent
+⭐⭐⭐ Moderate
+No monitoring accuracy
+Not usable
+Only viable option
+Confidence signal?
+Yes — decays with reading age
+No signal generated
+Good for research / A/B?
+Noisy (reading-dependent)
+Deterministic output
+T2D out of the box?
+Needs care (β-cell gap)
+Needs custom profile
+Failure mode
+Silent drift when reading is stale
+Silent bias when patient differs from preset
+Recommended: Hybrid mode
+Use Dynamic within 3h of a reading, automatically fall back to Preset when older. Show the user which mode is active and why. This is listed as a medium-term roadmap item in the report.
+
+
+Beyond the two current models, here are established glucose modelling approaches that could strengthen or replace the current baseline logic.
+
+Kalman filter / state observer
+Best addition
+Continuously fuses the circadian prior (like Preset) with incoming readings (like Dynamic), weighted by confidence. Each new reading updates the estimate; stale readings let it drift back to the prior. This is exactly the "hybrid" the report recommends — and gives you a principled confidence interval at every moment. Used in most commercial CGM algorithms.
+Bergman minimal model
+Research-grade
+A three-compartment ODE model (plasma glucose, remote insulin, plasma insulin) that has been the gold standard in research since 1979. More physiologically accurate than a bank-balance approach, especially for modelling insulin resistance. Requires parameter fitting per patient — needs at least one meal test or IVGTT session. Too complex for a consumer app but valuable if you're running clinical trials.
+UVa/Padova T1D simulator
+FDA-accepted
+The FDA-accepted in-silico replacement for animal trials in AID research. 13 differential equations, 30+ parameters per virtual patient. Overkill for a mobile app but the published parameter distributions could seed realistic default constants (carb factor, correction factor) for T1D and T2D cohorts without needing patient history.
+Personalized ML baseline (LSTM / GP)
+Future option
+After 2–4 weeks of CGM data, a per-patient model (Gaussian process or LSTM) can learn an individual's circadian pattern — including their specific dawn response, exercise sensitivity, and carb response variability. This replaces both the generic preset curve and the need to reverse-engineer a baseline from every reading. Requires enough longitudinal data to train on.
+Basal-bolus split model
+Addresses critical gap
+The report flags a critical clinical error: the current system adds Lantus (basal) and NovoRapid (bolus) to the same "bank balance" — which is wrong. A basal-bolus model treats long-acting insulin as a continuous suppression of hepatic glucose output (a background rate, not a correction bolus). This is not a new model per se, but a critical fix to the existing one before any clinical pilot.
+
+
+The four tabs cover everything you need:
+Model A (Dynamic) is the workhorse when you have readings. The key insight is that it's not guessing a baseline — it's calculating it algebraically by unwinding everything that was chemically active at the moment of the reading.
+Model B (Preset) is surprisingly useful for research and no-monitoring patients precisely because it's boring and predictable — the same input always produces the same output, which makes it ideal for controlled comparisons.
+The alternatives tab highlights what I'd consider the most valuable additions:
+
+A Kalman filter is the most practical near-term upgrade — it's essentially the principled version of the "hybrid mode" the report recommends, and would solve the confidence-decay problem for SMBG patients elegantly.
+The basal-bolus split isn't a new model but a critical fix: the report flags that Lantus and NovoRapid are currently treated identically in the bank balance, which is clinically wrong and will cause false hypo alerts in basal-using patients. That needs to be addressed before any clinical pilot regardless of which baseline model is used.
+Personalized ML (Gaussian process or LSTM) becomes viable after a few weeks of CGM data per patient and could eventually replace the generic preset curve with something fitted to each individual's actual circadian pattern.
+

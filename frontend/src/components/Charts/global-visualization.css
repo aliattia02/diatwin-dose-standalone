@@ -1,0 +1,2572 @@
+/* ============================================
+   GLOBAL VISUALIZATION STYLES - ENHANCED UNIFIED DESIGN
+   Complete file with BG Visualization styles integrated
+   ============================================ */
+
+/* ============================================
+   BASE VISUALIZATION CONTAINER
+   ============================================ */
+.activity-visualization,
+.blood-sugar-visualization,
+.bg-visualization-container,
+.insulin-visualization,
+.meal-visualization {
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  max-width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Embedded mode variations */
+.blood-sugar-visualization.embedded,
+.bg-visualization-container.embedded,
+.meal-visualization.embedded {
+  margin: 0;
+  padding: 16px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+}
+
+.blood-sugar-visualization.embedded::before,
+.bg-visualization-container.embedded::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #2563eb, transparent);
+  opacity: 0.6;
+}
+
+/* Fullscreen mode */
+.bg-visualization-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: 0;
+  padding: 24px;
+  border-radius: 0;
+  overflow-y: auto;
+}
+
+/* ============================================
+   BG VISUALIZATION SPECIFIC - HEADER
+   ============================================ */
+.bg-visualization-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bg-visualization-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+  font-weight: 700;
+}
+
+.bg-visualization-header p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Header controls group */
+.bg-visualization-header > div:last-child {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ============================================
+   ACTION BUTTONS - BG SPECIFIC
+   ============================================ */
+.bg-visualization-header button,
+.bg-action-button {
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: #666;
+}
+
+.bg-visualization-header button:hover,
+.bg-action-button:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.bg-visualization-header button:disabled,
+.bg-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bg-visualization-header button svg,
+.bg-action-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Spinning icon animation */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   DISPLAY OPTIONS - BG SPECIFIC
+   ============================================ */
+.bg-visualization-container .display-options {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.bg-visualization-container .display-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.bg-visualization-container .display-options label:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.bg-visualization-container .display-options input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: #1976d2;
+}
+
+/* ============================================
+   BG VISUALIZATION - LOADING & ERROR STATES
+   ============================================ */
+.bg-visualization-loading,
+.bg-visualization-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.bg-visualization-loading {
+  color: #666;
+}
+
+.bg-visualization-error {
+  color: #f44336;
+}
+
+.bg-visualization-loading svg {
+  margin-right: 8px;
+}
+
+/* ============================================
+   BG VISUALIZATION - TOOLTIP STYLES
+   ============================================ */
+.bg-visualization-tooltip {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 320px;
+  position: relative;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+.bg-visualization-tooltip button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #999;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.bg-visualization-tooltip button:hover {
+  color: #333;
+}
+
+/* Tooltip time header */
+.bg-visualization-tooltip > div:first-of-type {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 13px;
+}
+
+/* Tooltip sections */
+.bg-visualization-tooltip > div {
+  margin-bottom: 8px;
+}
+
+.bg-visualization-tooltip > div:last-child {
+  margin-bottom: 0;
+}
+
+/* Blood glucose value display in tooltip */
+.bg-visualization-tooltip .bg-value-display {
+  padding: 8px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 4px solid;
+}
+
+.bg-visualization-tooltip .bg-value-display > div:first-child {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.bg-visualization-tooltip .bg-value-display > div:nth-child(2) {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.bg-visualization-tooltip .bg-value-display > div:nth-child(2) span {
+  font-size: 14px;
+}
+
+.bg-visualization-tooltip .bg-value-display > div:nth-child(3) {
+  font-size: 10px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* Baseline display in tooltip */
+.bg-visualization-tooltip .baseline-display {
+  padding: 8px;
+  background-color: #e3f2fd;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 4px solid #2196F3;
+}
+
+.bg-visualization-tooltip .baseline-display > div:first-child {
+  font-size: 11px;
+  color: #1565c0;
+  margin-bottom: 2px;
+}
+
+.bg-visualization-tooltip .baseline-display > div:nth-child(2) {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1976d2;
+}
+
+.bg-visualization-tooltip .baseline-display > div:nth-child(3) {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+}
+
+/* Effects breakdown in tooltip */
+.bg-visualization-tooltip .effects-breakdown {
+  padding: 8px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.bg-visualization-tooltip .effects-breakdown > div:first-child {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.bg-visualization-tooltip .effects-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.bg-visualization-tooltip .effects-breakdown > div:last-child {
+  font-weight: bold;
+  padding-top: 4px;
+  border-top: 1px solid #ddd;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+/* Active contributions in tooltip */
+.bg-visualization-tooltip .active-contributions {
+  font-size: 10px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.bg-visualization-tooltip .active-contributions > div:first-child {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.bg-visualization-tooltip .active-contributions > div {
+  margin-left: 8px;
+}
+
+/* Status indicator in tooltip */
+.bg-visualization-tooltip .status-indicator {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #999;
+  text-align: center;
+  border-top: 1px solid #eee;
+  padding-top: 6px;
+}
+
+/* ============================================
+   TITLES & HEADERS - UNIFIED STYLE
+   ============================================ */
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #1f2937;
+  text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, transparent, #2563eb, transparent) 1;
+  position: relative;
+  letter-spacing: -0.5px;
+}
+
+.title::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  border-radius: 2px;
+}
+
+.insulin-visualization .title {
+  color: #1e40af;
+}
+
+.meal-visualization .title {
+  color: #059669;
+}
+
+.activity-visualization .title {
+  color: #7c3aed;
+}
+
+.bg-visualization-container .title {
+  color: #2563eb;
+}
+
+/* ============================================
+   TIMEZONE & SYSTEM INFO - ENHANCED
+   ============================================ */
+.timezone-info {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s;
+}
+
+.timezone-info:hover {
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.timezone-info::before {
+  content: "🌍";
+  font-size: 0.875rem;
+}
+
+.timezone-note {
+  font-style: italic;
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+/* Target info section - Enhanced */
+.target-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.1);
+  transition: all 0.2s;
+}
+
+.target-info:hover {
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15);
+  transform: translateY(-1px);
+}
+
+.target-label {
+  font-weight: 600;
+  color: #1e40af;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.target-label::before {
+  content: "🎯";
+  font-size: 1rem;
+}
+
+.target-value {
+  font-weight: 700;
+  color: #2563eb;
+  font-size: 1.125rem;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 6px;
+}
+
+/* ============================================
+   VIEW TOGGLES & MODE BUTTONS - UNIFIED PREMIUM STYLE
+   ============================================ */
+.view-toggle,
+.view-mode-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+/* Override for BG visualization header view toggle */
+.bg-visualization-header .view-mode-toggle {
+  padding: 4px;
+  background-color: #f5f5f5;
+  margin-bottom: 0;
+}
+
+.bg-visualization-header .view-mode-toggle button {
+  padding: 6px 12px;
+  background-color: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.bg-visualization-header .view-mode-toggle button.active {
+  background-color: #1976d2;
+  color: white;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.toggle-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.toggle-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.toggle-btn:hover:not(.active)::before {
+  left: 100%;
+}
+
+.toggle-btn:hover:not(.active) {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn.active {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  color: white;
+  border-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+}
+
+.toggle-btn.active::after {
+  content: "✓";
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* ============================================
+   UNIFIED CONTROLS CONTAINER - PREMIUM DESIGN
+   ============================================ */
+.controls,
+.compact-controls {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.controls:hover,
+.compact-controls:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  border-color: #d1d5db;
+}
+
+/* Controls Header Section */
+.controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-bottom: 2px solid #d1d5db;
+}
+
+.controls-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls-title::before {
+  content: "⚙️";
+  font-size: 1rem;
+}
+
+/* ============================================
+   DATE CONTROLS ROW - ENHANCED LAYOUT
+   ============================================ */
+.controls-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.date-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  flex: 1;
+}
+
+.date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.date-input-group:hover {
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.date-input-group:focus-within {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: #ffffff;
+}
+
+.date-input-group label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.date-input-group label::before {
+  content: "📅";
+  font-size: 0.875rem;
+}
+
+.date-input-group input[type="date"],
+.date-input-group input[type="datetime-local"] {
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  transition: all 0.2s;
+  min-width: 150px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.date-input-group input[type="date"]:focus,
+.date-input-group input[type="datetime-local"]:focus {
+  outline: none;
+  background: rgba(37, 99, 235, 0.05);
+}
+
+/* ============================================
+   QUICK DATE RANGES - ENHANCED BUTTONS
+   ============================================ */
+.quick-ranges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.quick-ranges button {
+  padding: 8px 16px;
+  font-size: 0.813rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-ranges button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.quick-ranges button:hover::before {
+  width: 200px;
+  height: 200px;
+}
+
+.quick-ranges button:hover {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #2563eb;
+  color: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
+.quick-ranges button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.quick-ranges button svg {
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================
+   UNIT SELECTOR - ENHANCED DROPDOWN
+   ============================================ */
+.unit-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.unit-selector:hover {
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.unit-selector label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.unit-selector select {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.unit-selector select:focus {
+  outline: none;
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.unit-selector select:hover {
+  color: #2563eb;
+}
+
+/* ============================================
+   FILTER CONTROLS SECTION - UNIFIED STYLE
+   ============================================ */
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f3f4f6 100%);
+  border-bottom: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+}
+
+.meal-type-filter,
+.insulin-type-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.meal-type-filter:hover,
+.insulin-type-filter:hover {
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.meal-type-filter label,
+.insulin-type-filter label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.meal-type-filter label svg,
+.insulin-type-filter label svg {
+  color: #2563eb;
+  font-size: 1rem;
+}
+
+.meal-type-filter select,
+.insulin-type-filter select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 2px solid #e5e7eb;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  transition: all 0.2s;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.meal-type-filter select:hover,
+.insulin-type-filter select:hover {
+  border-color: #2563eb;
+  background: #ffffff;
+}
+
+.meal-type-filter select:focus,
+.insulin-type-filter select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ============================================
+   UPDATE BUTTON - PREMIUM DESIGN
+   ============================================ */
+.update-btn {
+  padding: 10px 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.update-btn::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.update-btn:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.update-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  transform: translateY(-2px);
+}
+
+.update-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.update-btn svg {
+  position: relative;
+  z-index: 1;
+}
+
+.update-btn:disabled,
+.update-btn.loading {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.update-btn.loading svg {
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   CHART TYPE CONTROLS - PREMIUM TABS
+   ============================================ */
+.chart-type-controls {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f3f4f6 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.chart-type-btn {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #4b5563;
+  position: relative;
+  overflow: hidden;
+}
+
+.chart-type-btn::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #2563eb, #3b82f6);
+  transform: translateX(-50%);
+  transition: width 0.3s;
+}
+
+.chart-type-btn:hover:not(.active) {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.chart-type-btn.active {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+  font-weight: 700;
+}
+
+.chart-type-btn.active::after {
+  width: 100%;
+}
+
+/* ============================================
+   DISPLAY OPTIONS - ENHANCED GRID
+   ============================================ */
+.display-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.display-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  padding: 10px 12px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  color: #374151;
+  font-weight: 500;
+  border: 2px solid transparent;
+}
+
+.display-option:hover {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-color: #e5e7eb;
+  transform: translateX(2px);
+}
+
+.display-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+  accent-color: #2563eb;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.display-option input[type="checkbox"]:checked {
+  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3));
+}
+
+.display-option:has(input[type="checkbox"]:checked) {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+/* ============================================
+   FUTURE HOURS AND EFFECT DURATION - ENHANCED
+   ============================================ */
+.future-hours,
+.effect-duration,
+.threshold-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.future-hours:hover,
+.effect-duration:hover,
+.threshold-input:hover {
+  border-color: #2563eb;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.future-hours label,
+.effect-duration label,
+.threshold-input label {
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.future-hours input,
+.effect-duration input,
+.threshold-input input {
+  width: 60px;
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  border: 2px solid #e5e7eb;
+  text-align: center;
+  font-weight: 600;
+  color: #1f2937;
+  background: #ffffff;
+  transition: all 0.2s;
+}
+
+.future-hours input:focus,
+.effect-duration input:focus,
+.threshold-input input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: #ffffff;
+}
+
+.future-hours span,
+.threshold-input span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* ============================================
+   GAP FILL CONTROLS - ENHANCED
+   ============================================ */
+.gap-fill-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #fafbfc 0%, #f3f4f6 100%);
+  border-top: 1px solid #e5e7eb;
+}
+
+.gap-fill-controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  padding: 8px 12px;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  color: #374151;
+  font-weight: 500;
+  border: 2px solid transparent;
+  background: #ffffff;
+}
+
+.gap-fill-controls label:hover {
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-color: #e5e7eb;
+}
+
+.gap-fill-controls label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+  accent-color: #2563eb;
+}
+
+.gap-fill-controls label:has(input[type="checkbox"]:checked) {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-color: #93c5fd;
+  color: #1e40af;
+  font-weight: 600;
+}
+
+/* ============================================
+   ACTIVE INSULIN INDICATOR - PREMIUM BADGE
+   ============================================ */
+.active-insulin-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+  animation: pulse-subtle 2s infinite;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.95; }
+}
+
+.active-insulin-icon {
+  font-size: 1.5rem;
+  color: #f59e0b;
+  filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.3));
+}
+
+.active-insulin-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #78350f;
+  font-size: 0.875rem;
+}
+
+.active-insulin-text strong {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.active-insulin-time {
+  font-size: 0.75rem;
+  color: #a16207;
+  font-style: italic;
+}
+
+/* ============================================
+   INFO BUTTONS AND PANELS - ENHANCED
+   ============================================ */
+.info-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 0.813rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(59, 130, 246, 0.15) 100%);
+  border: 2px solid rgba(37, 99, 235, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #1e40af;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s, height 0.4s;
+}
+
+.info-button:hover::before {
+  width: 200px;
+  height: 200px;
+}
+
+.info-button:hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(59, 130, 246, 0.2) 100%);
+  border-color: rgba(37, 99, 235, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.info-button svg {
+  position: relative;
+  z-index: 1;
+}
+
+.carb-equivalent-info {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.info-panel {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 400px;
+  max-width: calc(100vw - 32px);
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.info-panel h4 {
+  margin: 0 0 12px;
+  color: #1e40af;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #93c5fd;
+  padding-bottom: 8px;
+}
+
+.info-panel h5 {
+  margin: 16px 0 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-panel p {
+  margin: 8px 0;
+  font-size: 0.875rem;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.info-panel ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.info-panel li {
+  margin-bottom: 6px;
+  font-size: 0.875rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.info-panel strong {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.close-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  margin-top: 16px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+  transition: all 0.2s;
+}
+
+.close-button:hover {
+  background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+/* ============================================
+   UNIFIED CHART LEGEND - PREMIUM DESIGN
+   ============================================ */
+.chart-legend,
+.legend-tier {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+}
+
+.chart-legend:hover,
+.legend-tier:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  border-color: #d1d5db;
+}
+
+.chart-legend h3,
+.chart-legend h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, #2563eb, transparent) 1;
+}
+
+.chart-legend h3::before,
+.chart-legend h4::before {
+  content: "📊";
+  font-size: 1.25rem;
+}
+
+/* Legend Content Grid */
+.legend-content,
+.legend-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.legend-item,
+.legend-item-enhanced {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.legend-item:hover,
+.legend-item-enhanced:hover {
+  background: #ffffff;
+  border-color: #2563eb;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  transform: translateY(-2px);
+}
+
+.legend-color-box,
+.legend-item-indicator {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.legend-color-line,
+.legend-item-line {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.legend-item-label {
+  font-size: 0.875rem;
+  color: #1f2937;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================
+   INSULIN TYPES GRID - ENHANCED CARDS
+   ============================================ */
+.insulin-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.insulin-type-details {
+  padding: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.insulin-type-details:hover {
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border-color: #2563eb;
+  transform: translateY(-2px);
+}
+
+.insulin-type-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.insulin-color-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.insulin-type-name {
+  font-weight: 700;
+  font-size: 0.938rem;
+  color: #1f2937;
+}
+
+.insulin-pharmacokinetics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.813rem;
+  color: #4b5563;
+  margin-bottom: 8px;
+}
+
+.insulin-pharmacokinetics span {
+  padding: 4px 8px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.insulin-tag {
+  display: inline-block;
+  padding: 3px 8px;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #1e40af;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
+.insulin-brands {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ============================================
+   CHARTS & VISUALIZATIONS - ENHANCED
+   ============================================ */
+.chart-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+  padding: 24px;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  position: relative;
+  margin-top: 20px;
+  transition: all 0.3s;
+}
+
+.chart-container:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  border-color: #d1d5db;
+}
+
+.meal-visualization .chart-container {
+  min-height: 500px;
+}
+
+.no-data-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  color: #78350f;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3);
+  z-index: 10;
+}
+
+/* ============================================
+   STATUS & ERROR MESSAGES - ENHANCED
+   ============================================ */
+.error-message {
+  color: #dc2626;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-left: 4px solid #dc2626;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-message::before {
+  content: "⚠️";
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.loading,
+.no-data,
+.no-data-message {
+  padding: 48px 32px;
+  text-align: center;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  color: #6b7280;
+  font-size: 0.938rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.loading::before,
+.no-data::before,
+.no-data-message::before {
+  content: "⏳";
+  font-size: 2.5rem;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+/* ============================================
+   TOOLTIPS - ENHANCED DESIGN
+   ============================================ */
+.activity-tooltip,
+.insulin-tooltip,
+.meal-effect-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  border: 2px solid #e5e7eb;
+  padding: 14px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+/* Insulin brand info inside tooltip */
+.insulin-brands {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ============================================
+CHARTS & VISUALIZATIONS - ENHANCED
+============================================ */
+.chart-container {
+background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+padding: 24px;
+border-radius: 12px;
+border: 2px solid #e5e7eb;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+position: relative;
+margin-top: 20px;
+transition: all 0.3s;
+}
+.chart-container:hover {
+box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+border-color: #d1d5db;
+}
+.meal-visualization .chart-container {
+min-height: 500px;
+}
+.no-data-overlay {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+padding: 24px 32px;
+background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+border: 2px solid #fbbf24;
+border-radius: 12px;
+color: #78350f;
+font-size: 1rem;
+font-weight: 600;
+text-align: center;
+box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3);
+z-index: 10;
+}
+/* ============================================
+STATUS & ERROR MESSAGES - ENHANCED
+============================================ */
+.error-message {
+color: #dc2626;
+padding: 16px 20px;
+background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+border-left: 4px solid #dc2626;
+border-radius: 8px;
+margin-bottom: 16px;
+font-size: 0.875rem;
+font-weight: 600;
+box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+display: flex;
+align-items: center;
+gap: 10px;
+}
+.error-message::before {
+content: "⚠️";
+font-size: 1.25rem;
+flex-shrink: 0;
+}
+.loading,
+.no-data,
+.no-data-message {
+padding: 48px 32px;
+text-align: center;
+background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+border: 2px dashed #d1d5db;
+border-radius: 12px;
+color: #6b7280;
+font-size: 0.938rem;
+font-weight: 600;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 12px;
+}
+.loading::before,
+.no-data::before,
+.no-data-message::before {
+content: "⏳";
+font-size: 2.5rem;
+animation: pulse 1.5s infinite;
+}
+/* ============================================
+TOOLTIPS - ENHANCED DESIGN
+============================================ */
+.activity-tooltip,
+.insulin-tooltip,
+.meal-effect-tooltip {
+background: rgba(255, 255, 255, 0.98);
+backdrop-filter: blur(10px);
+border: 2px solid #e5e7eb;
+padding: 14px;
+border-radius: 10px;
+box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+max-width: 340px;
+font-size: 0.875rem;
+z-index: 9999;
+animation: tooltipFadeIn 0.2s ease-out;
+}
+@keyframes tooltipFadeIn {
+from {
+opacity: 0;
+transform: translateY(-5px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+.meal-effect-tooltip.sticky {
+box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+border-color: #2563eb;
+max-width: 420px;
+}
+.tooltip-close-btn {
+position: absolute;
+top: 8px;
+right: 8px;
+width: 24px;
+height: 24px;
+border-radius: 50%;
+background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+color: white;
+border: none;
+cursor: pointer;
+font-size: 0.75rem;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: all 0.2s;
+box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+.tooltip-close-btn:hover {
+background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+transform: scale(1.1);
+}
+.tooltip-time {
+font-weight: 700;
+font-size: 0.938rem;
+margin-bottom: 10px;
+padding-bottom: 10px;
+border-bottom: 2px solid #e5e7eb;
+color: #1f2937;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+.tooltip-time::before {
+content: "🕒";
+font-size: 1rem;
+}
+.tooltip-section {
+margin-bottom: 12px;
+padding-bottom: 10px;
+border-bottom: 1px dashed #e5e7eb;
+}
+.tooltip-section:last-child {
+border-bottom: none;
+margin-bottom: 0;
+padding-bottom: 0;
+}
+.tooltip-section h4 {
+font-size: 0.813rem;
+font-weight: 700;
+color: #4b5563;
+margin: 0 0 8px 0;
+text-transform: uppercase;
+letter-spacing: 0.5px;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+/* ============================================
+TABLES - ENHANCED DESIGN
+============================================ */
+.table-container {
+background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+border-radius: 12px;
+border: 2px solid #e5e7eb;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+overflow: hidden;
+margin-top: 20px;
+}
+.activity-table,
+.blood-sugar-table,
+.insulin-table,
+.meal-table {
+width: 100%;
+border-collapse: collapse;
+font-size: 0.875rem;
+}
+.activity-table th,
+.activity-table td,
+.blood-sugar-table th,
+.blood-sugar-table td,
+.insulin-table th,
+.insulin-table td,
+.meal-table th,
+.meal-table td {
+padding: 12px 16px;
+border-bottom: 1px solid #f3f4f6;
+text-align: left;
+}
+.activity-table th,
+.blood-sugar-table th,
+.insulin-table th,
+.meal-table th {
+background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+font-weight: 700;
+color: #1f2937;
+cursor: pointer;
+position: sticky;
+top: 0;
+z-index: 10;
+transition: all 0.2s;
+user-select: none;
+}
+.activity-table th:hover,
+.blood-sugar-table th:hover,
+.insulin-table th:hover,
+.meal-table th:hover {
+background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+color: #2563eb;
+}
+.activity-table tr:hover,
+.blood-sugar-table tr:hover,
+.insulin-table tr:hover,
+.meal-table tr:hover {
+background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+.activity-table tr:nth-child(even),
+.blood-sugar-table tr:nth-child(even),
+.insulin-table tr:nth-child(even),
+.meal-table tr:nth-child(even) {
+background-color: #fafbfc;
+}
+/* ============================================
+PAGINATION - ENHANCED
+============================================ */
+.pagination {
+display: flex;
+padding: 16px;
+justify-content: center;
+align-items: center;
+flex-wrap: wrap;
+gap: 8px;
+background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+border-top: 2px solid #e5e7eb;
+}
+.pagination button {
+padding: 8px 14px;
+background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+border: 2px solid #d1d5db;
+border-radius: 8px;
+cursor: pointer;
+font-size: 0.875rem;
+font-weight: 600;
+transition: all 0.2s;
+color: #4b5563;
+}
+.pagination button:hover:not(:disabled) {
+background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+border-color: #2563eb;
+color: #1e40af;
+transform: translateY(-2px);
+box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+.pagination button:disabled {
+color: #d1d5db;
+cursor: not-allowed;
+opacity: 0.5;
+background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+.pagination input,
+.pagination select {
+padding: 8px 12px;
+border: 2px solid #d1d5db;
+border-radius: 8px;
+font-size: 0.875rem;
+font-weight: 600;
+background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+color: #1f2937;
+transition: all 0.2s;
+}
+.pagination input:focus,
+.pagination select:focus {
+outline: none;
+border-color: #2563eb;
+box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.pagination strong {
+color: #2563eb;
+}
+/* ============================================
+UTILITY CLASSES
+============================================ */
+.bs-increase,
+.effect-increase,
+.positive-effect {
+color: #ef4444;
+font-weight: 700;
+}
+.bs-decrease,
+.effect-decrease,
+.negative-effect {
+color: #10b981;
+font-weight: 700;
+}
+.bs-neutral,
+.effect-neutral {
+color: #6b7280;
+font-weight: 600;
+}
+/* ============================================
+RESPONSIVE ADJUSTMENTS - MOBILE FIRST
+============================================ */
+@media (max-width: 1024px) {
+.legend-content,
+.legend-items-grid {
+grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.insulin-types-grid {
+grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+}
+@media (max-width: 768px) {
+.activity-visualization,
+.blood-sugar-visualization,
+.bg-visualization-container,
+.insulin-visualization,
+.meal-visualization {
+padding: 16px;
+}
+.title {
+font-size: 1.5rem;
+}
+.bg-visualization-header {
+flex-direction: column;
+align-items: stretch;
+}
+.bg-visualization-header > div:last-child {
+justify-content: space-between;
+}
+.controls-row,
+.date-controls {
+flex-direction: column;
+align-items: stretch;
+}
+.date-input-group {
+width: 100%;
+}
+.quick-ranges {
+width: 100%;
+justify-content: space-between;
+}
+.quick-ranges button {
+flex: 1;
+}
+.display-options {
+grid-template-columns: 1fr;
+}
+.legend-content,
+.legend-items-grid {
+grid-template-columns: 1fr;
+}
+.info-panel {
+width: calc(100vw - 32px);
+left: 16px;
+right: 16px;
+}
+.chart-container {
+padding: 16px;
+}
+.insulin-types-grid {
+grid-template-columns: 1fr;
+}
+.bg-visualization-tooltip {
+max-width: 280px;
+}
+}
+@media (max-width: 480px) {
+  .toggle-btn {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    gap: 4px;
+  }
+
+  .view-toggle,
+  .view-mode-toggle {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  .chart-type-controls {
+    flex-direction: column;
+  }
+
+  .pagination {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bg-visualization-header h3 {
+    font-size: 16px;
+  }
+
+  .bg-visualization-header p {
+    font-size: 11px;
+  }
+};
+
+
+/* Additional styles for updated InsulinVisualization component */
+
+/* Stacking Alert Styles */
+.stacking-alert {
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.stacking-alert.stacking-low {
+  background-color: #d1ecf1;
+  border-color: #17a2b8;
+}
+
+.stacking-alert.stacking-moderate {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.stacking-alert.stacking-high {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+}
+
+.stacking-alert.stacking-severe,
+.stacking-alert.stacking-critical {
+  background-color: #f8d7da;
+  border-color: #721c24;
+  animation: pulse-alert 2s infinite;
+}
+
+@keyframes pulse-alert {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.stacking-alert h4 {
+  margin: 0 0 10px 0;
+  color: #856404;
+  font-size: 16px;
+}
+
+.stacking-alert.stacking-high h4,
+.stacking-alert.stacking-severe h4,
+.stacking-alert.stacking-critical h4 {
+  color: #721c24;
+}
+
+.stacking-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.stacking-stat {
+  font-size: 14px;
+}
+
+.stacking-stat strong {
+  color: #333;
+}
+
+.stacking-recommendations {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.stacking-recommendations ul {
+  margin: 5px 0 0 0;
+  padding-left: 20px;
+}
+
+.stacking-recommendations li {
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+/* Hypoglycemia Risk Alert Styles */
+.hypo-alert {
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.hypo-alert.hypo-minimal,
+.hypo-alert.hypo-low {
+  background-color: #d1ecf1;
+  border-color: #17a2b8;
+}
+
+.hypo-alert.hypo-moderate {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.hypo-alert.hypo-high {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+}
+
+.hypo-alert.hypo-critical {
+  background-color: #f8d7da;
+  border-color: #721c24;
+  animation: pulse-alert 2s infinite;
+}
+
+.hypo-alert h4 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+.hypo-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.hypo-stat {
+  font-size: 14px;
+}
+
+.hypo-stat strong {
+  color: #333;
+}
+
+.hypo-recommendations {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.hypo-recommendations ul {
+  margin: 5px 0 0 0;
+  padding-left: 20px;
+}
+
+.hypo-recommendations li {
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+/* T1D Duration Control */
+.t1d-duration {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.t1d-duration label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.t1d-duration input {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.t1d-label {
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Active Effects Summary */
+.active-effects-summary {
+  margin: 20px 0;
+  padding: 15px;
+  background: linear-gradient(to right, #f8f9fa, #e9ecef);
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.active-effects-summary h4 {
+  margin: 0 0 12px 0;
+  color: #495057;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.active-effects-summary h4::before {
+  content: "💉";
+  font-size: 18px;
+}
+
+.effects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.effect-stat {
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  font-size: 13px;
+}
+
+.effect-stat strong {
+  display: block;
+  color: #6c757d;
+  font-size: 11px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stacking-warning {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #856404;
+  font-weight: 600;
+}
+
+/* Enhanced Legend Styles */
+.chart-legend {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.chart-legend h4 {
+  margin: 0 0 15px 0;
+  color: #495057;
+  font-size: 16px;
+  border-bottom: 2px solid #dee2e6;
+  padding-bottom: 8px;
+}
+
+.insulin-types-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.insulin-type-details {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  transition: all 0.2s ease;
+}
+
+.insulin-type-details:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.insulin-type-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.insulin-color-box {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.insulin-type-name {
+  font-weight: 600;
+  color: #212529;
+  font-size: 14px;
+}
+
+.insulin-brand {
+  font-weight: normal;
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.insulin-pharmacokinetics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.insulin-pharmacokinetics span {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  color: #495057;
+}
+
+.insulin-tag {
+  background: #d1ecf1 !important;
+  color: #0c5460 !important;
+  font-weight: 600;
+  border: 1px solid #bee5eb;
+}
+
+.insulin-description {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #e9ecef;
+}
+
+.insulin-description small {
+  font-size: 11px;
+  color: #6c757d;
+  line-height: 1.4;
+}
+
+/* Display Options Enhancements */
+.display-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.display-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.display-option:hover {
+  background-color: #f8f9fa;
+}
+
+.display-option input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.future-hours {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 24px;
+  padding: 6px 10px;
+  background: #e9ecef;
+  border-radius: 4px;
+}
+
+.future-hours label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.future-hours input {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .stacking-details,
+  .hypo-details,
+  .effects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insulin-types-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .display-options {
+    gap: 8px;
+  }
+
+  .future-hours {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Chart-specific styles */
+.recharts-tooltip-wrapper {
+  z-index: 1000;
+}
+
+.recharts-legend-wrapper {
+  padding-top: 20px;
+}
+
+/* Loading and Error States */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #6c757d;
+}
+
+.error-message {
+  padding: 15px;
+  margin: 20px 0;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  color: #721c24;
+  font-size: 14px;
+}
+
+.no-data {
+  padding: 40px;
+  text-align: center;
+  color: #6c757d;
+  font-size: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+/* ✅ Inverted Insulin Effect Styling */
+.insulin-inverted-area {
+  fill: #e1bee7;
+  stroke: #9c27b0;
+  fill-opacity: 0.5;
+  stroke-width: 2.5;
+}
+
+.insulin-reduction-indicator {
+  position: relative;
+}
+
+.insulin-reduction-indicator::before {
+  content: "↓";
+  position: absolute;
+  left: -20px;
+  font-size: 20px;
+  color: #9c27b0;
+  font-weight: bold;
+}
+
+/* Baseline reference line enhancement */
+.recharts-reference-line-line {
+  stroke-dasharray: 5 5;
+}
+
+/* Enhanced legend for inverted view */
+.chart-legend-inverted {
+  background: linear-gradient(to bottom, #f3e5f5 0%, #e1bee7 50%, #ce93d8 100%);
+  padding: 8px;
+  border-radius: 6px;
+  margin-top: 12px;
+}

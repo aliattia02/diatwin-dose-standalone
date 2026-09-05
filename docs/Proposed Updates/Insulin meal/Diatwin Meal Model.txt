@@ -1,0 +1,108 @@
+GI Absorption / Rate of Appearance — your gamma curve & Ra(t)
+Dalla Man C, Rizza RA, Cobelli C. (2006)
+Meal simulation model of the glucose-insulin system.
+IEEE Trans Biomed Eng. 53(10):1740–9.
+→ The original two-compartment stomach/gut ODE and the Ra(t) equation your gamma curve approximates. This is your primary meal mechanics reference.
+
+FDA-Accepted Simulator Baseline — overall framework claim
+Kovatchev BP, Breton M, Dalla Man C, Cobelli C. (2009)
+In silico preclinical trials: a proof of concept in closed-loop control of T1D.
+J Diabetes Sci Technol. 3(1):44–55.
+→ S2008, FDA acceptance. Cite when claiming your model is referenced to the FDA-accepted framework.
+
+Hypoglycaemia nonlinearity + glucagon counterregulation — safety thresholds
+Dalla Man C, Micheletto F, Lv D, Breton M, Kovatchev BP, Cobelli C. (2014)
+The UVA/Padova T1D Simulator: New Features (S2013).
+J Diabetes Sci Technol. 8(1):26–34.
+→ S2013 additions: nonlinear insulin-dependent utilisation in hypoglycaemia, glucagon kinetics. Supports your critical_low / hypoglycaemia_risk safety thresholds.
+
+Circadian ISF/ICR + dawn phenomenon — your time-of-day dosing layer
+Visentin R, Campos-Náñez E, Schiavon M, et al. (2018)
+The UVA/Padova T1D Simulator Goes From Single Meal to Single Day (S2017).
+J Diabetes Sci Technol. 12(2):273–281.
+→ Intraday variability of insulin sensitivity was modelled based on clinical T1D data, with time-varying distributions of basal insulin infusion and insulin-to-carbohydrate ratio made available. PubMed Directly supports your circadian ISF/ICR research question and the S2017 extension claim.
+
+Comprehensive simulator review — general positioning
+Cobelli C, Kovatchev B. (2023)
+Developing the UVA/Padova T1D Simulator: Modeling, Validation, Refinements, and Utility.
+J Diabetes Sci Technol. 17(6):1493–1505.
+→ Since the 2008 FDA acceptance, six proposed algorithms advanced to systems accepted in clinical practice. PubMed Use this as your single catch-all citation for the simulator lineage when space is tight — it covers S2008 through S2017 in one paper.
+
+Protein & fat modeling — your carb-equivalent extension
+Visentin R, et al. (2025)
+Simulation of High-Fat High-Protein Meals Using the UVA/Padova T1D Simulator.
+IFAC-PapersOnLine (published July 2025).
+→ The UVA/Padova simulator was updated by integrating fat and protein effects on model parameters to allow realistic simulation of meals with varying content ScienceDirect, though validation is still pending. This is the key citation showing your protein/fat approach is consistent with — and actually precedes the validated version of — the newest simulator extension. It positions your protein_factor and fat_factor as a parallel contribution, not a deviation.
+
+Suggested in-document citation string
+When you need a single compact reference chain covering all of the above:
+
+
+
+Models Meal-on-Board (MOB) using a gamma distribution rate-of-appearance curve (shape and scale parameters per absorption profile), converting macronutrient load — carbohydrates, protein (×0.5 GNG factor), and fat (×0.2 glycerol factor) — to a carbohydrate-equivalent input. BG impact is integrated as a cumulative daily effect, referenced to the UVA/Padova S2008 meal absorption framework.
+
+
+For a methods/prototype paragraph:
+
+The meal effect subsystem translates macronutrient intake into a carbohydrate-equivalent load  and models the postprandial rate of glucose appearance using a gamma distribution PDF across five absorption profiles (onset 5–60 min, peak 30–210 min). This approach produces a rate-of-appearance curve functionally consistent with the UVA/Padova S2008 GI subsystem (Dalla Man et al., 2006), implemented without a full ODE solver for real-time clinical deployment. Cumulative BG impact is tracked as a daily-reset bank balance, combining meal and insulin effects into a single interpretable glucose state estimate.
+
+
+(Dalla Man et al., 2006; Kovatchev et al., 2009; Dalla Man et al., 2014; Visentin et al., 2018; Cobelli & Kovatchev, 2023; Visentin et al., 2025)
+
+
+
+
+
+
+
+
+
+Part 1 — Currently Used / Approved Reference Models
+The UVA/Padova T1D Simulator family is the gold standard in this space. There are three FDA-accepted versions:
+S2008 (Original) — the first computer model accepted by FDA as a substitute for preclinical trials of certain insulin treatments, including closed-loop algorithms. It includes a population of 300 in silico subjects (100 adults, 100 adolescents, 100 children) PubMed Central covering the GI tract, glucose kinetics, and insulin kinetics subsystems.
+S2013 (Updated) — incorporates a model of counterregulation and a new description of glucose dynamics in hypoglycemia PubMed Central, and was separately accepted by FDA. It added nonlinear hypoglycemic response and an alpha-cell glucagon model.
+S2017 (Single-Day Extension) — intraday variability of insulin sensitivity (SI) has been modeled, based on clinical T1D data, accounting for both intra- and intersubject variability of daily SI, thus extending the domain from "single-meal" to "single-day" scenarios. PubMed Central It also added the dawn phenomenon model, fast-acting insulin analog PK, intradermal and inhaled insulin models.
+S2017 + Macronutrient Extension (2025, research) — the UVA/Padova T1D simulator was updated by integrating fat and protein effects on model parameters to allow realistic simulation of meals with varying content ScienceDirect, though the updated simulator still lacks proper validation against data free from confounding factors ScienceDirect.
+These are the primary approved benchmarks. The Dalla Man et al. (2006) GI subsystem paper underpins all versions.
+
+Part 2 — NATIVE Model Alignment Assessment
+Here is a systematic assessment of your model against the S2008/S2013/S2017 lineage, organized by subsystem:
+
+✅ Strong Alignment
+Gamma-shaped Rate of Appearance (Ra)
+Your meal-pharmacodynamics.ts gamma PDF integration is conceptually the closest available analytic approximation to the ODE-derived Ra(t) in Dalla Man 2006. The curve shapes are functionally equivalent for standard-sized meals, which is your most important structural alignment point.
+Stacked meal superposition
+Both NATIVE's calculateStackedMealEffect and the UVA/Padova ODE system handle multiple concurrent meals by linear superposition — physiologically correct when glucose transporters are not saturated.
+Linear BG sensitivity factor
+Your carb_to_bg_factor (4.0 mg/dL/g) is a valid linear-regime approximation of UVA/Padova's tissue-level Vmx×G_t/(Km+G_t) term. For moderate meals, this holds well.
+Protein & fat modeling — NATIVE is ahead of the base model
+The base S2008/S2013/S2017 simulators are CHO-only. A macronutrient extension integrating fat and protein effects is a recent 2025 research update that still lacks full validation ScienceDirect. Your protein_factor = 0.5 and fat_factor = 0.2 carb-equivalent approach is therefore a clinically motivated extension that is ahead of the approved baseline, not a gap. This is a platform differentiator worth documenting and validating.
+Safety classification
+UVA/Padova leaves threshold-based alerts to the controller layer — your rule-based safety classifier is an appropriate application-level addition with no contradicting reference.
+
+⚠️ Partial Alignment (Functional but Simplified)
+IOB vs. remote insulin compartment
+Your IOB fraction empirically captures the insulin effect delay, but UVA/Padova's remote compartment X(t) with rate constant p2U is the physiologically grounded mechanism. For standard meal scenarios the two converge reasonably well; the divergence appears most in rapid insulin stacking events and in the hypoglycemic tail.
+5 discrete absorption profiles vs. continuous k_empt
+Your absorption type system (very_fast → very_slow) captures the qualitative spectrum of GI kinetics. The alignment gap is dose-dependency: UVA/Padova's nonlinear sigmoid k_empt slows gastric emptying for larger carb loads (>50 g CHO), which your flat modifiers do not reproduce. For typical meals (20–50 g CHO) the difference is modest; for large meals (>80 g CHO) your model will overestimate early BG rise.
+Meal timing factors vs. S2017 circadian SI
+S2017 provides time-varying distributions of both basal insulin infusion and insulin-to-carbohydrate ratio to capture intraday variability of insulin sensitivity PubMed. Your static meal_timing_factors capture the same intent but as fixed scalars rather than patient-fitted circadian functions — a reasonable approximation for a clinical decision-support context.
+
+❌ Structural Gaps (Requiring Targeted Work)
+Single BG value vs. two-compartment glucose kinetics
+UVA/Padova separates plasma glucose (G_p) and tissue glucose (G_t) with explicit transfer rates k1/k2. This split is what produces the realistic post-meal overshoot and the tissue-uptake delay. Your single estimatedBG value cannot reproduce this pattern. This is the highest-impact gap for mixed-composition meal accuracy.
+No EGP model
+Endogenous glucose production (hepatic suppression by portal insulin) is absent from NATIVE. Your daily-reset baseline partially compensates at a population level, but individual overnight and fasting excursions will be systematically mismodeled. A minimal-viable approximation — a basal_egp constant reduced by IOB fraction — would close most of this gap without a full ODE.
+Cumulative bank-balance vs. continuous ODE state
+This is NATIVE's most architecturally distinct choice. The persist-at-100% mechanism and daily reset have no analogue in UVA/Padova. This is appropriate for a clinical app context (interpretable state, no ODE solver required), but it means your model diverges progressively over a multi-meal day when meal and insulin effects from the morning carry forward in a way that the UVA/Padova continuous state does not. This needs explicit clinical validation rather than physiological derivation.
+
+Summary Alignment Score by Subsystem
+SubsystemAlignmentAbsorption curve shape (Ra)✅ StrongProtein & fat modeling✅ Ahead of baseStacked meal superposition✅ StrongLinear BG sensitivity✅ AdequateInsulin effect delay (IOB)⚠️ FunctionalAbsorption timing profiles⚠️ Functional (fails on large meals)Meal timing / circadian SI⚠️ SimplifiedGastric emptying nonlinearity❌ MissingTwo-compartment glucose kinetics❌ MissingEndogenous glucose production (EGP)❌ Missing
+
+Recommended Priority Actions
+
+Dose-dependent gastric emptying — Add a mealSizeEmptyingFactor from total_carb_equiv, scaling onset/peak timing for large meals. Low implementation cost, high accuracy gain for real-world use.
+Lightweight 2-compartment glucose step — A single Euler integration step over 5-min intervals in blood-glucose-estimation.ts would capture the plasma/tissue split without a full ODE solver. This directly addresses the largest structural gap.
+Validate protein_factor and fat_factor — Given that NATIVE is ahead of the base UVA/Padova model here, publish your factors against GNG literature. This turns a potential review question into a documented contribution.
+Approximate EGP suppression — Model as basal_egp × (1 − IOB_fraction) as a minimal viable addition for overnight accuracy.
+Clinical validation of bank balance — The daily-reset accumulator is your most architecturally novel construct. It needs validation against CGM traces from a real patient cohort before regulatory submission, as there is no physiological derivation to defend it.

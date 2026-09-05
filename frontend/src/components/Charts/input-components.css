@@ -1,0 +1,4135 @@
+/**
+ * Global Input Components Stylesheet
+ * Unified styling for BloodSugarInput, InsulinInput, and TimeInput components
+ * Author: aliattia02
+ * Last Updated: 2025-10-08
+ *
+ * This file uses component-specific prefixes to avoid naming conflicts:
+ * - .bs-* for BloodSugarInput
+ * - .insulin-* for InsulinInput
+ * - .time-* for TimeInput
+ */
+
+/* ============================================
+   GLOBAL CSS VARIABLES
+   ============================================ */
+:root {
+  /* Color Palette */
+  --input-color-primary: #3498db;
+  --input-color-primary-dark: #2980b9;
+  --input-color-primary-light: #74b9ff;
+  --input-color-primary-bg: #e7f4fc;
+
+  --input-color-secondary: #6c757d;
+  --input-color-success: #27ae60;
+  --input-color-success-light: #55efc4;
+  --input-color-success-bg: #e6ffed;
+  --input-color-danger: #e74c3c;
+  --input-color-danger-light: #ff7675;
+  --input-color-danger-bg: #fde8e8;
+  --input-color-warning: #f39c12;
+  --input-color-warning-bg: #fef6e7;
+  --input-color-info: #17a2b8;
+  --input-color-info-bg: #e2f0fb;
+
+  /* Neutral Colors */
+  --input-color-text-primary: #333;
+  --input-color-text-secondary: #555;
+  --input-color-text-tertiary: #777;
+  --input-color-text-muted: #95a5a6;
+
+  --input-color-bg-primary: #ffffff;
+  --input-color-bg-secondary: #f9f9f9;
+  --input-color-bg-tertiary: #f5f5f5;
+  --input-color-bg-disabled: #f5f5f5;
+
+  --input-color-border: #ddd;
+  --input-color-border-light: #e0e0e0;
+  --input-color-border-focus: #4a90e2;
+
+  /* Spacing */
+  --input-spacing-xs: 5px;
+  --input-spacing-sm: 8px;
+  --input-spacing-md: 10px;
+  --input-spacing-lg: 15px;
+  --input-spacing-xl: 20px;
+
+  /* Border Radius */
+  --input-radius-sm: 3px;
+  --input-radius-md: 4px;
+  --input-radius-lg: 6px;
+  --input-radius-xl: 8px;
+  --input-radius-round: 50%;
+
+  /* Shadows */
+  --input-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --input-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --input-shadow-lg: 0 2px 10px rgba(0, 0, 0, 0.1);
+  --input-shadow-focus: 0 0 0 2px rgba(74, 144, 226, 0.2);
+
+  /* Transitions */
+  --input-transition-fast: 0.1s ease;
+  --input-transition-normal: 0.2s ease;
+  --input-transition-slow: 0.3s ease;
+
+  /* Typography */
+  --input-font-size-xs: 0.7rem;
+  --input-font-size-sm: 0.8rem;
+  --input-font-size-base: 0.9rem;
+  --input-font-size-md: 1rem;
+  --input-font-size-lg: 1.1rem;
+  --input-font-size-xl: 1.2rem;
+  --input-font-size-xxl: 1.3rem;
+
+  --input-font-weight-normal: 400;
+  --input-font-weight-medium: 500;
+  --input-font-weight-semibold: 600;
+  --input-font-weight-bold: 700;
+}
+
+/* ============================================
+   BLOOD SUGAR INPUT COMPONENT
+   Prefix: .bs-*
+   ============================================ */
+
+/* Container */
+.bs-container {
+  max-width: 500px;
+  margin: var(--input-spacing-xl) auto;
+  padding: var(--input-spacing-xl);
+  background: var(--input-color-bg-primary);
+  border-radius: var(--input-radius-xl);
+  box-shadow: var(--input-shadow-md);
+  border: 1px solid var(--input-color-border-light);
+}
+
+/* Header */
+.bs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--input-spacing-xl);
+}
+
+.bs-header h2 {
+  margin: 0;
+  color: var(--input-color-text-primary);
+  font-size: var(--input-font-size-xxl);
+  font-weight: var(--input-font-weight-semibold);
+}
+
+.bs-action-buttons {
+  display: flex;
+  gap: var(--input-spacing-md);
+}
+
+.bs-icon-button {
+  background: none;
+  border: none;
+  color: var(--input-color-primary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: var(--input-spacing-xs);
+  border-radius: var(--input-radius-md);
+  transition: background-color var(--input-transition-normal), color var(--input-transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.bs-icon-button:hover {
+  background-color: #edf7ff;
+  color: var(--input-color-primary-dark);
+}
+
+.bs-icon-button:disabled {
+  color: var(--input-color-text-muted);
+  cursor: not-allowed;
+}
+
+.bs-icon-button.bs-import-btn {
+  color: var(--input-color-success);
+}
+
+.bs-icon-button.bs-import-btn:hover {
+  background-color: #e5f9ee;
+  color: #219653;
+}
+
+.bs-icon-button.bs-history-btn {
+  color: var(--input-color-warning);
+}
+
+.bs-icon-button.bs-history-btn:hover {
+  background-color: var(--input-color-warning-bg);
+  color: #d35400;
+}
+
+.bs-spin {
+  animation: bs-spin 1s linear infinite;
+}
+
+@keyframes bs-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Form Elements */
+.bs-input-group {
+  margin-bottom: var(--input-spacing-xl);
+}
+
+.bs-input-group label {
+  display: block;
+  margin-bottom: var(--input-spacing-sm);
+  color: var(--input-color-text-secondary);
+  font-weight: var(--input-font-weight-medium);
+}
+
+.bs-input-with-unit {
+  position: relative;
+  display: flex;
+  gap: var(--input-spacing-md);
+  align-items: center;
+}
+
+.bs-input-with-unit input {
+  flex: 1;
+  padding: var(--input-spacing-md);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+}
+
+.bs-unit-selector {
+  padding: var(--input-spacing-md);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  background-color: var(--input-color-bg-primary);
+  color: var(--input-color-text-primary);
+  font-size: var(--input-font-size-md);
+  cursor: pointer;
+  min-width: 80px;
+}
+
+.bs-unit-selector:disabled {
+  background-color: var(--input-color-bg-disabled);
+  cursor: not-allowed;
+}
+
+.bs-input-with-unit input:focus,
+.bs-unit-selector:focus {
+  outline: none;
+  border-color: var(--input-color-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.bs-input-with-unit input:disabled {
+  background-color: var(--input-color-bg-disabled);
+  cursor: not-allowed;
+}
+
+/* Notes */
+.bs-notes-input {
+  width: 100%;
+  min-height: 80px;
+  padding: var(--input-spacing-sm);
+  margin-top: var(--input-spacing-xs);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.bs-notes-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: var(--input-shadow-focus);
+}
+
+.bs-notes-input:disabled {
+  background-color: var(--input-color-bg-disabled);
+  cursor: not-allowed;
+}
+
+/* Submit Button */
+.bs-submit-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--input-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+  cursor: pointer;
+  transition: background-color var(--input-transition-normal);
+  font-weight: var(--input-font-weight-semibold);
+}
+
+.bs-submit-button:hover:not(:disabled) {
+  background-color: var(--input-color-primary-dark);
+}
+
+.bs-submit-button:disabled {
+  background-color: #a0c3e8;
+  cursor: not-allowed;
+}
+
+/* Messages */
+.bs-message {
+  margin-top: var(--input-spacing-xl);
+  padding: 12px;
+  border-radius: var(--input-radius-md);
+  text-align: center;
+  animation: bs-fadeIn var(--input-transition-slow) ease;
+}
+
+.bs-message.bs-error {
+  background-color: var(--input-color-danger-bg);
+  color: #c53030;
+  border: 1px solid #feb2b2;
+}
+
+.bs-message.bs-success {
+  background-color: var(--input-color-success-bg);
+  color: #2e7c67;
+  border: 1px solid #b7eb8f;
+}
+
+.bs-message.bs-info {
+  background-color: var(--input-color-info-bg);
+  color: #0c5460;
+  border-left: 4px solid var(--input-color-info);
+  text-align: left;
+}
+
+.bs-import-message-header {
+  display: flex;
+  align-items: center;
+  font-weight: var(--input-font-weight-medium);
+}
+
+.bs-message-icon {
+  margin-right: var(--input-spacing-sm);
+}
+
+.bs-import-details {
+  margin-top: var(--input-spacing-sm);
+  padding: var(--input-spacing-sm);
+  border-radius: var(--input-radius-md);
+  background-color: rgba(255, 255, 255, 0.4);
+  font-size: var(--input-font-size-base);
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+@keyframes bs-fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Recent Readings */
+.bs-recent-readings {
+  margin-top: var(--input-spacing-xl);
+  padding: var(--input-spacing-lg);
+  border: 1px solid var(--input-color-border-light);
+  border-radius: var(--input-radius-xl);
+}
+
+.bs-recent-readings h3 {
+  margin-top: 0;
+  margin-bottom: var(--input-spacing-lg);
+  font-size: var(--input-font-size-lg);
+  color: #2c3e50;
+}
+
+.bs-readings-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.bs-reading-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--input-spacing-md);
+  margin-bottom: var(--input-spacing-sm);
+  border-radius: var(--input-radius-lg);
+  background-color: var(--input-color-bg-secondary);
+  box-shadow: var(--input-shadow-sm);
+}
+
+.bs-reading-value {
+  font-size: var(--input-font-size-xl);
+  font-weight: var(--input-font-weight-semibold);
+  width: 30%;
+}
+
+.bs-reading-details {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin: 0 var(--input-spacing-md);
+}
+
+.bs-reading-time {
+  font-size: var(--input-font-size-base);
+  color: #7f8c8d;
+}
+
+.bs-reading-notes {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-primary);
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.bs-reading-status {
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-semibold);
+  padding: 4px var(--input-spacing-sm);
+  border-radius: var(--input-radius-md);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Status Colors */
+.bs-status-normal {
+  color: var(--input-color-success);
+}
+
+.bs-status-high {
+  color: var(--input-color-danger);
+}
+
+.bs-status-low {
+  color: var(--input-color-warning);
+}
+
+.bs-reading-value.bs-status-normal {
+  color: var(--input-color-success);
+}
+
+.bs-reading-value.bs-status-high {
+  color: var(--input-color-danger);
+}
+
+.bs-reading-value.bs-status-low {
+  color: var(--input-color-warning);
+}
+
+.bs-reading-status.bs-status-normal {
+  background-color: var(--input-color-success-bg);
+  color: var(--input-color-success);
+}
+
+.bs-reading-status.bs-status-high {
+  background-color: #fde7e5;
+  color: var(--input-color-danger);
+}
+
+.bs-reading-status.bs-status-low {
+  background-color: var(--input-color-warning-bg);
+  color: var(--input-color-warning);
+}
+
+.bs-no-readings {
+  color: var(--input-color-text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: var(--input-spacing-xl);
+}
+
+.bs-readings-footer {
+  margin-top: var(--input-spacing-lg);
+  padding-top: var(--input-spacing-md);
+  border-top: 1px dotted var(--input-color-border-light);
+  font-size: var(--input-font-size-base);
+}
+
+.bs-import-note {
+  color: #7f8c8d;
+}
+
+.bs-import-link {
+  color: var(--input-color-primary);
+  text-decoration: none;
+  font-weight: var(--input-font-weight-medium);
+}
+
+.bs-import-link:hover {
+  text-decoration: underline;
+}
+
+.bs-inline-icon {
+  font-size: 0.9em;
+  vertical-align: middle;
+  margin: -2px 2px 0;
+}
+
+/* ============================================
+   INSULIN INPUT COMPONENT
+   Prefix: .insulin-*
+   ============================================ */
+
+/* Container */
+.insulin-container {
+  background-color: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-xl);
+  padding: var(--input-spacing-lg);
+  margin-bottom: var(--input-spacing-xl);
+}
+
+.insulin-container.insulin-standalone {
+  margin: var(--input-spacing-xl) auto;
+  border: 1px solid var(--input-color-border-light);
+  max-width: 500px;
+  box-shadow: var(--input-shadow-lg);
+  background-color: var(--input-color-bg-primary);
+  padding: var(--input-spacing-xl);
+}
+
+/* Header */
+.insulin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.insulin-title {
+  margin: 0;
+  color: var(--input-color-text-primary);
+  font-size: var(--input-font-size-xxl);
+  font-weight: var(--input-font-weight-semibold);
+}
+
+.insulin-action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Icon Buttons */
+.insulin-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: var(--input-color-bg-tertiary);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-round);
+  color: var(--input-color-text-secondary);
+  cursor: pointer;
+  transition: all var(--input-transition-normal);
+}
+
+.insulin-icon-button:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  color: var(--input-color-text-primary);
+}
+
+.insulin-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.insulin-icon-button.insulin-refresh-btn:hover:not(:disabled) {
+  color: #2196F3;
+  background-color: #e3f2fd;
+}
+
+.insulin-icon-button.insulin-history-btn:hover:not(:disabled) {
+  color: #9C27B0;
+  background-color: #f3e5f5;
+}
+
+.insulin-icon-button.insulin-import-btn:hover:not(:disabled) {
+  color: #4CAF50;
+  background-color: #e8f5e9;
+}
+
+.insulin-spinning {
+  animation: insulin-spin 1s infinite linear;
+}
+
+@keyframes insulin-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Form Elements */
+.insulin-input-group {
+  margin-bottom: var(--input-spacing-lg);
+}
+
+.insulin-input-label {
+  display: block;
+  margin-bottom: var(--input-spacing-xs);
+  font-weight: var(--input-font-weight-medium);
+  color: var(--input-color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.insulin-select-container {
+  position: relative;
+}
+
+.insulin-select-container::after {
+  content: "▼";
+  position: absolute;
+  right: var(--input-spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+.insulin-type-select {
+  width: 100%;
+  padding: var(--input-spacing-md);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  background-color: white;
+  font-size: var(--input-font-size-md);
+  appearance: none;
+  cursor: pointer;
+}
+
+.insulin-type-select:focus {
+  outline: none;
+  border-color: var(--input-color-primary);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.insulin-dose-input,
+.insulin-time-input {
+  width: 100%;
+  padding: var(--input-spacing-md);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+}
+
+.insulin-dose-input:focus,
+.insulin-time-input:focus {
+  outline: none;
+  border-color: var(--input-color-primary);
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* Suggested Insulin */
+.insulin-suggested {
+  background-color: #f0f8ff;
+  padding: var(--input-spacing-md);
+  border-radius: var(--input-radius-md);
+  margin-bottom: var(--input-spacing-lg);
+  border-left: 3px solid var(--input-color-primary);
+}
+
+.insulin-suggested p {
+  margin: 0;
+  color: var(--input-color-text-primary);
+}
+
+/* Collapsible Sections */
+.insulin-collapsible-section {
+  margin-bottom: var(--input-spacing-lg);
+  border: 1px solid var(--input-color-border-light);
+  border-radius: var(--input-radius-md);
+  overflow: hidden;
+}
+
+.insulin-collapsible-toggle {
+  width: 100%;
+  padding: var(--input-spacing-md) var(--input-spacing-lg);
+  background-color: var(--input-color-bg-tertiary);
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: var(--input-font-weight-medium);
+  color: var(--input-color-text-primary);
+  transition: background-color var(--input-transition-normal);
+}
+
+.insulin-collapsible-toggle:hover {
+  background-color: #e9e9e9;
+}
+
+.insulin-collapsible-content {
+  padding: var(--input-spacing-lg);
+  border-top: 1px solid #eaeaea;
+  background-color: var(--input-color-bg-primary);
+}
+
+.insulin-time-icon {
+  margin-right: var(--input-spacing-xs);
+  color: var(--input-color-text-tertiary);
+}
+
+/* Notes */
+.insulin-notes-container {
+  margin-top: var(--input-spacing-lg);
+}
+
+.insulin-notes-input {
+  width: 100%;
+  padding: var(--input-spacing-md);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  min-height: 80px;
+  font-size: var(--input-font-size-md);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.insulin-notes-input:focus {
+  outline: none;
+  border-color: var(--input-color-primary);
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* Insulin Info/Details */
+.insulin-info-section {
+  margin-top: var(--input-spacing-lg);
+  background-color: var(--input-color-bg-tertiary);
+  border-radius: var(--input-radius-lg);
+  overflow: hidden;
+}
+
+.insulin-info-toggle {
+  width: 100%;
+  padding: var(--input-spacing-md);
+  background-color: var(--input-color-primary-bg);
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--input-color-primary-dark);
+  font-weight: var(--input-font-weight-medium);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.insulin-info-toggle:hover {
+  background-color: #d5eaf8;
+}
+
+.insulin-toggle-icon {
+  font-size: 14px;
+  transition: transform var(--input-transition-normal);
+}
+
+.insulin-expanded-info {
+  padding: var(--input-spacing-lg);
+  font-size: var(--input-font-size-base);
+  line-height: 1.4;
+  border-top: 1px solid var(--input-color-border-light);
+  background-color: var(--input-color-bg-primary);
+}
+
+.insulin-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--input-spacing-md);
+  margin-bottom: var(--input-spacing-md);
+}
+
+.insulin-info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.insulin-info-item-label {
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-secondary);
+  font-size: var(--input-font-size-sm);
+}
+
+.insulin-info-item-value {
+  color: var(--input-color-text-primary);
+}
+
+.insulin-brand-names {
+  margin: var(--input-spacing-md) 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.insulin-description {
+  margin-top: var(--input-spacing-md);
+  color: var(--input-color-text-secondary);
+  font-style: italic;
+}
+
+/* Insulin Timeline */
+.insulin-timeline-section {
+  margin-top: var(--input-spacing-lg);
+  padding-top: var(--input-spacing-lg);
+  border-top: 1px dashed var(--input-color-border-light);
+}
+
+.insulin-timeline-bar {
+  height: 30px;
+  background-color: var(--input-color-bg-tertiary);
+  border-radius: 15px;
+  position: relative;
+  margin: var(--input-spacing-xl) 0 var(--input-spacing-xs);
+}
+
+.insulin-onset-marker,
+.insulin-peak-marker {
+  position: absolute;
+  transform: translateX(-50%);
+  bottom: 100%;
+  margin-bottom: var(--input-spacing-xs);
+}
+
+.insulin-onset-marker span,
+.insulin-peak-marker span {
+  display: inline-block;
+  background-color: var(--input-color-primary);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--input-radius-sm);
+  font-size: var(--input-font-size-sm);
+  white-space: nowrap;
+}
+
+.insulin-onset-marker::after,
+.insulin-peak-marker::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border-style: solid;
+  border-width: 5px 5px 0 5px;
+  border-color: var(--input-color-primary) transparent transparent transparent;
+}
+
+.insulin-duration-line {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  width: 100%;
+  background-color: var(--input-color-primary);
+  border-radius: var(--input-radius-sm);
+}
+
+.insulin-timeline-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+/* Active Insulin Section */
+.insulin-active-section {
+  margin: var(--input-spacing-lg) 0;
+  padding: var(--input-spacing-md) var(--input-spacing-lg);
+  background-color: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-xl);
+  border-left: 4px solid var(--input-color-primary);
+}
+
+.insulin-active-section h4 {
+  color: var(--input-color-primary-dark);
+  margin-bottom: var(--input-spacing-md);
+  margin-top: 0;
+}
+
+.insulin-calculation-time {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+  font-weight: var(--input-font-weight-normal);
+  margin-left: var(--input-spacing-sm);
+}
+
+.insulin-contributions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-sm);
+}
+
+.insulin-contribution-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--input-spacing-sm);
+  background-color: var(--input-color-bg-primary);
+  border-radius: var(--input-radius-lg);
+  box-shadow: var(--input-shadow-sm);
+}
+
+.insulin-contribution-medication {
+  font-weight: var(--input-font-weight-medium);
+  color: #2d3748;
+}
+
+.insulin-contribution-details {
+  font-size: var(--input-font-size-base);
+  color: #4a5568;
+}
+
+.insulin-contribution-time {
+  font-size: var(--input-font-size-sm);
+  color: #718096;
+  margin-top: 4px;
+  display: block;
+}
+
+.insulin-contribution-activity {
+  font-size: var(--input-font-size-base);
+  color: #38a169;
+  display: block;
+  margin-top: 4px;
+}
+
+/* Messages */
+.insulin-message {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border-radius: var(--input-radius-md);
+  display: flex;
+  align-items: flex-start;
+}
+
+.insulin-message-icon {
+  margin-right: 0.75rem;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.insulin-message-content {
+  flex: 1;
+}
+
+.insulin-message-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: var(--input-font-size-md);
+}
+
+.insulin-message.insulin-msg-info {
+  background-color: var(--input-color-info-bg);
+  border: 1px solid #bbdefb;
+  color: #0d47a1;
+}
+
+.insulin-message.insulin-msg-success {
+  background-color: var(--input-color-success-bg);
+  border: 1px solid #c8e6c9;
+  color: #1b5e20;
+}
+
+.insulin-message.insulin-msg-error {
+  background-color: var(--input-color-danger-bg);
+  border: 1px solid #ffcdd2;
+  color: #b71c1c;
+}
+
+.insulin-message-details {
+  font-family: monospace;
+  font-size: var(--input-font-size-sm);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  border-radius: var(--input-radius-sm);
+  margin: 0.5rem 0 0 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* Submit Button */
+.insulin-submit-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--input-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--input-transition-normal), transform var(--input-transition-fast);
+  margin-top: var(--input-spacing-xl);
+}
+
+.insulin-submit-button:hover:not(:disabled) {
+  background-color: var(--input-color-primary-dark);
+}
+
+.insulin-submit-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.insulin-submit-button:disabled {
+  background-color: var(--input-color-text-muted);
+  cursor: not-allowed;
+}
+
+/* Recent Doses Section */
+.insulin-recent-doses-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--input-color-border-light);
+  padding-top: 1rem;
+}
+
+.insulin-recent-doses-section h4 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-secondary);
+}
+
+.insulin-doses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.insulin-dose-item {
+  background-color: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-lg);
+  padding: 0.75rem;
+  border-left: 4px solid #2196F3;
+}
+
+.insulin-dose-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.insulin-dose-type {
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-primary);
+}
+
+.insulin-dose-amount {
+  font-weight: var(--input-font-weight-semibold);
+  color: #2196F3;
+  font-size: var(--input-font-size-lg);
+}
+
+.insulin-dose-details-section {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+.insulin-dose-time {
+  margin-bottom: 0.25rem;
+}
+
+.insulin-dose-activity-status {
+  color: #38a169;
+  margin-top: 4px;
+}
+
+.insulin-dose-notes {
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  margin-top: 0.25rem;
+  color: #777;
+}
+
+.insulin-loading-doses {
+  text-align: center;
+  padding: 1rem;
+  color: var(--input-color-text-tertiary);
+}
+
+.insulin-no-doses {
+  text-align: center;
+  padding: 1.5rem 0;
+  color: #888;
+  font-style: italic;
+}
+
+.insulin-doses-footer {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--input-color-border-light);
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+.insulin-import-note {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.insulin-inline-icon {
+  font-size: 0.9em;
+}
+
+/* Loading & Error States */
+.insulin-loading {
+  text-align: center;
+  padding: 20px;
+  color: var(--input-color-text-tertiary);
+}
+
+.insulin-error {
+  color: var(--input-color-danger);
+  padding: 10px;
+  background-color: var(--input-color-danger-bg);
+  border-radius: var(--input-radius-md);
+  border: 1px solid #ef5350;
+}
+
+/* ============================================
+   TIME INPUT COMPONENT
+   Prefix: .time-*
+   ============================================ */
+
+/* Container */
+.time-input {
+  margin-bottom: var(--input-spacing-lg);
+}
+
+.time-input-label {
+  display: block;
+  margin-bottom: var(--input-spacing-sm);
+  font-weight: var(--input-font-weight-medium);
+  color: var(--input-color-text-primary);
+}
+
+/* Timepoint Mode */
+.time-input-timepoint {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  padding: var(--input-spacing-xs) var(--input-spacing-md);
+  background-color: var(--input-color-bg-primary);
+}
+
+.time-input-icon {
+  margin-right: var(--input-spacing-sm);
+  color: var(--input-color-text-secondary);
+}
+
+.time-input-datetime {
+  border: none;
+  outline: none;
+  width: 100%;
+  padding: var(--input-spacing-xs);
+  font-size: 14px;
+}
+
+/* Duration Mode */
+.time-input-duration {
+  display: flex;
+  align-items: center;
+}
+
+.time-input-hours,
+.time-input-minutes {
+  width: 50px;
+  text-align: center;
+  padding: var(--input-spacing-sm) var(--input-spacing-xs);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+}
+
+.time-input-separator {
+  margin: 0 var(--input-spacing-sm);
+  font-weight: var(--input-font-weight-bold);
+  font-size: 18px;
+}
+
+.time-input-duration-label {
+  margin-left: var(--input-spacing-md);
+  color: var(--input-color-text-tertiary);
+  font-size: 12px;
+}
+
+/* Range Mode */
+.time-input-range {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-lg);
+}
+
+.time-input-range-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-xs);
+}
+
+.time-input-range-label {
+  font-size: 14px;
+  color: var(--input-color-text-secondary);
+}
+
+.time-input-duration-display {
+  margin-top: var(--input-spacing-sm);
+  font-size: 14px;
+  color: var(--input-color-text-secondary);
+  font-weight: var(--input-font-weight-medium);
+}
+
+/* Date Range Mode */
+.time-input-daterange {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-lg);
+}
+
+.time-date-controls {
+  display: flex;
+  gap: var(--input-spacing-lg);
+  flex-wrap: wrap;
+}
+
+.time-date-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-xs);
+  flex: 1;
+  min-width: 150px;
+}
+
+.time-quick-ranges {
+  display: flex;
+  gap: var(--input-spacing-sm);
+  flex-wrap: wrap;
+}
+
+.time-quick-ranges button {
+  padding: var(--input-spacing-sm) var(--input-spacing-md);
+  background-color: var(--input-color-bg-tertiary);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  cursor: pointer;
+  font-size: var(--input-font-size-sm);
+  transition: all var(--input-transition-normal);
+}
+
+.time-quick-ranges button:hover:not(:disabled) {
+  background-color: var(--input-color-primary);
+  color: white;
+  border-color: var(--input-color-primary);
+}
+
+.time-timezone-info,
+.time-system-info {
+  margin-top: var(--input-spacing-md);
+  padding: var(--input-spacing-sm);
+  background-color: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-sm);
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+/* Global Update Control */
+.time-global-update-control {
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-md);
+  padding: var(--input-spacing-md);
+  background: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-xl);
+  border: 1px solid var(--input-color-border-light);
+  margin: var(--input-spacing-md) 0;
+}
+
+.time-update-btn {
+  background: var(--input-color-primary);
+  color: white;
+  border: 1px solid var(--input-color-primary);
+  padding: var(--input-spacing-sm) var(--input-spacing-md);
+  border-radius: var(--input-radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--input-font-weight-medium);
+  transition: all var(--input-transition-slow);
+  font-size: var(--input-font-size-base);
+}
+
+.time-update-btn:hover {
+  background: var(--input-color-primary-dark);
+  border-color: var(--input-color-primary-dark);
+}
+
+.time-update-btn:disabled {
+  background: var(--input-color-secondary);
+  border-color: var(--input-color-secondary);
+  cursor: not-allowed;
+}
+
+.time-update-btn.time-needs-update {
+  background: var(--input-color-warning);
+  border-color: var(--input-color-warning);
+  animation: time-pulse 2s infinite;
+}
+
+.time-auto-update-toggle {
+  background: var(--input-color-secondary);
+  color: white;
+  border: 1px solid var(--input-color-secondary);
+  padding: var(--input-spacing-sm) 12px;
+  border-radius: var(--input-radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--input-font-size-sm);
+  transition: all var(--input-transition-slow);
+}
+
+.time-auto-update-toggle.time-enabled {
+  background: var(--input-color-success);
+  border-color: var(--input-color-success);
+}
+
+.time-update-indicator {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-warning);
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes time-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 152, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 152, 0, 0); }
+}
+
+/* ============================================
+   ACTIVITY RECORDING COMPONENT
+   Prefix: .activity-*  .ua-*  .hr-*  .pd-*
+   ============================================ */
+
+/* ─── Containers ─────────────────────────────────────────────────────────── */
+
+.activity-standalone-container {
+  max-width: 800px;
+  margin: var(--input-spacing-xl) auto;
+  padding: var(--input-spacing-xl);
+  background: var(--input-color-bg-primary);
+  border-radius: var(--input-radius-xl);
+  box-shadow: var(--input-shadow-lg);
+}
+
+.activity-inline-container {
+  padding: var(--input-spacing-lg);
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+
+.activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--input-spacing-xl);
+}
+
+.activity-header h2 {
+  margin: 0;
+  color: var(--input-color-text-primary);
+  font-size: var(--input-font-size-xxl);
+}
+
+.ua-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-md);
+}
+
+.ua-header-badge {
+  padding: 3px 10px;
+  border-radius: var(--input-radius-round);
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-semibold);
+}
+
+.ua-header-badge--increase {
+  background: var(--input-color-danger-bg);
+  color: var(--input-color-danger);
+}
+
+.ua-header-badge--decrease {
+  background: var(--input-color-success-bg);
+  color: var(--input-color-success);
+}
+
+.ua-header-badge--neutral {
+  background: var(--input-color-bg-tertiary);
+  color: var(--input-color-text-tertiary);
+}
+
+.activity-action-buttons {
+  display: flex;
+  gap: var(--input-spacing-md);
+}
+
+/* ─── Icon Buttons ───────────────────────────────────────────────────────── */
+
+.activity-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: var(--input-spacing-xs);
+  background-color: var(--input-color-bg-tertiary);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-round);
+  color: var(--input-color-text-secondary);
+  cursor: pointer;
+  transition: all var(--input-transition-normal);
+}
+
+.activity-icon-button:hover:not(:disabled) {
+  background-color: var(--input-color-bg-secondary);
+  color: var(--input-color-text-primary);
+}
+
+.activity-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.activity-icon-button.activity-refresh-btn:hover {
+  color: var(--input-color-primary);
+}
+
+.activity-icon-button.activity-import-btn:hover {
+  color: var(--input-color-success);
+}
+
+.activity-icon-button.activity-history-btn:hover {
+  color: var(--input-color-warning);
+}
+
+.activity-icon-button.activity-remove-btn {
+  background-color: #ffebee;
+  border-color: #ffcdd2;
+  color: var(--input-color-danger);
+}
+
+.activity-icon-button.activity-remove-btn:hover {
+  background-color: #ffcdd2;
+  color: var(--input-color-danger-dark);
+}
+
+.activity-spin {
+  animation: activity-spin 1s linear infinite;
+}
+
+@keyframes activity-spin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ─── Timezone Info ──────────────────────────────────────────────────────── */
+
+.activity-timezone-info {
+  margin-bottom: var(--input-spacing-lg);
+  padding: var(--input-spacing-md);
+  background-color: var(--input-color-info-bg);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-secondary);
+}
+
+.activity-timezone-note {
+  font-style: italic;
+  color: var(--input-color-text-tertiary);
+}
+
+/* ─── Status Messages ────────────────────────────────────────────────────── */
+
+.activity-message {
+  margin: var(--input-spacing-lg) 0;
+  padding: 0.75rem;
+  border-radius: var(--input-radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--input-spacing-md);
+}
+
+.activity-message-icon {
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.activity-message-content {
+  flex: 1;
+}
+
+.activity-message-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: var(--input-font-size-md);
+}
+
+.activity-message.activity-msg-info {
+  background-color: var(--input-color-info-bg);
+  border: 1px solid #bbdefb;
+  color: #0d47a1;
+}
+
+.activity-message.activity-msg-success {
+  background-color: var(--input-color-success-bg);
+  border: 1px solid #c8e6c9;
+  color: #1b5e20;
+}
+
+.activity-message.activity-msg-error {
+  background-color: var(--input-color-danger-bg);
+  border: 1px solid #ffcdd2;
+  color: #b71c1c;
+}
+
+.activity-message-details {
+  font-family: monospace;
+  font-size: var(--input-font-size-sm);
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  border-radius: var(--input-radius-sm);
+  margin: 0.5rem 0 0 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+/* ─── Form wrapper ───────────────────────────────────────────────────────── */
+
+.activity-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-xl);
+}
+
+/* ─── Unified Activity List (ua-list / ua-card) ──────────────────────────── */
+
+.ua-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-md);
+}
+
+.ua-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--input-spacing-md);
+  padding: var(--input-spacing-lg);
+  background-color: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-lg);
+  box-shadow: var(--input-shadow-sm);
+  border-left: 3px solid transparent;
+}
+
+.ua-card--expected {
+  border-left-color: var(--input-color-primary);
+}
+
+.ua-card--completed {
+  border-left-color: var(--input-color-success);
+}
+
+.ua-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-xs);
+}
+
+.ua-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-sm);
+  flex-wrap: wrap;
+}
+
+.ua-card-level {
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-primary);
+}
+
+.ua-card-badge {
+  padding: 2px 8px;
+  border-radius: var(--input-radius-sm);
+  font-size: var(--input-font-size-xs);
+  font-weight: var(--input-font-weight-semibold);
+  text-transform: uppercase;
+}
+
+.ua-card-badge--expected {
+  background-color: var(--input-color-primary-bg);
+  color: var(--input-color-primary-dark);
+}
+
+.ua-card-badge--completed {
+  background-color: var(--input-color-success-bg);
+  color: var(--input-color-success-dark);
+}
+
+.ua-card-intensity {
+  font-size: var(--input-font-size-xs);
+  color: var(--input-color-text-tertiary);
+  text-transform: capitalize;
+}
+
+.ua-card-time {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-secondary);
+}
+
+.ua-card-duration {
+  color: var(--input-color-text-tertiary);
+}
+
+.ua-card-impact {
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-medium);
+}
+
+.ua-card-impact--increase {
+  color: var(--input-color-danger);
+}
+
+.ua-card-impact--decrease {
+  color: var(--input-color-success);
+}
+
+.ua-card-hr {
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-xs);
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+.ua-card-hr-icon {
+  color: #e53935;
+  flex-shrink: 0;
+}
+
+.ua-card-notes {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-secondary);
+  font-style: italic;
+}
+
+.ua-card-remove {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: none;
+  color: var(--input-color-text-muted);
+  cursor: pointer;
+  border-radius: var(--input-radius-sm);
+  transition: color var(--input-transition-normal), background var(--input-transition-normal);
+}
+
+.ua-card-remove:hover {
+  background: var(--input-color-danger-bg);
+  color: var(--input-color-danger);
+}
+
+/* ─── Impact Summary Bar ─────────────────────────────────────────────────── */
+
+.ua-impact-summary {
+  padding: var(--input-spacing-lg);
+  border-radius: var(--input-radius-md);
+  text-align: center;
+  font-size: var(--input-font-size-lg);
+  font-weight: var(--input-font-weight-semibold);
+}
+
+.ua-impact-summary--increase {
+  background-color: var(--input-color-danger-bg);
+  color: var(--input-color-danger);
+}
+
+.ua-impact-summary--decrease {
+  background-color: var(--input-color-success-bg);
+  color: var(--input-color-success-dark);
+}
+
+.ua-impact-summary--neutral {
+  background-color: var(--input-color-bg-tertiary);
+  color: var(--input-color-text-tertiary);
+}
+
+/* ─── Add Activity Button ────────────────────────────────────────────────── */
+
+.ua-add-btn {
+  width: 100%;
+  padding: var(--input-spacing-md);
+  background-color: var(--input-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-medium);
+  cursor: pointer;
+  transition: background-color var(--input-transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--input-spacing-sm);
+}
+
+.ua-add-btn:hover:not(:disabled) {
+  background-color: var(--input-color-primary-dark);
+}
+
+.ua-add-btn:disabled {
+  background-color: var(--input-color-text-muted);
+  cursor: not-allowed;
+}
+
+/* ─── Inline Add Form ────────────────────────────────────────────────────── */
+
+.ua-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-md);
+  padding: var(--input-spacing-lg);
+  background-color: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-lg);
+  border: 1px solid var(--input-color-border-light);
+}
+
+.ua-form-label {
+  margin: 0;
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ua-form-label--spaced {
+  margin-top: var(--input-spacing-sm);
+}
+
+/* Intensity level pill grid */
+.ua-level-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--input-spacing-sm);
+}
+
+.ua-level-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--input-spacing-sm) var(--input-spacing-md);
+  background: var(--input-color-bg-primary);
+  border: 1.5px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  cursor: pointer;
+  transition: border-color var(--input-transition-normal), background var(--input-transition-normal);
+}
+
+.ua-level-btn:hover {
+  border-color: var(--input-color-primary);
+  background: var(--input-color-primary-bg);
+}
+
+.ua-level-btn--active {
+  border-color: var(--input-color-primary);
+  background: var(--input-color-primary-bg);
+}
+
+.ua-level-btn-label {
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-primary);
+}
+
+.ua-level-btn-impact {
+  font-size: var(--input-font-size-xs);
+  color: var(--input-color-text-tertiary);
+  margin-top: 2px;
+}
+
+.ua-level-btn--active .ua-level-btn-label {
+  color: var(--input-color-primary-dark);
+}
+
+.ua-level-btn--active .ua-level-btn-impact {
+  color: var(--input-color-primary);
+}
+
+/* Time input passthrough */
+.ua-time-input {
+  width: 100%;
+}
+
+/* Expected checkbox row */
+.ua-expected-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--input-spacing-sm);
+  cursor: pointer;
+  user-select: none;
+  padding: var(--input-spacing-sm) 0;
+}
+
+.ua-expected-native {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.ua-expected-box {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border-radius: 4px;
+  border: 2px solid var(--input-color-border);
+  background: var(--input-color-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--input-transition-normal), background var(--input-transition-normal);
+}
+
+.ua-expected-box--checked {
+  background: var(--input-color-primary);
+  border-color: var(--input-color-primary);
+}
+
+.ua-expected-tick {
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.ua-expected-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ua-expected-label {
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-medium);
+  color: var(--input-color-text-primary);
+}
+
+.ua-expected-hint {
+  font-size: var(--input-font-size-xs);
+  color: var(--input-color-text-tertiary);
+}
+
+/* Form actions */
+.ua-form-actions {
+  display: flex;
+  gap: var(--input-spacing-md);
+  justify-content: flex-end;
+  padding-top: var(--input-spacing-sm);
+}
+
+.ua-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-xs);
+  padding: var(--input-spacing-sm) var(--input-spacing-lg);
+  border: none;
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-medium);
+  cursor: pointer;
+  transition: background-color var(--input-transition-normal);
+}
+
+.ua-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ua-btn--cancel {
+  background-color: var(--input-color-bg-tertiary);
+  color: var(--input-color-text-secondary);
+  border: 1px solid var(--input-color-border);
+}
+
+.ua-btn--cancel:hover:not(:disabled) {
+  background-color: var(--input-color-bg-secondary);
+}
+
+.ua-btn--confirm {
+  background-color: var(--input-color-primary);
+  color: white;
+}
+
+.ua-btn--confirm:hover:not(:disabled) {
+  background-color: var(--input-color-primary-dark);
+}
+
+/* ─── Notes Section ──────────────────────────────────────────────────────── */
+
+.activity-notes-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-sm);
+}
+
+.activity-notes-section label {
+  font-weight: var(--input-font-weight-medium);
+  color: var(--input-color-text-secondary);
+}
+
+.activity-notes-input {
+  width: 100%;
+  min-height: 100px;
+  padding: var(--input-spacing-md);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-family: inherit;
+  font-size: var(--input-font-size-md);
+  resize: vertical;
+}
+
+.activity-notes-input:focus {
+  outline: none;
+  border-color: var(--input-color-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* ─── Submit Button ──────────────────────────────────────────────────────── */
+
+.activity-submit-button {
+  width: 100%;
+  padding: 12px;
+  background-color: var(--input-color-success);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-semibold);
+  cursor: pointer;
+  transition: background-color var(--input-transition-normal);
+}
+
+.activity-submit-button:hover:not(:disabled) {
+  background-color: var(--input-color-success-dark);
+}
+
+.activity-submit-button:disabled {
+  background-color: var(--input-color-text-muted);
+  cursor: not-allowed;
+}
+
+/* ─── Recent Activities Panel ────────────────────────────────────────────── */
+
+.activity-recent-activities {
+  margin-top: var(--input-spacing-xl);
+  padding: var(--input-spacing-lg);
+  border: 1px solid var(--input-color-border-light);
+  border-radius: var(--input-radius-xl);
+}
+
+.activity-recent-activities h3 {
+  margin-top: 0;
+  margin-bottom: var(--input-spacing-lg);
+  font-size: var(--input-font-size-lg);
+  color: var(--input-color-text-primary);
+}
+
+.activity-recent-activities-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-md);
+}
+
+.activity-recent-activity-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: var(--input-spacing-md);
+  padding: var(--input-spacing-lg);
+  background-color: var(--input-color-bg-secondary);
+  border-radius: var(--input-radius-lg);
+  box-shadow: var(--input-shadow-sm);
+}
+
+.activity-type-and-level {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-xs);
+}
+
+.activity-type-badge {
+  padding: 4px var(--input-spacing-sm);
+  background-color: var(--input-color-primary);
+  color: white;
+  border-radius: var(--input-radius-sm);
+  font-size: var(--input-font-size-xs);
+  text-transform: uppercase;
+  font-weight: var(--input-font-weight-semibold);
+  text-align: center;
+}
+
+.activity-level-badge {
+  padding: 4px var(--input-spacing-sm);
+  background-color: var(--input-color-bg-tertiary);
+  color: var(--input-color-text-primary);
+  border-radius: var(--input-radius-sm);
+  font-size: var(--input-font-size-xs);
+  font-weight: var(--input-font-weight-medium);
+  text-align: center;
+}
+
+.activity-intensity-badge {
+  padding: 4px var(--input-spacing-sm);
+  background-color: var(--input-color-bg-tertiary);
+  color: var(--input-color-text-tertiary);
+  border-radius: var(--input-radius-sm);
+  font-size: var(--input-font-size-xs);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.activity-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--input-spacing-xs);
+}
+
+.activity-time {
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-primary);
+}
+
+.activity-date {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+.activity-duration {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-secondary);
+}
+
+.activity-hr-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-xs);
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+}
+
+.activity-notes-display {
+  max-width: 200px;
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-impact-badge {
+  padding: 6px 12px;
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-semibold);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.activity-impact-badge.activity-impact-increase {
+  background-color: var(--input-color-danger-bg);
+  color: var(--input-color-danger);
+}
+
+.activity-impact-badge.activity-impact-decrease {
+  background-color: var(--input-color-success-bg);
+  color: var(--input-color-success);
+}
+
+.activity-impact-badge.activity-impact-neutral {
+  background-color: var(--input-color-bg-tertiary);
+  color: var(--input-color-text-tertiary);
+}
+
+.activity-no-activities {
+  text-align: center;
+  padding: var(--input-spacing-xl);
+  color: var(--input-color-text-muted);
+  font-style: italic;
+}
+
+.activity-activities-footer {
+  margin-top: var(--input-spacing-lg);
+  padding-top: var(--input-spacing-md);
+  border-top: 1px dotted var(--input-color-border-light);
+  font-size: var(--input-font-size-sm);
+}
+
+.activity-import-note {
+  color: var(--input-color-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-xs);
+}
+
+.activity-inline-icon {
+  font-size: 0.9em;
+}
+
+/* ─── Loading & Error States ─────────────────────────────────────────────── */
+
+.activity-loading {
+  text-align: center;
+  padding: var(--input-spacing-xl);
+  color: var(--input-color-text-tertiary);
+}
+
+.activity-error {
+  color: var(--input-color-danger);
+  padding: var(--input-spacing-md);
+  background-color: var(--input-color-danger-bg);
+  border-radius: var(--input-radius-md);
+  border: 1px solid var(--input-color-danger);
+}
+
+/* ─── HR Section ─────────────────────────────────────────────────────────── */
+
+.hr-section {
+  margin-top: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hr-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #444;
+  text-align: left;
+}
+
+.hr-toggle-btn:hover {
+  background: #ebebeb;
+}
+
+.hr-icon {
+  color: #e53935;
+  flex-shrink: 0;
+}
+
+.hr-optional {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.hr-chevron {
+  margin-left: auto;
+  color: #888;
+}
+
+.hr-badge {
+  background: #e53935;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+}
+
+/* ─── HR Fields (expanded) ───────────────────────────────────────────────── */
+
+.hr-fields {
+  padding: 10px 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hr-hint {
+  font-size: 0.78rem;
+  color: #888;
+  margin: 0;
+}
+
+.hr-baseline-row {
+  display: flex;
+  gap: 16px;
+}
+
+.hr-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.hr-input-group label {
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.hr-number-input {
+  padding: 5px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  width: 100%;
+}
+
+/* ─── HR Trace ───────────────────────────────────────────────────────────── */
+
+.hr-trace-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hr-trace-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hr-trace-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.hr-add-point-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.hr-add-point-btn:hover {
+  background: #1565c0;
+}
+
+.hr-trace-empty {
+  font-size: 0.78rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.hr-trace-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hr-trace-label {
+  font-size: 0.78rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.hr-trace-input {
+  width: 70px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.hr-trace-remove {
+  margin-left: auto;
+}
+
+/* ─── PD Result Panel ────────────────────────────────────────────────────── */
+
+.pd-result-panel {
+  margin-top: var(--input-spacing-lg);
+  padding: var(--input-spacing-lg);
+  background-color: var(--input-color-bg-secondary);
+  border: 1px solid var(--input-color-border-light);
+  border-radius: var(--input-radius-lg);
+  box-shadow: var(--input-shadow-sm);
+}
+
+.pd-result-header {
+  display: flex;
+  align-items: center;
+  gap: var(--input-spacing-sm);
+  margin-bottom: var(--input-spacing-md);
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-primary);
+}
+
+.pd-result-icon {
+  color: var(--input-color-primary);
+}
+
+.pd-result-dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--input-color-text-muted);
+  padding: 0 4px;
+}
+
+.pd-result-dismiss:hover {
+  color: var(--input-color-text-primary);
+}
+
+.pd-result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--input-spacing-md);
+  margin-bottom: var(--input-spacing-md);
+}
+
+.pd-result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--input-spacing-sm);
+  background: var(--input-color-bg-primary);
+  border-radius: var(--input-radius-sm);
+  border: 1px solid var(--input-color-border-light);
+}
+
+.pd-label {
+  font-size: var(--input-font-size-xs);
+  color: var(--input-color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pd-value {
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-primary);
+}
+
+.pd-value.pd-negative {
+  color: var(--input-color-success);
+}
+
+.pd-value.pd-positive {
+  color: var(--input-color-danger);
+}
+
+.pd-value.pd-boost {
+  color: var(--input-color-primary);
+}
+
+.pd-contributions {
+  margin-top: var(--input-spacing-md);
+  font-size: var(--input-font-size-sm);
+}
+
+.pd-contributions summary {
+  cursor: pointer;
+  color: var(--input-color-text-secondary);
+  font-weight: var(--input-font-weight-medium);
+  margin-bottom: var(--input-spacing-sm);
+}
+
+.pd-contributions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--input-font-size-sm);
+}
+
+.pd-contributions-table th,
+.pd-contributions-table td {
+  padding: 4px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--input-color-border-light);
+}
+
+.pd-contributions-table th {
+  color: var(--input-color-text-tertiary);
+  font-weight: var(--input-font-weight-medium);
+  text-transform: uppercase;
+  font-size: var(--input-font-size-xs);
+}
+
+.pd-contributions-table td.pd-negative {
+  color: var(--input-color-success);
+}
+
+.pd-result-meta {
+  margin-top: var(--input-spacing-md);
+  font-size: var(--input-font-size-xs);
+  color: var(--input-color-text-tertiary);
+  border-top: 1px dotted var(--input-color-border-light);
+  padding-top: var(--input-spacing-sm);
+}
+
+/* ─── Dark Mode ──────────────────────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  .activity-type-badge {
+    background-color: var(--input-color-primary-dark);
+  }
+
+  .activity-level-badge,
+  .activity-intensity-badge {
+    background-color: #3a3a3a;
+  }
+
+  .activity-icon-button.activity-remove-btn {
+    background-color: #5a2828;
+    border-color: #7a3838;
+  }
+
+  .hr-toggle-btn {
+    background: #2a2a2a;
+    color: #ccc;
+  }
+
+  .hr-toggle-btn:hover {
+    background: #333;
+  }
+
+  .hr-fields {
+    background: #1e1e1e;
+  }
+
+  .ua-level-btn {
+    background: var(--input-color-bg-secondary);
+  }
+}
+
+/* ─── Responsive Design ──────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .activity-recent-activity-item {
+    grid-template-columns: 1fr;
+    gap: var(--input-spacing-sm);
+  }
+
+  .activity-standalone-container {
+    margin: var(--input-spacing-md);
+    padding: var(--input-spacing-lg);
+  }
+
+  .ua-level-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .pd-result-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .activity-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--input-spacing-md);
+  }
+
+  .activity-action-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .ua-form-actions {
+    flex-direction: column;
+  }
+
+  .ua-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pd-result-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --input-color-text-primary: #ecf0f1;
+    --input-color-text-secondary: #bdc3c7;
+    --input-color-text-tertiary: #95a5a6;
+    --input-color-text-muted: #7f8c8d;
+
+    --input-color-bg-primary: #2c2c2c;
+    --input-color-bg-secondary: #2d2d2d;
+    --input-color-bg-tertiary: #333;
+    --input-color-bg-disabled: #3d3d3d;
+
+    --input-color-border: #4d4d4d;
+    --input-color-border-light: #444;
+
+    --input-color-primary-bg: #1a3045;
+    --input-color-success-bg: #2a542a;
+    --input-color-danger-bg: #542a2a;
+    --input-color-warning-bg: #54462a;
+    --input-color-info-bg: #1a3a45;
+  }
+
+  /* Blood Sugar Dark Mode Specifics */
+  .bs-unit-selector,
+  .bs-input-with-unit input,
+  .bs-notes-input {
+    background-color: #3d3d3d;
+    border-color: #4d4d4d;
+    color: #f0f0f0;
+  }
+
+  .bs-reading-item,
+  .bs-dose-item {
+    background-color: #2c2c2c;
+  }
+
+  /* Insulin Dark Mode Specifics */
+  .insulin-type-select,
+  .insulin-dose-input,
+  .insulin-time-input,
+  .insulin-notes-input {
+    background-color: #3d3d3d;
+    border-color: #4d4d4d;
+    color: #f0f0f0;
+  }
+
+  .insulin-select-container::after {
+    color: #aaa;
+  }
+
+  .insulin-suggested {
+    background-color: #1a3045;
+    border-left-color: #2980b9;
+  }
+
+  .insulin-info-section {
+    background-color: #262626;
+  }
+
+  .insulin-info-toggle {
+    background-color: #1a3045;
+    color: #74b9ff;
+  }
+
+  .insulin-info-toggle:hover {
+    background-color: #1e3a50;
+  }
+
+  .insulin-expanded-info {
+    background-color: #2c2c2c;
+    border-top-color: #444;
+  }
+
+  .insulin-timeline-bar {
+    background-color: #3d3d3d;
+  }
+
+  .insulin-submit-button:disabled {
+    background-color: #5a5a5a;
+  }
+
+  /* Time Input Dark Mode Specifics */
+  .time-input-timepoint {
+    background-color: #2c2c2c;
+    border-color: #4d4d4d;
+  }
+
+  .time-input-datetime,
+  .time-input-hours,
+  .time-input-minutes {
+    background-color: #3d3d3d;
+    color: #f0f0f0;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (min-width: 768px) {
+  .time-input-range {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .time-input-range-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .time-input-duration-display {
+    width: 100%;
+    padding-top: var(--input-spacing-xs);
+  }
+}
+
+@media (max-width: 768px) {
+  /* Insulin Responsive */
+  .insulin-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .insulin-timeline-section {
+    margin-top: 25px;
+  }
+
+  .insulin-container.insulin-standalone {
+    margin: var(--input-spacing-md);
+    padding: var(--input-spacing-lg);
+  }
+
+  .insulin-title {
+    font-size: var(--input-font-size-xl);
+  }
+
+  /* Blood Sugar Responsive */
+  .bs-container {
+    margin: var(--input-spacing-md);
+    padding: var(--input-spacing-lg);
+  }
+
+  /* Time Input Responsive */
+  .time-global-update-control {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--input-spacing-sm);
+  }
+
+  .time-update-btn,
+  .time-auto-update-toggle {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Blood Sugar */
+  .bs-readings-list {
+    max-height: 200px;
+  }
+
+  .bs-action-buttons {
+    flex-wrap: wrap;
+  }
+
+  .bs-icon-button {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Insulin */
+  .insulin-doses-list {
+    max-height: 200px;
+  }
+
+  .insulin-dose-item {
+    padding: 0.5rem;
+  }
+
+  .insulin-dose-type {
+    max-width: 120px;
+  }
+
+  .insulin-action-buttons {
+    flex-wrap: wrap;
+  }
+
+  .insulin-icon-button {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ============================================
+   MEAL INPUT COMPONENT
+   Prefix: .meal-*
+   ============================================ */
+
+/* Container */
+.meal-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.meal-title {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.meal-subtitle {
+  font-size: 1.5rem;
+  color: #34495e;
+  margin: 1rem 0;
+}
+
+/* Header */
+.meal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.meal-action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.meal-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meal-icon-button:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.meal-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.meal-icon-button.meal-refresh-btn:hover {
+  color: #2196F3;
+}
+
+.meal-icon-button.meal-history-btn:hover {
+  color: #9C27B0;
+}
+
+.meal-icon-button.meal-import-btn:hover {
+  color: #4CAF50;
+}
+
+.meal-spin {
+  animation: meal-spin 1s infinite linear;
+}
+
+@keyframes meal-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Form */
+.meal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Form Fields */
+.meal-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.meal-form-field label {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.meal-form-field input,
+.meal-form-field select,
+.meal-form-field textarea {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.meal-form-field input:focus,
+.meal-form-field select:focus,
+.meal-form-field textarea:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+  outline: none;
+}
+
+.meal-form-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.meal-readonly-field input {
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+/* Meal Time Input Styles */
+.meal-time-input {
+  width: 100%;
+  padding: var(--input-spacing-md);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+  transition: border-color var(--input-transition-normal), box-shadow var(--input-transition-normal);
+}
+
+.meal-time-input:focus {
+  outline: none;
+  border-color: var(--input-color-primary);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.meal-time-input:disabled {
+  background-color: var(--input-color-bg-disabled);
+  cursor: not-allowed;
+}
+
+.meal-time-helper {
+  display: block;
+  margin-top: var(--input-spacing-xs);
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-tertiary);
+  font-style: italic;
+}
+/* Messages */
+.meal-message {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: flex-start;
+  text-align: center;
+}
+
+.meal-message-icon {
+  margin-right: 0.75rem;
+  margin-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.meal-message-content {
+  flex: 1;
+}
+
+.meal-message-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.meal-message-details {
+  font-family: monospace;
+  font-size: 0.85rem;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  border-radius: 3px;
+  margin: 0.5rem 0 0 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.meal-message.meal-msg-info {
+  background-color: #e3f2fd;
+  border: 1px solid #bbdefb;
+  color: #0d47a1;
+}
+
+.meal-message.meal-msg-success {
+  background-color: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  color: #1b5e20;
+}
+
+.meal-message.meal-msg-error {
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #b71c1c;
+}
+
+.meal-message:empty {
+  display: none;
+}
+
+/* Recent Meals */
+.meal-recent-meals {
+  margin-bottom: 2rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.meal-recent-meals h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.meal-meals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.meal-item {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.meal-item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.meal-type {
+  font-weight: 600;
+  color: #333;
+}
+
+.meal-timestamp {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.meal-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.meal-food-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.meal-food-item {
+  background-color: #f0f0f0;
+  border-radius: 12px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.meal-more-foods {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+}
+
+.meal-no-foods {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+}
+
+.meal-nutrition {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.meal-blood-sugar,
+.meal-insulin {
+  font-size: 0.9rem;
+  color: #444;
+}
+
+.meal-loading-meals {
+  text-align: center;
+  padding: 1rem;
+  color: #666;
+}
+
+.meal-no-meals {
+  text-align: center;
+  padding: 1.5rem 0;
+  color: #888;
+  font-style: italic;
+}
+
+.meal-meals-footer {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.meal-view-all-meals a {
+  color: var(--input-color-primary);
+  text-decoration: none;
+}
+
+.meal-view-all-meals a:hover {
+  text-decoration: underline;
+}
+
+/* Calculation Summary */
+.meal-calculation-summary {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.meal-calc-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.meal-calc-label {
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.meal-calc-value {
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.meal-adj-factor {
+  margin-left: 8px;
+  padding: 0 4px;
+  font-size: 0.8rem;
+  border-radius: 3px;
+  background-color: #e0e7ff;
+}
+
+.meal-suggested-insulin-row {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.meal-suggested-value {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #0369a1;
+}
+
+/* Sections */
+.meal-form-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.meal-activity-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.meal-measurement-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+/* Section Cards */
+.meal-section-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.meal-section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.meal-section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.meal-info-icon {
+  color: #718096;
+  cursor: help;
+}
+
+/* Tooltip */
+.meal-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.meal-tooltip .meal-tooltip-text {
+  visibility: hidden;
+  background-color: #2d3748;
+  color: white;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.meal-tooltip:hover .meal-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Insulin Breakdown */
+.meal-insulin-breakdown {
+  background: #f7fafc;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.meal-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.meal-breakdown-card {
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.meal-breakdown-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.meal-breakdown-card.meal-expanded {
+  grid-column: 1 / -1;
+}
+
+.meal-breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.meal-header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.875rem;
+}
+
+.meal-breakdown-value {
+  font-size: 1.25rem;
+  color: #2c5282;
+  font-weight: 600;
+}
+
+.meal-value-highlight {
+  color: #2c5282;
+  font-weight: 600;
+}
+
+.meal-impact-positive {
+  color: #38a169;
+}
+
+.meal-impact-negative {
+  color: #e53e3e;
+}
+
+.meal-expanded-content {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.meal-expanded-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.meal-expanded-content li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meal-expanded-content li:last-child {
+  border-bottom: none;
+}
+
+.meal-summary-line {
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.meal-formula-explanation {
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #eaeaea;
+  color: #666;
+}
+
+.meal-formula-explanation small {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+/* Activity Details */
+.meal-activity-detail {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Health Section */
+.meal-health-section {
+  margin-bottom: 1rem;
+}
+
+.meal-health-section h4 {
+  font-size: 0.875rem;
+  color: #4a5568;
+  margin: 0.5rem 0;
+}
+
+.meal-medication-effect {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: #f7fafc;
+  border-radius: 4px;
+}
+
+.meal-medication-effect h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.875rem;
+  color: #2d3748;
+}
+
+.meal-effect-details {
+  font-size: 0.813rem;
+  color: #718096;
+}
+
+.meal-effect-details p {
+  margin: 0.25rem 0;
+}
+
+/* Active Insulin Card */
+.meal-active-insulin-card {
+  background-color: #f0f7ff;
+}
+
+.meal-active-insulin-item {
+  color: #2471a3;
+  font-weight: 500;
+}
+
+.meal-active-insulin-summary {
+  color: #2471a3;
+  font-weight: 500;
+}
+
+/* Backend Calculation */
+.meal-backend-calculation {
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.meal-backend-calculation h4 {
+  margin-top: 0;
+  color: #2c3e50;
+}
+
+.meal-backend-calculation ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.meal-backend-calculation li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.meal-breakdown-section {
+  margin-bottom: 1rem;
+}
+
+.meal-breakdown-section > strong {
+  color: #2c5282;
+  font-size: 1.05rem;
+}
+
+.meal-calculation-breakdown {
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-radius: 6px;
+}
+
+.meal-calculation-breakdown p {
+  margin: 0.5rem 0;
+  color: #4a5568;
+}
+
+/* Timing Guidelines */
+.meal-timing-guidelines {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f0f8ff;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}
+
+.meal-timing-guidelines h4 {
+  margin-top: 0;
+  color: #2c5282;
+}
+
+.meal-timing-guidelines p {
+  margin: 0.5rem 0;
+  color: #4a5568;
+}
+
+/* Buttons */
+.meal-submit-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  font-size: 1.1rem;
+  width: 100%;
+  max-width: 300px;
+  margin: 1rem auto;
+  display: block;
+}
+
+.meal-submit-button:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.meal-submit-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.meal-submit-button:disabled {
+  background-color: #a0c3e8;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Insulin Input Group */
+.meal-insulin-input-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.meal-insulin-type-select {
+  min-width: 150px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+}
+
+.meal-insulin-type-readonly {
+  min-width: 150px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+/* Embedded Components */
+.meal-input-blood-sugar {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+.meal-input-insulin {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+/* Loading State */
+.meal-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+
+.meal-error {
+  text-align: center;
+  padding: 1rem;
+  color: #dc3545;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .meal-container {
+    background-color: #1a1a1a;
+    color: #fff;
+  }
+
+  .meal-form {
+    background-color: #2d2d2d;
+  }
+
+  .meal-form-field label {
+    color: #fff;
+  }
+
+  .meal-form-field input,
+  .meal-form-field select,
+  .meal-form-field textarea {
+    background-color: #3d3d3d;
+    border-color: #4d4d4d;
+    color: #fff;
+  }
+
+  .meal-form-section,
+  .meal-activity-section,
+  .meal-measurement-section {
+    background-color: #3d3d3d;
+  }
+
+  .meal-section-card {
+    background-color: #2d3748;
+  }
+
+  .meal-section-header {
+    border-bottom-color: #4a5568;
+  }
+
+  .meal-section-title {
+    color: #e2e8f0;
+  }
+
+  .meal-insulin-breakdown {
+    background: #2d3748;
+  }
+
+  .meal-breakdown-card {
+    background: #1a202c;
+    border-color: #4a5568;
+  }
+
+  .meal-header-content {
+    color: #e2e8f0;
+  }
+
+  .meal-breakdown-value {
+    color: #63b3ed;
+  }
+
+  .meal-expanded-content {
+    border-top-color: #4a5568;
+  }
+
+  .meal-expanded-content li {
+    border-bottom-color: #4a5568;
+  }
+
+  .meal-activity-detail {
+    border-bottom-color: #4a5568;
+  }
+
+  .meal-medication-effect {
+    background: #2d3748;
+  }
+
+  .meal-readonly-field input {
+    background-color: #2d2d2d;
+  }
+
+  .meal-food-item {
+    background-color: #3d3d3d;
+  }
+
+  .meal-recent-meals {
+    background-color: #2d2d2d;
+  }
+
+  .meal-item {
+    background-color: #3d3d3d;
+    border-color: #4d4d4d;
+  }
+
+  .meal-backend-calculation {
+    background-color: #2d2d2d;
+    border-color: #4d4d4d;
+  }
+
+  .meal-timing-guidelines {
+    background-color: #1a3045;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .meal-container {
+    padding: 0.5rem;
+  }
+
+  .meal-form {
+    padding: 1rem;
+  }
+
+  .meal-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-breakdown-card {
+    padding: 0.75rem;
+  }
+
+  .meal-section-title {
+    font-size: 1.1rem;
+  }
+
+  .meal-title {
+    font-size: 1.5rem;
+  }
+
+  .meal-subtitle {
+    font-size: 1.25rem;
+  }
+
+  .meal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .meal-action-buttons {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .meal-insulin-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .meal-insulin-type-select,
+  .meal-insulin-type-readonly {
+    width: 100%;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .meal-action-buttons,
+  .meal-submit-button {
+    display: none;
+  }
+
+  .meal-section-card,
+  .meal-form {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}
+
+/* ============================================
+   FOOD SECTION COMPONENT
+   Prefix: .food-*
+   ============================================ */
+
+/* Container */
+.food-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Food Search */
+.food-search {
+  background: var(--input-color-bg-tertiary);
+  padding: 1rem;
+  border-radius: var(--input-radius-lg);
+}
+
+.food-search-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.food-tab-button {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--input-color-bg-secondary);
+  color: var(--input-color-text-primary);
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: var(--input-font-weight-medium);
+  transition: all var(--input-transition-normal);
+}
+
+.food-tab-button:hover {
+  background-color: var(--input-color-bg-tertiary);
+}
+
+.food-tab-button.food-tab-active {
+  background-color: var(--input-color-primary);
+  color: white;
+  border-color: var(--input-color-primary);
+}
+
+.food-button-icon {
+  font-size: 0.9em;
+}
+
+/* Search Container */
+.food-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.food-search-controls {
+  display: flex;
+  gap: 1rem;
+}
+
+.food-search-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+}
+
+.food-search-input:focus {
+  outline: none;
+  border-color: var(--input-color-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.food-category-select {
+  min-width: 150px;
+  padding: 0.75rem;
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+  cursor: pointer;
+}
+
+.food-category-select:focus {
+  outline: none;
+  border-color: var(--input-color-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* Search Results */
+.food-search-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.food-card-simple {
+  background: var(--input-color-bg-primary);
+  padding: 1rem;
+  border-radius: var(--input-radius-lg);
+  box-shadow: var(--input-shadow-sm);
+  transition: box-shadow var(--input-transition-normal);
+}
+
+.food-card-simple:hover {
+  box-shadow: var(--input-shadow-md);
+}
+
+.food-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.food-card-title {
+  margin: 0;
+  font-size: var(--input-font-size-md);
+  color: var(--input-color-text-primary);
+}
+
+.food-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.food-favorite-button,
+.food-add-button {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: var(--input-radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--input-font-size-sm);
+  font-weight: var(--input-font-weight-medium);
+  transition: all var(--input-transition-normal);
+}
+
+.food-favorite-button {
+  background-color: #ffebee;
+  color: #e74c3c;
+}
+
+.food-favorite-button:hover {
+  background-color: #ffcdd2;
+}
+
+.food-add-button {
+  background-color: var(--input-color-success);
+  color: white;
+}
+
+.food-add-button:hover {
+  background-color: #219653;
+}
+
+/* Favorites Grid */
+.food-favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.food-empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--input-color-text-muted);
+  font-style: italic;
+}
+
+.food-message {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: var(--input-color-info-bg);
+  color: #0c5460;
+  border-radius: var(--input-radius-md);
+  text-align: center;
+}
+
+/* Selected Foods */
+.food-selected-foods {
+  margin-top: 1.5rem;
+}
+
+.food-section-title {
+  font-size: var(--input-font-size-xl);
+  color: var(--input-color-text-primary);
+  margin: 0 0 1rem 0;
+  font-weight: var(--input-font-weight-semibold);
+}
+
+/* Food Item */
+.food-item {
+  background: var(--input-color-bg-tertiary);
+  padding: 1rem;
+  border-radius: var(--input-radius-lg);
+  margin-bottom: 1rem;
+  box-shadow: var(--input-shadow-sm);
+}
+
+.food-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.food-item-title {
+  margin: 0;
+  font-size: var(--input-font-size-lg);
+  color: var(--input-color-text-primary);
+  font-weight: var(--input-font-weight-semibold);
+}
+
+.food-button-remove {
+  background-color: #ffebee;
+  color: var(--input-color-danger);
+  border: none;
+  border-radius: var(--input-radius-md);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: all var(--input-transition-normal);
+}
+
+.food-button-remove:hover {
+  background-color: #ffcdd2;
+}
+
+/* Measurement Toggle */
+.food-measurement-toggle {
+  margin-bottom: 1rem;
+}
+
+.food-toggle-buttons {
+  display: flex;
+  gap: 0.5rem;
+  background-color: var(--input-color-bg-secondary);
+  padding: 0.25rem;
+  border-radius: var(--input-radius-md);
+}
+
+.food-toggle-button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  border: none;
+  border-radius: var(--input-radius-sm);
+  cursor: pointer;
+  font-weight: var(--input-font-weight-medium);
+  color: var(--input-color-text-secondary);
+  transition: all var(--input-transition-normal);
+}
+
+.food-toggle-button:hover {
+  background-color: var(--input-color-bg-tertiary);
+}
+
+.food-toggle-button.food-toggle-active {
+  background-color: var(--input-color-primary);
+  color: white;
+}
+
+/* Portion Control */
+.food-portion-control {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.food-amount-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.food-control-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background-color: var(--input-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--input-radius-md);
+  cursor: pointer;
+  transition: all var(--input-transition-normal);
+}
+
+.food-control-button:hover {
+  background-color: var(--input-color-primary-dark);
+}
+
+.food-portion-input {
+  width: 80px;
+  text-align: center;
+  padding: 0.5rem;
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  font-size: var(--input-font-size-md);
+}
+
+.food-portion-input:focus {
+  outline: none;
+  border-color: var(--input-color-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+.food-unit-select {
+  padding: 0.5rem;
+  border: 1px solid var(--input-color-border);
+  border-radius: var(--input-radius-md);
+  background-color: var(--input-color-bg-primary);
+  font-size: var(--input-font-size-md);
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.food-unit-select:focus {
+  outline: none;
+  border-color: var(--input-color-border-focus);
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* Nutrients Display */
+.food-nutrients-display {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--input-color-bg-primary);
+  border-radius: var(--input-radius-md);
+}
+
+.food-nutrient-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.food-nutrient-label {
+  font-size: var(--input-font-size-sm);
+  color: var(--input-color-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.food-nutrient-value {
+  font-size: var(--input-font-size-md);
+  font-weight: var(--input-font-weight-semibold);
+  color: var(--input-color-text-primary);
+}
+
+/* Absorption Badge */
+.food-absorption-badge {
+  padding: 2px 6px;
+  border-radius: var(--input-radius-sm);
+  font-size: var(--input-font-size-xs);
+  font-weight: var(--input-font-weight-semibold);
+  color: white;
+  text-transform: capitalize;
+}
+
+.food-absorption-badge.food-absorption-very_fast {
+  background-color: #FF4444;
+}
+
+.food-absorption-badge.food-absorption-fast {
+  background-color: #FF8800;
+}
+
+.food-absorption-badge.food-absorption-medium {
+  background-color: #4CAF50;
+}
+
+.food-absorption-badge.food-absorption-slow {
+  background-color: #2196F3;
+}
+
+.food-absorption-badge.food-absorption-very_slow {
+  background-color: #9C27B0;
+}
+
+/* Dark Mode */
+@media (prefers-color-scheme: dark) {
+  .food-tab-button {
+    background-color: #3d3d3d;
+  }
+
+  .food-tab-button:hover {
+    background-color: #4d4d4d;
+  }
+
+  .food-card-simple {
+    background-color: #2c2c2c;
+  }
+
+  .food-search-input,
+  .food-category-select,
+  .food-portion-input,
+  .food-unit-select {
+    background-color: #3d3d3d;
+    border-color: #4d4d4d;
+    color: #f0f0f0;
+  }
+
+  .food-item {
+    background-color: #2c2c2c;
+  }
+
+  .food-nutrients-display {
+    background-color: #1a1a1a;
+  }
+
+  .food-button-remove {
+    background-color: #5a2828;
+  }
+
+  .food-button-remove:hover {
+    background-color: #7a3838;
+  }
+
+  .food-favorite-button {
+    background-color: #5a2828;
+  }
+
+  .food-favorite-button:hover {
+    background-color: #7a3838;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .food-search-controls {
+    flex-direction: column;
+  }
+
+  .food-search-results,
+  .food-favorites-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .food-nutrients-display {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .food-portion-control {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .food-amount-control {
+    justify-content: center;
+  }
+
+  .food-unit-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .food-card-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .food-favorite-button,
+  .food-add-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+@media print {
+  .bs-action-buttons,
+  .insulin-action-buttons,
+  .bs-submit-button,
+  .insulin-submit-button,
+  .insulin-collapsible-toggle,
+  .insulin-info-toggle,
+  .time-global-update-control {
+    display: none;
+  }
+
+  .bs-container,
+  .insulin-container {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+}

@@ -1,0 +1,8 @@
+# Test and tooling dependencies.
+#
+# Kept separate from backend/requirements.txt so the foundation suite can run
+# in CI without installing the Flask stack, and so backend/requirements.txt
+# stays a pure runtime manifest.
+pytest==8.3.4
+pytest-cov==6.0.0
+mongomock==4.3.0         # in-memory Mongo for the backend route suite

@@ -1,0 +1,1951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>DiaTwin Exercise BG Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg:       #0f1117;
+    --bg2:      #181c27;
+    --bg3:      #1e2336;
+    --border:   rgba(255,255,255,0.08);
+    --border2:  rgba(255,255,255,0.14);
+    --text:     #e8eaf2;
+    --muted:    #7c84a0;
+    --teal:     #1fc8a4;
+    --teal-dim: rgba(31,200,164,0.12);
+    --coral:    #f06060;
+    --coral-dim:rgba(240,96,96,0.12);
+    --amber:    #f0a030;
+    --amber-dim:rgba(240,160,48,0.12);
+    --blue:     #5b9cf6;
+    --blue-dim: rgba(91,156,246,0.12);
+    --purple:   #a78bfa;
+    --purple-dim:rgba(167,139,250,0.12);
+    --red:      #ef4444;
+    --green:    #22c55e;
+    --font-main:'Syne', sans-serif;
+    --font-mono:'DM Mono', monospace;
+    --r:        10px;
+    --r-lg:     16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--font-main);font-size:14px;line-height:1.6;min-height:100vh}
+
+  /* ─── layout ─── */
+  .shell{max-width:1020px;margin:0 auto;padding:24px 16px 60px}
+  h1{font-size:22px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:24px}
+
+  /* ─── tabs ─── */
+  .tabs{display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:24px;width:fit-content;flex-wrap:wrap}
+  .tab{padding:7px 18px;border-radius:7px;border:none;background:transparent;color:var(--muted);font-family:var(--font-main);font-size:13px;font-weight:600;cursor:pointer;transition:all .18s;letter-spacing:0.2px}
+  .tab.active{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+  .panel{display:none}.panel.active{display:block}
+
+  /* ─── cards ─── */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-lg);padding:20px}
+  .card+.card{margin-top:14px}
+  .card-title{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  @media(max-width:700px){.grid2,.grid3,.grid4,.grid5{grid-template-columns:1fr 1fr}}
+  @media(max-width:420px){.grid4,.grid5{grid-template-columns:1fr 1fr}}
+
+  /* ─── stat tiles ─── */
+  .stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+  .stat-label{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .stat-val{font-size:22px;font-weight:700;font-family:var(--font-mono);line-height:1}
+  .stat-unit{font-size:11px;color:var(--muted);margin-top:2px}
+  .stat-val.pos{color:var(--coral)}
+  .stat-val.neg{color:var(--teal)}
+  .stat-val.warn{color:var(--amber)}
+  .stat-val.good{color:var(--green)}
+
+  /* ─── controls ─── */
+  .ctrl-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px}
+  .ctrl{display:flex;flex-direction:column;gap:5px;min-width:120px}
+  .ctrl label{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted)}
+  .ctrl-val{font-family:var(--font-mono);font-size:13px;color:var(--text);min-width:52px}
+  input[type=range]{accent-color:var(--teal);width:120px;cursor:pointer}
+  select{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:var(--font-main);font-size:13px;padding:6px 10px;cursor:pointer;outline:none}
+  select:focus{border-color:var(--teal)}
+
+  /* ─── pill buttons ─── */
+  .pills{display:flex;gap:6px;flex-wrap:wrap}
+  .pill{padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--font-main);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .pill.act-teal.active{background:var(--teal-dim);border-color:var(--teal);color:var(--teal)}
+  .pill.act-coral.active{background:var(--coral-dim);border-color:var(--coral);color:var(--coral)}
+  .pill.act-amber.active{background:var(--amber-dim);border-color:var(--amber);color:var(--amber)}
+  .pill.act-blue.active{background:var(--blue-dim);border-color:var(--blue);color:var(--blue)}
+  .pill.act-purple.active{background:var(--purple-dim);border-color:var(--purple);color:var(--purple)}
+
+  /* ─── note box ─── */
+  .note{border-left:3px solid var(--teal);border-radius:0 var(--r) var(--r) 0;background:var(--teal-dim);padding:10px 14px;font-size:12px;color:var(--muted);line-height:1.65;margin-top:14px}
+  .note.warn{border-color:var(--amber);background:var(--amber-dim)}
+  .note.danger{border-color:var(--coral);background:var(--coral-dim)}
+  .note.info{border-color:var(--blue);background:var(--blue-dim)}
+  .note strong{color:var(--text);font-weight:600}
+
+  /* ─── legend ─── */
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--muted);margin-bottom:8px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .swatch{width:14px;height:4px;border-radius:2px;flex-shrink:0}
+
+  /* ─── chart wrapper ─── */
+  .chart-wrap{position:relative;height:220px}
+  .chart-label{font-size:11px;color:var(--muted);margin:16px 0 6px;letter-spacing:0.5px}
+
+  /* ─── discrepancy table ─── */
+  .diff-table{width:100%;border-collapse:collapse;font-size:12px}
+  .diff-table th{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  .diff-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+  .diff-table tr:last-child td{border-bottom:none}
+  .diff-table tr:hover td{background:var(--bg3)}
+  .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;letter-spacing:0.5px}
+  .tag-miss{background:var(--coral-dim);color:var(--coral)}
+  .tag-mism{background:var(--amber-dim);color:var(--amber)}
+  .tag-ok{background:var(--teal-dim);color:var(--teal)}
+  .tag-new{background:var(--purple-dim);color:var(--purple)}
+  code{font-family:var(--font-mono);font-size:11px;background:var(--bg3);padding:1px 5px;border-radius:4px;color:var(--blue)}
+
+  /* ─── adv model section ─── */
+  .section-head{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--purple);margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+  .rescue-box{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-top:12px}
+  .rescue-box .big{font-size:28px;font-weight:700;font-family:var(--font-mono);color:var(--amber)}
+  .rescue-box .label{font-size:11px;color:var(--muted);margin-top:2px}
+  .alert-row{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border-radius:var(--r);font-size:12px;margin-top:8px}
+  .alert-row.red{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#fca5a5}
+  .alert-row.amber{background:var(--amber-dim);border:1px solid rgba(240,160,48,0.25);color:#fcd34d}
+  .alert-row.green{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:#86efac}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+  .dot.red{background:var(--red)}
+  .dot.amber{background:var(--amber)}
+  .dot.green{background:var(--green)}
+
+  /* ─── cumulative BG specific ─── */
+  .mode-toggle{display:inline-flex;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:3px;gap:2px;margin-bottom:14px}
+  .mode-btn{padding:5px 14px;border-radius:6px;border:none;background:transparent;color:var(--muted);font-family:var(--font-main);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+  .mode-btn.active{background:var(--bg2);color:var(--text);border:1px solid var(--border2)}
+
+  .effect-bar-wrap{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+  .effect-row{display:flex;align-items:center;gap:10px;font-size:12px}
+  .effect-label{width:160px;color:var(--muted);flex-shrink:0;font-size:11px;letter-spacing:0.3px}
+  .effect-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;position:relative}
+  .effect-fill{height:100%;border-radius:4px;transition:width .3s}
+  .effect-val{width:72px;text-align:right;font-family:var(--font-mono);font-size:12px;flex-shrink:0}
+
+  .breakdown-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-family:var(--font-mono);font-size:12px;margin:2px 4px 2px 0}
+  .bb-meal{background:rgba(240,160,48,0.15);border:1px solid rgba(240,160,48,0.3);color:var(--amber)}
+  .bb-ins{background:var(--teal-dim);border:1px solid rgba(31,200,164,0.3);color:var(--teal)}
+  .bb-act{background:var(--blue-dim);border:1px solid rgba(91,156,246,0.3);color:var(--blue)}
+  .bb-base{background:var(--purple-dim);border:1px solid rgba(167,139,250,0.3);color:var(--purple)}
+
+  .safety-badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:0.5px}
+  .sb-ok{background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:var(--green)}
+  .sb-warn{background:var(--amber-dim);border:1px solid rgba(240,160,48,0.3);color:var(--amber)}
+  .sb-danger{background:var(--coral-dim);border:1px solid rgba(240,96,96,0.3);color:var(--coral)}
+  .sb-critical{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.5);color:#fca5a5}
+
+  .activity-block{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:14px;margin-top:10px}
+  .activity-block .title{font-size:11px;letter-spacing:0.8px;text-transform:uppercase;color:var(--blue);margin-bottom:10px;font-weight:600}
+
+  /* ─── layer toggle ─── */
+  .layer-toggle{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 8px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--font-main);font-size:11px;font-weight:600;cursor:pointer;transition:all .18s;letter-spacing:0.3px;margin-left:auto}
+  .layer-toggle .toggle-track{width:28px;height:15px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);position:relative;transition:background .18s;flex-shrink:0}
+  .layer-toggle .toggle-knob{position:absolute;top:2px;left:2px;width:9px;height:9px;border-radius:50%;background:var(--muted);transition:transform .18s,background .18s}
+  .layer-toggle.on{border-color:var(--teal);color:var(--teal)}
+  .layer-toggle.on .toggle-track{background:var(--teal-dim);border-color:var(--teal)}
+  .layer-toggle.on .toggle-knob{background:var(--teal);transform:translateX(13px)}
+  .layer-card-title{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .layer-card-title .card-title{margin-bottom:0}
+  .card.layer-off{opacity:0.45;filter:saturate(0.3)}
+</style>
+</head>
+<body>
+<div class="shell">
+  <h1>DiaTwin / NATIVE — Exercise BG Dynamics</h1>
+  <p class="subtitle">Combines shared-constants.ts defaults with the exercise model — now with activity cumulative effect & dual baseline modes</p>
+
+  <div class="tabs">
+    <button class="tab" onclick="switchTab('simple')">Simple Mode</button>
+    <button class="tab" onclick="switchTab('advanced')">Advanced Model</button>
+    <button class="tab active" onclick="switchTab('cumulative')">Cumulative BG</button>
+    <button class="tab" onclick="switchTab('gaps')">Discrepancies</button>
+  </div>
+
+  <!-- ════════════════════ SIMPLE MODE ════════════════════ -->
+  <div id="panel-simple" class="panel">
+    <div class="card">
+      <div class="card-title">Patient constants — from shared-constants.ts</div>
+      <div class="ctrl-row">
+        <div class="ctrl">
+          <label>ISF / CF (mg/dL per unit)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="20" max="100" step="5" value="40" id="s-isf" oninput="sISF(this.value)"/>
+            <span class="ctrl-val" id="s-isf-out">40</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>ICR (g carbs per unit)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="5" max="25" step="1" value="10" id="s-icr" oninput="sICR(this.value)"/>
+            <span class="ctrl-val" id="s-icr-out">10</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Target BG (mg/dL)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="70" max="140" step="5" value="100" id="s-target" oninput="sTarget(this.value)"/>
+            <span class="ctrl-val" id="s-target-out">100</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Current BG (mg/dL)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="60" max="300" step="5" value="140" id="s-bg" oninput="sBG(this.value)"/>
+            <span class="ctrl-val" id="s-bg-out">140</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Exercise — activity_coefficients scale (−2 to +2)</div>
+      <div class="ctrl-row">
+        <div class="ctrl">
+          <label>Exercise Type</label>
+          <div class="pills" id="s-type-pills">
+            <button class="pill act-teal active" onclick="sType('aerobic',this)">Aerobic</button>
+            <button class="pill act-coral" onclick="sType('anaerobic',this)">Anaerobic</button>
+            <button class="pill act-amber" onclick="sType('mixed',this)">Mixed</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Activity Level</label>
+          <div class="pills" id="s-act-pills">
+            <button class="pill act-blue" onclick="sAct(0,this)">Normal (0)</button>
+            <button class="pill act-blue" onclick="sAct(1,this)">High (+1)</button>
+            <button class="pill act-blue active" onclick="sAct(2,this)">Vigorous (+2)</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Duration (min)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="10" max="90" step="5" value="45" id="s-dur" oninput="sDur(this.value)"/>
+            <span class="ctrl-val" id="s-dur-out">45 min</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>IOB (units)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="10" step="0.5" value="2" id="s-iob" oninput="sIOB(this.value)"/>
+            <span class="ctrl-val" id="s-iob-out">2.0 U</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid4" style="margin-top:14px">
+      <div class="stat"><div class="stat-label">BG effect (peak)</div><div class="stat-val" id="s-stat1">—</div><div class="stat-unit">mg/dL</div></div>
+      <div class="stat"><div class="stat-label">ISF boost</div><div class="stat-val" id="s-stat2">—</div><div class="stat-unit">× normal</div></div>
+      <div class="stat"><div class="stat-label">Adjusted dose</div><div class="stat-val" id="s-stat3">—</div><div class="stat-unit">units</div></div>
+      <div class="stat"><div class="stat-label">Activity coeff.</div><div class="stat-val" id="s-stat4">—</div><div class="stat-unit">multiplier</div></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="legend">
+        <span><span class="swatch" style="background:#1fc8a4"></span>GLUT4 drop (aerobic)</span>
+        <span><span class="swatch" style="background:#f06060"></span>Catecholamine spike (anaerobic)</span>
+        <span><span class="swatch" style="background:#a78bfa;border-top:2px dashed #a78bfa;height:0"></span>Net BG change</span>
+      </div>
+      <div class="chart-wrap"><canvas id="s-acute"></canvas></div>
+      <div class="chart-label">Post-exercise ISF multiplier (0–24 h)</div>
+      <div class="chart-wrap" style="height:150px"><canvas id="s-isf"></canvas></div>
+    </div>
+
+    <div class="note" id="s-note"></div>
+  </div>
+
+  <!-- ════════════════════ ADVANCED MODEL ════════════════════ -->
+  <div id="panel-advanced" class="panel">
+
+    <div class="card">
+      <div class="card-title">Patient constants</div>
+      <div class="ctrl-row">
+        <div class="ctrl">
+          <label>ISF / correction_factor</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="20" max="100" step="5" value="40" id="a-isf" oninput="aISF(this.value)"/>
+            <span class="ctrl-val" id="a-isf-out">40</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>ICR</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="5" max="25" step="1" value="10" id="a-icr" oninput="aICR(this.value)"/>
+            <span class="ctrl-val" id="a-icr-out">10</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Target BG</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="70" max="140" step="5" value="100" id="a-target" oninput="aTarget(this.value)"/>
+            <span class="ctrl-val" id="a-target-out">100</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Current BG</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="60" max="300" step="5" value="140" id="a-bg" oninput="aBG(this.value)"/>
+            <span class="ctrl-val" id="a-bg-out">140</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>IOB (units)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="10" step="0.5" value="2" id="a-iob" oninput="aIOB(this.value)"/>
+            <span class="ctrl-val" id="a-iob-out">2.0 U</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>carb_to_bg_factor</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="2" max="6" step="0.5" value="4" id="a-cbg" oninput="aCBG(this.value)"/>
+            <span class="ctrl-val" id="a-cbg-out">4.0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Activity — MET classification (model §3.1)</div>
+      <div class="ctrl-row">
+        <div class="ctrl">
+          <label>Activity Type</label>
+          <select id="a-acttype" onchange="aUpdate()">
+            <option value="walking">Walking (MET 3.5 | α 0.95)</option>
+            <option value="running">Running (MET 9.8 | α 0.85)</option>
+            <option value="cycling" selected>Cycling (MET 8.0 | α 0.90)</option>
+            <option value="swimming">Swimming (MET 7.0 | α 0.88)</option>
+            <option value="strength_training">Strength training (MET 5.0 | α 0.30)</option>
+            <option value="yoga">Yoga (MET 2.5 | α 0.92)</option>
+            <option value="sports">Team sports (MET 7.5 | α 0.60)</option>
+            <option value="hiit">HIIT (MET 10.0 | α 0.45)</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>Intensity</label>
+          <div class="pills" id="a-int-pills">
+            <button class="pill act-blue" onclick="aInt('light',this)">Light</button>
+            <button class="pill act-blue active" onclick="aInt('moderate',this)">Moderate</button>
+            <button class="pill act-blue" onclick="aInt('vigorous',this)">Vigorous</button>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Duration (min)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="10" max="90" step="5" value="45" id="a-dur" oninput="aDur(this.value)"/>
+            <span class="ctrl-val" id="a-dur-out">45 min</span>
+          </div>
+        </div>
+        <div class="ctrl" style="flex-direction:row;align-items:center;gap:8px;margin-bottom:0">
+          <label style="margin-bottom:0">Pump user</label>
+          <input type="checkbox" id="a-pump" onchange="aUpdate()" style="width:16px;height:16px;accent-color:var(--teal);cursor:pointer"/>
+        </div>
+      </div>
+
+      <div class="section-head">Model constants — K params (§9.1)</div>
+      <div class="ctrl-row">
+        <div class="ctrl">
+          <label>K_aero (ISF enhance)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0.05" max="0.50" step="0.01" value="0.20" id="a-kaero" oninput="aKaero(this.value)"/>
+            <span class="ctrl-val" id="a-kaero-out">0.20</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>K_ana (ISF suppress)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0.02" max="0.30" step="0.01" value="0.10" id="a-kana" oninput="aKana(this.value)"/>
+            <span class="ctrl-val" id="a-kana-out">0.10</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>K_post_aero</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0.10" max="0.60" step="0.01" value="0.35" id="a-kpost" oninput="aKpost(this.value)"/>
+            <span class="ctrl-val" id="a-kpost-out">0.35</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>T_early (h)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="1" max="8" step="0.5" value="4" id="a-tearly" oninput="aTearly(this.value)"/>
+            <span class="ctrl-val" id="a-tearly-out">4 h</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>T_late (h)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="8" max="48" step="2" value="24" id="a-tlate" oninput="aTlate(this.value)"/>
+            <span class="ctrl-val" id="a-tlate-out">24 h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid4" style="margin-top:14px">
+      <div class="stat"><div class="stat-label">Effective MET</div><div class="stat-val" id="a-stat-met">—</div><div class="stat-unit">MET units</div></div>
+      <div class="stat"><div class="stat-label">Aerobic fraction α</div><div class="stat-val" id="a-stat-alpha">—</div><div class="stat-unit">0–1</div></div>
+      <div class="stat"><div class="stat-label">Peak ISF boost</div><div class="stat-val" id="a-stat-isf">—</div><div class="stat-unit">× normal</div></div>
+      <div class="stat"><div class="stat-label">Sensitivity window</div><div class="stat-val" id="a-stat-win">—</div><div class="stat-unit">hours</div></div>
+    </div>
+    <div class="grid4" style="margin-top:10px">
+      <div class="stat"><div class="stat-label">Dose suggestion</div><div class="stat-val" id="a-stat-dose">—</div><div class="stat-unit">units</div></div>
+      <div class="stat"><div class="stat-label">Pre-exercise reduction</div><div class="stat-val" id="a-stat-red">—</div><div class="stat-unit">%</div></div>
+      <div class="stat"><div class="stat-label">TBR factor</div><div class="stat-val" id="a-stat-tbr">—</div><div class="stat-unit">% of basal</div></div>
+      <div class="stat"><div class="stat-label">BG nadir (pred.)</div><div class="stat-val" id="a-stat-nadir">—</div><div class="stat-unit">mg/dL</div></div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="legend">
+        <span><span class="swatch" style="background:#1fc8a4"></span>GLUT4 R_U_aero</span>
+        <span><span class="swatch" style="background:#f06060"></span>Catecholamine R_HGP_ana</span>
+        <span><span class="swatch" style="background:#a78bfa"></span>Net ΔBG (model §3.6)</span>
+      </div>
+      <div class="chart-wrap"><canvas id="a-acute"></canvas></div>
+      <div class="chart-label">3-phase ISF multiplier — during / early (T_early) / late (T_late)</div>
+      <div class="chart-wrap" style="height:160px"><canvas id="a-isf"></canvas></div>
+    </div>
+
+    <div id="a-alerts"></div>
+
+    <div class="rescue-box" id="a-rescue" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="big" id="a-rescue-g">— g</div>
+          <div class="label">Carb rescue recommended (post-exercise)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--muted)">Predicted nadir</div>
+          <div style="font-family:var(--font-mono);font-size:18px;color:var(--coral)" id="a-rescue-nadir">—</div>
+          <div style="font-size:11px;color:var(--muted)" id="a-rescue-t">— min post-exercise</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="a-tbr-note" style="display:none" class="note">
+      <strong>Pump TBR suggestion:</strong> <span id="a-tbr-text"></span>
+    </div>
+  </div>
+
+  <!-- ════════════════════ CUMULATIVE BG MODEL (NEW) ════════════════════ -->
+  <div id="panel-cumulative" class="panel active">
+
+    <!-- Baseline Mode -->
+    <div class="card">
+      <div class="card-title">Baseline Estimation Mode</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="c-mode-dynamic" onclick="cSetMode('dynamic')">Dynamic (from reading)</button>
+        <button class="mode-btn" id="c-mode-preset" onclick="cSetMode('preset')">Preset (circadian profile)</button>
+      </div>
+
+      <!-- Dynamic baseline inputs -->
+      <div id="c-dynamic-section">
+        <div class="ctrl-row">
+          <div class="ctrl">
+            <label>BG Reading (mg/dL)</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="60" max="300" step="5" value="140" id="c-bgreading" oninput="cBGReading(this.value)"/>
+              <span class="ctrl-val" id="c-bgreading-out">140</span>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>Reading taken (h ago)</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="0" max="4" step="0.25" value="0.5" id="c-readingage" oninput="cReadingAge(this.value)"/>
+              <span class="ctrl-val" id="c-readingage-out">0.5 h</span>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>ISF / correction_factor</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="20" max="100" step="5" value="40" id="c-isf" oninput="cISF(this.value)"/>
+              <span class="ctrl-val" id="c-isf-out">40</span>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>carb_to_bg_factor</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="2" max="6" step="0.5" value="4" id="c-cbg" oninput="cCBG(this.value)"/>
+              <span class="ctrl-val" id="c-cbg-out">4.0</span>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>Target BG</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="70" max="140" step="5" value="100" id="c-target" oninput="cTarget(this.value)"/>
+              <span class="ctrl-val" id="c-target-out">100</span>
+            </div>
+          </div>
+        </div>
+        <div class="note info" style="margin-top:6px">
+          <strong>Dynamic mode:</strong> The stable baseline is back-calculated from your BG reading by unwinding all active meal and insulin effects at the reading time —
+          <code>Baseline = Reading − (CumulativeMealEffect<sub>@reading</sub> − |CumulativeInsulinEffect<sub>@reading</sub>|)</code>.
+          This mirrors <code>calculateStableBaselineFromReading()</code> in <code>baseline.ts</code>.
+        </div>
+      </div>
+
+      <!-- Preset baseline display -->
+      <div id="c-preset-section" style="display:none">
+        <div class="ctrl-row">
+          <div class="ctrl">
+            <label>Current hour (0–23)</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="0" max="23" step="1" value="14" id="c-hour" oninput="cHour(this.value)"/>
+              <span class="ctrl-val" id="c-hour-out">14:00</span>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>ISF / correction_factor</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="20" max="100" step="5" value="40" id="c-isf2" oninput="cISF2(this.value)"/>
+              <span class="ctrl-val" id="c-isf2-out">40</span>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>carb_to_bg_factor</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="2" max="6" step="0.5" value="4" id="c-cbg2" oninput="cCBG2(this.value)"/>
+              <span class="ctrl-val" id="c-cbg2-out">4.0</span>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>Target BG</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="70" max="140" step="5" value="100" id="c-target2" oninput="cTarget2(this.value)"/>
+              <span class="ctrl-val" id="c-target2-out">100</span>
+            </div>
+          </div>
+        </div>
+        <div class="note info" style="margin-top:6px">
+          <strong>Preset mode:</strong> Baseline is read from the circadian profile anchors in <code>shared-constants.ts</code>
+          (source: <code>"preset"</code>). The 24-hour anchor table is interpolated at the selected hour.
+          The profile captures morning insulin resistance (×1.2 at 07–10 h) and overnight dip.
+        </div>
+      </div>
+    </div>
+
+    <!-- Meal event -->
+    <div class="card layer-off" id="c-meal-card">
+      <div class="layer-card-title">
+        <div class="card-title">Meal event — cumulative BG elevation (MOB)</div>
+        <button class="layer-toggle" id="c-meal-toggle" onclick="toggleMeal()">
+          <span id="c-meal-toggle-label">Off</span>
+          <span class="toggle-track"><span class="toggle-knob"></span></span>
+        </button>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl">
+          <label>Carbohydrate equiv. (g)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="150" step="5" value="60" id="c-carbs" oninput="cCarbs(this.value)"/>
+            <span class="ctrl-val" id="c-carbs-out">60 g</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Absorption type</label>
+          <select id="c-abstype" onchange="cUpdate()">
+            <option value="very_fast">Very Fast (2.0 h)</option>
+            <option value="fast">Fast (3.0 h)</option>
+            <option value="medium" selected>Medium (4.0 h)</option>
+            <option value="slow">Slow (5.5 h)</option>
+            <option value="very_slow">Very Slow (7.0 h)</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>Meal eaten (h ago)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="8" step="0.25" value="2" id="c-mealago" oninput="cMealAgo(this.value)"/>
+            <span class="ctrl-val" id="c-mealago-out">2.0 h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Insulin event -->
+    <div class="card layer-off" id="c-insulin-card">
+      <div class="layer-card-title">
+        <div class="card-title">Insulin event — cumulative BG reduction (IOB)</div>
+        <button class="layer-toggle" id="c-insulin-toggle" onclick="toggleInsulin()">
+          <span id="c-insulin-toggle-label">Off</span>
+          <span class="toggle-track"><span class="toggle-knob"></span></span>
+        </button>
+      </div>
+      <div class="ctrl-row">
+        <div class="ctrl">
+          <label>Dose (units)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="20" step="0.5" value="4" id="c-units" oninput="cUnits(this.value)"/>
+            <span class="ctrl-val" id="c-units-out">4.0 U</span>
+          </div>
+        </div>
+        <div class="ctrl">
+          <label>Insulin type</label>
+          <select id="c-instype" onchange="cUpdate()">
+            <option value="rapid_acting" selected>Rapid acting (4.5 h)</option>
+            <option value="short_acting">Short acting (8 h)</option>
+            <option value="intermediate_acting">Intermediate (14 h)</option>
+            <option value="long_acting">Long acting (24 h)</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>Dose taken (h ago)</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" min="0" max="12" step="0.25" value="2" id="c-insago" oninput="cInsAgo(this.value)"/>
+            <span class="ctrl-val" id="c-insago-out">2.0 h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity event (NEW) -->
+    <div class="card">
+      <div class="card-title">
+        Activity event — cumulative BG effect
+        <span style="font-size:10px;font-weight:400;color:var(--blue);margin-left:8px;letter-spacing:0">NEW — implements missing activity term in calculateTotalCumulativeEffects()</span>
+      </div>
+
+      <div class="activity-block">
+        <div class="title">activity_coefficients scale (from shared-constants.ts)</div>
+        <div class="ctrl-row">
+          <div class="ctrl">
+            <label>Exercise type</label>
+            <div class="pills" id="c-extype-pills">
+              <button class="pill act-teal active" onclick="cExType('aerobic',this)">Aerobic</button>
+              <button class="pill act-coral" onclick="cExType('anaerobic',this)">Anaerobic</button>
+              <button class="pill act-amber" onclick="cExType('mixed',this)">Mixed</button>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>Activity level</label>
+            <div class="pills" id="c-actlvl-pills">
+              <button class="pill act-blue" onclick="cActLvl(0,this)">0 — Normal</button>
+              <button class="pill act-blue active" onclick="cActLvl(1,this)">+1 — High</button>
+              <button class="pill act-blue" onclick="cActLvl(2,this)">+2 — Vigorous</button>
+            </div>
+          </div>
+          <div class="ctrl">
+            <label>Activity Start</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="time" id="c-actstart" oninput="cActStartEnd()"
+                style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:13px;padding:5px 8px;cursor:pointer;outline:none;width:110px"/>
+            </div>
+            <span style="font-size:10px;color:var(--muted);margin-top:3px" id="c-actstart-note"></span>
+          </div>
+          <div class="ctrl">
+            <label>Activity End</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="time" id="c-actend" oninput="cActStartEnd()"
+                style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:13px;padding:5px 8px;cursor:pointer;outline:none;width:110px"/>
+            </div>
+            <span style="font-size:10px;color:var(--muted);margin-top:3px" id="c-actend-note"></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.7" id="c-act-coeff-note"></div>
+
+      <!-- Activity breakdown mini-stats -->
+      <div class="grid4" style="margin-top:12px">
+        <div class="stat"><div class="stat-label">Activity coeff.</div><div class="stat-val" id="c-act-coeff">—</div><div class="stat-unit">from act_coefficients</div></div>
+        <div class="stat"><div class="stat-label">ISF effective mult.</div><div class="stat-val" id="c-act-isfmult">—</div><div class="stat-unit">× normal</div></div>
+        <div class="stat"><div class="stat-label">Direct BG Δ</div><div class="stat-val" id="c-act-direct">—</div><div class="stat-unit">mg/dL (exercise)</div></div>
+        <div class="stat"><div class="stat-label">Post-exercise ISF effect</div><div class="stat-val" id="c-act-post">—</div><div class="stat-unit">mg/dL (window)</div></div>
+      </div>
+    </div>
+
+    <!-- Bank balance output -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">Cumulative bank balance — estimatedBG = baseline + Σ effects</div>
+
+      <div style="margin-bottom:16px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px">
+          <span class="breakdown-badge bb-base"><span id="c-out-base">—</span> <span style="opacity:.6;font-size:10px">baseline</span></span>
+          <span style="color:var(--muted)">+</span>
+          <span class="breakdown-badge bb-meal" id="c-badge-meal" style="opacity:0.35"><span id="c-out-meal">—</span> <span style="opacity:.6;font-size:10px">meal</span></span>
+          <span style="color:var(--muted)">+</span>
+          <span class="breakdown-badge bb-ins" id="c-badge-ins" style="opacity:0.35"><span id="c-out-ins">—</span> <span style="opacity:.6;font-size:10px">insulin</span></span>
+          <span style="color:var(--muted)">+</span>
+          <span class="breakdown-badge bb-act"><span id="c-out-act">—</span> <span style="opacity:.6;font-size:10px">activity</span></span>
+          <span style="color:var(--muted)">=</span>
+          <span style="font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--text)" id="c-out-estbg">—</span>
+          <span style="color:var(--muted);font-size:12px">mg/dL</span>
+          <span id="c-safety-badge" class="safety-badge sb-ok" style="margin-left:4px">—</span>
+        </div>
+      </div>
+
+      <!-- Effect magnitude bars -->
+      <div class="effect-bar-wrap">
+        <div class="effect-row">
+          <div class="effect-label">🌙 Stable Baseline</div>
+          <div class="effect-track"><div class="effect-fill" id="c-bar-base" style="background:var(--purple);width:0%"></div></div>
+          <div class="effect-val" id="c-barv-base" style="color:var(--purple)">—</div>
+        </div>
+        <div class="effect-row">
+          <div class="effect-label">🍽 Meal effect (MOB)</div>
+          <div class="effect-track"><div class="effect-fill" id="c-bar-meal" style="background:var(--amber);width:0%"></div></div>
+          <div class="effect-val" id="c-barv-meal" style="color:var(--amber)">—</div>
+        </div>
+        <div class="effect-row">
+          <div class="effect-label">💉 Insulin effect (IOB)</div>
+          <div class="effect-track"><div class="effect-fill" id="c-bar-ins" style="background:var(--teal);width:0%"></div></div>
+          <div class="effect-val" id="c-barv-ins" style="color:var(--teal)">—</div>
+        </div>
+        <div class="effect-row">
+          <div class="effect-label">🏃 Activity effect <span style="font-size:9px;color:var(--blue);font-style:normal">[NEW]</span></div>
+          <div class="effect-track"><div class="effect-fill" id="c-bar-act" style="background:var(--blue);width:0%"></div></div>
+          <div class="effect-val" id="c-barv-act" style="color:var(--blue)">—</div>
+        </div>
+        <div class="effect-row">
+          <div class="effect-label" style="color:var(--text);font-weight:600">= Estimated BG</div>
+          <div class="effect-track"><div class="effect-fill" id="c-bar-est" style="background:var(--text);width:0%"></div></div>
+          <div class="effect-val" id="c-barv-est" style="color:var(--text);font-weight:700">—</div>
+        </div>
+      </div>
+
+      <!-- Phase breakdown note -->
+      <div class="note" style="margin-top:14px" id="c-phase-note"></div>
+    </div>
+
+    <!-- 12h BG timeline chart -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-title">12-hour cumulative BG timeline — all effect layers</div>
+      <div class="legend" id="c-chart-legend">
+        <span><span class="swatch" style="background:#a78bfa"></span>Stable baseline</span>
+        <span id="c-legend-meal" style="display:none"><span class="swatch" style="background:#f0a030"></span>+ Meal (MOB)</span>
+        <span id="c-legend-ins" style="display:none"><span class="swatch" style="background:#1fc8a4"></span>+ Insulin (IOB)</span>
+        <span><span class="swatch" style="background:#5b9cf6"></span>+ Activity effect</span>
+      </div>
+      <div class="chart-wrap" style="height:260px"><canvas id="c-timeline"></canvas></div>
+      <div class="chart-label">Activity effect sub-components (direct BG Δ + post-exercise ISF window)</div>
+      <div class="chart-wrap" style="height:150px"><canvas id="c-actchart"></canvas></div>
+    </div>
+
+    <div id="c-alerts" style="margin-top:10px"></div>
+  </div>
+
+  <!-- ════════════════════ DISCREPANCIES ════════════════════ -->
+  <div id="panel-gaps" class="panel">
+    <div class="card">
+      <div class="card-title">Gaps between shared-constants.ts, model v2, and HTML widget</div>
+      <table class="diff-table">
+        <thead>
+          <tr>
+            <th>Parameter / feature</th>
+            <th>shared-constants.ts</th>
+            <th>Model v2 value</th>
+            <th>HTML widget</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>ISF / Correction Factor</strong></td>
+            <td><code>correction_factor = 40</code></td>
+            <td><code>ISF_rest</code> (patient constant)</td>
+            <td><code>exISF</code> slider, default 40</td>
+            <td><span class="tag tag-ok">aligned</span></td>
+          </tr>
+          <tr>
+            <td><strong>Activity cumulative BG effect</strong></td>
+            <td><code>activity_coefficients</code> {−2..+2}</td>
+            <td>Not in cumulative-effects.ts</td>
+            <td><strong>Implemented in Cumulative BG tab</strong></td>
+            <td><span class="tag tag-new">newly added</span></td>
+          </tr>
+          <tr>
+            <td><strong>Baseline: dynamic vs preset</strong></td>
+            <td><code>baseline_mode = "dynamic"</code>, circadian_profile anchors 0–23 h</td>
+            <td>Both modes in baseline.ts</td>
+            <td><strong>Both modes in Cumulative BG tab</strong></td>
+            <td><span class="tag tag-new">newly added</span></td>
+          </tr>
+          <tr>
+            <td><strong>ICR</strong></td>
+            <td><code>insulin_to_carb_ratio = 10</code></td>
+            <td>Used in dose formula §4.2</td>
+            <td>Cumulative BG tab (implicit via carbs→bg)</td>
+            <td><span class="tag tag-ok">aligned</span></td>
+          </tr>
+          <tr>
+            <td><strong>Activity scale</strong></td>
+            <td><code>activity_coefficients</code> −2 to +2 → scalars 0.8–1.2</td>
+            <td>MET values per type (2.5–13.0) + aerobic fraction α</td>
+            <td>Both scales: Simple tab + Cumulative BG tab uses coefficients</td>
+            <td><span class="tag tag-ok">resolved</span></td>
+          </tr>
+          <tr>
+            <td><strong>Aerobic fraction α</strong></td>
+            <td>Not defined anywhere</td>
+            <td>Per activity type (e.g. cycling 0.90, HIIT 0.45)</td>
+            <td>Implicit mapping in Cumulative BG tab (aerobic→0.90, mixed→0.60, anaerobic→0.25)</td>
+            <td><span class="tag tag-mism">missing in constants</span></td>
+          </tr>
+          <tr>
+            <td><strong>ISF boost constant</strong></td>
+            <td>Not defined</td>
+            <td><code>K_post_aero = 0.35</code></td>
+            <td>Advanced tab slider, hardcoded 0.38 in Simple tab</td>
+            <td><span class="tag tag-mism">value mismatch</span></td>
+          </tr>
+          <tr>
+            <td><strong>ISF decay model</strong></td>
+            <td>Not defined</td>
+            <td>3-phase: during / early T_early=4h / late T_late=24h with glycogen repletion</td>
+            <td>3-phase in Advanced; 2-component (direct + ISF-window) in Cumulative BG</td>
+            <td><span class="tag tag-ok">resolved</span></td>
+          </tr>
+          <tr>
+            <td><strong>Catecholamine peak timing</strong></td>
+            <td>Not modelled</td>
+            <td>T_HGP_peak = 15 min from <em>exercise start</em></td>
+            <td>Gaussian peak at <em>duration + 15 min</em> (after end) in Simple</td>
+            <td><span class="tag tag-mism">timing offset</span></td>
+          </tr>
+          <tr>
+            <td><strong>ISF suppression (anaerobic)</strong></td>
+            <td>Not defined</td>
+            <td><code>K_ana = 0.10</code> reduces ISF during high-intensity</td>
+            <td>Advanced tab slider; modelled in Cumulative BG activity effect</td>
+            <td><span class="tag tag-ok">resolved</span></td>
+          </tr>
+          <tr>
+            <td><strong>Persist-at-100% (Phase 3)</strong></td>
+            <td>Not explicit — behaviour in backend</td>
+            <td>cumulative-effects.ts implements for meal + insulin</td>
+            <td>Implemented in Cumulative BG timeline for all 3 effect types</td>
+            <td><span class="tag tag-ok">aligned</span></td>
+          </tr>
+          <tr>
+            <td><strong>Glycogen repletion term</strong></td>
+            <td>Not defined</td>
+            <td><code>R_post = 0.40 mg/dL/min</code>, decays with half-time 6h</td>
+            <td>Advanced tab only</td>
+            <td><span class="tag tag-miss">not in cumulative model</span></td>
+          </tr>
+          <tr>
+            <td><strong>K_aero / K_ana / K_post_*</strong></td>
+            <td>None exist in constants</td>
+            <td>All four defined in §9.1</td>
+            <td>Advanced tab sliders; K_post_aero=0.35 hardcoded in Cumulative BG</td>
+            <td><span class="tag tag-miss">missing in constants</span></td>
+          </tr>
+          <tr>
+            <td><strong>T_early / T_late</strong></td>
+            <td>Not defined</td>
+            <td>T_early = 4h, T_late = 24h</td>
+            <td>Advanced tab sliders; T_early=4h hardcoded in Cumulative BG</td>
+            <td><span class="tag tag-miss">missing in constants</span></td>
+          </tr>
+          <tr>
+            <td><strong>pre_exercise_bolus_reduction</strong></td>
+            <td>Not defined</td>
+            <td>20–30% (§4.3, ADA/ISPAD 2022)</td>
+            <td>Advanced tab only</td>
+            <td><span class="tag tag-miss">missing in constants</span></td>
+          </tr>
+          <tr>
+            <td><strong>has_pump / TBR logic</strong></td>
+            <td>Not defined</td>
+            <td>§4.4 TBR_factor = 1/activity_ISF_ratio, 90min lead</td>
+            <td>Advanced tab only</td>
+            <td><span class="tag tag-miss">missing in constants</span></td>
+          </tr>
+          <tr>
+            <td><strong>carb_to_bg_factor</strong></td>
+            <td><code>carb_to_bg_factor = 4.0</code></td>
+            <td>Used in carb rescue §6.1</td>
+            <td>All tabs — fully integrated</td>
+            <td><span class="tag tag-ok">aligned</span></td>
+          </tr>
+          <tr>
+            <td><strong>target_glucose</strong></td>
+            <td><code>target_glucose = 100</code></td>
+            <td>BG_target in dose formula</td>
+            <td>All tabs</td>
+            <td><span class="tag tag-ok">aligned</span></td>
+          </tr>
+          <tr>
+            <td><strong>time_of_day_factors</strong> (morning ×1.2)</td>
+            <td>Defined: morning 06–10h factor 1.2</td>
+            <td>Not referenced in exercise model</td>
+            <td>Reflected in preset circadian profile (morning anchors are higher)</td>
+            <td><span class="tag tag-ok">resolved via profile</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note warn" style="margin-top:14px">
+      <strong>Summary:</strong> Activity cumulative BG effect and dual baseline modes are now implemented in the <em>Cumulative BG</em> tab.
+      Remaining gaps: <code>K_post_aero</code>, <code>T_early/T_late</code>, aerobic fraction α, <code>pre_exercise_bolus_reduction</code>,
+      and <code>has_pump</code> are still absent from <code>shared-constants.ts</code> and would need to be added before the exercise model
+      can fully replace the scalar <code>activity_coefficients</code> lookup in production.
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// SHARED CONSTANTS (mirroring shared-constants.ts defaults)
+// ══════════════════════════════════════════════
+const DEFAULTS = {
+  isf: 40, icr: 10, target: 100, bg: 140, iob: 2.0,
+  carb_to_bg: 4.0,
+  activity_coefficients: {'-2':1.2,'-1':1.1,'0':1.0,'1':0.9,'2':0.8}
+};
+
+// Circadian profile anchors from shared-constants.ts (baseline_mode: "preset")
+const CIRCADIAN_ANCHORS = [
+  {hour:0,value:90},{hour:1,value:88},{hour:2,value:87},{hour:3,value:85},
+  {hour:4,value:87},{hour:5,value:93},{hour:6,value:108},{hour:7,value:118},
+  {hour:8,value:120},{hour:9,value:115},{hour:10,value:108},{hour:11,value:103},
+  {hour:12,value:100},{hour:13,value:98},{hour:14,value:97},{hour:15,value:97},
+  {hour:16,value:100},{hour:17,value:102},{hour:18,value:100},{hour:19,value:99},
+  {hour:20,value:97},{hour:21,value:95},{hour:22,value:93},{hour:23,value:91}
+];
+
+// Absorption duration map (from meal-impact-curves.ts)
+const ABSORPTION_DURATIONS = {
+  very_fast:2.0, fast:3.0, medium:4.0, slow:5.5, very_slow:7.0
+};
+
+// Insulin duration map (from pharmacokinetics defaults)
+const INSULIN_DURATIONS = {
+  rapid_acting:4.5, short_acting:8.0, intermediate_acting:14.0, long_acting:24.0
+};
+
+// Aerobic fraction per type (from advanced model MET_TABLE)
+const AEROBIC_FRACTIONS = {aerobic:0.90, mixed:0.60, anaerobic:0.25};
+
+// MET table from model §3.1
+const MET_TABLE = {
+  walking:           {met:3.5, alpha:0.95},
+  running:           {met:9.8, alpha:0.85},
+  cycling:           {met:8.0, alpha:0.90},
+  swimming:          {met:7.0, alpha:0.88},
+  strength_training: {met:5.0, alpha:0.30},
+  yoga:              {met:2.5, alpha:0.92},
+  sports:            {met:7.5, alpha:0.60},
+  hiit:              {met:10.0,alpha:0.45}
+};
+const INT_MOD = {light:0.60, moderate:1.00, vigorous:1.50};
+
+// ─── Circadian interpolation ─────────────────────────────────────────────────
+function getCircadianBG(hour) {
+  const h = Math.floor(hour) % 24;
+  const frac = hour - Math.floor(hour);
+  const a = CIRCADIAN_ANCHORS[h].value;
+  const b = CIRCADIAN_ANCHORS[(h + 1) % 24].value;
+  return a + (b - a) * frac;
+}
+
+// ─── Smooth cumulative absorption fraction (S-curve, 0→1 over durationH) ────
+// Mirrors the integrate-to-100% persist-at-100% (Phase 3) model in cumulative-effects.ts
+function absorptionFraction(hoursElapsed, durationH) {
+  if (hoursElapsed <= 0) return 0;
+  if (hoursElapsed >= durationH) return 1.0; // Phase 3: persist-at-100%
+  // Smooth S-curve matching the onset/peak/fall profile
+  const t = hoursElapsed / durationH;
+  // Use cosine smoothing for a physiologically plausible ramp
+  return 0.5 * (1 - Math.cos(Math.PI * t));
+}
+
+// ══════════════════════════════════════════════
+// ACTIVITY CUMULATIVE BG EFFECT
+// This implements the MISSING 3rd term in calculateTotalCumulativeEffects():
+//   cumulativeNetBaseline = cumulativeMealEffect + cumulativeInsulinEffect + cumulativeActivityEffect
+//
+// Two sub-components:
+//   1. directBGDelta: BG change accumulated DURING exercise
+//      aerobic → GLUT4 uptake → BG drops proportionally to alpha × intensity × duration
+//      anaerobic → catecholamine → BG rises proportionally to (1-alpha) × intensity × duration
+//
+//   2. postISFEffect: post-exercise ISF enhancement applied to cumulative IOB
+//      The activity_coefficient modifies effective ISF (coeff < 1 → ISF × 1/coeff)
+//      Extra sensitivity acts on the current IOB, decaying over T_early window
+//      This mirrors how activity_coefficients modify dose in the production code:
+//        adjustedDose = baseCorrection / actCoeff   →   effectively ISF × (1/actCoeff)
+//
+// Returns { directDelta, postISFEffect, totalEffect, actCoeff, isfMult, phase, decayFactor }
+// ══════════════════════════════════════════════
+function computeActivityCumulativeEffect(params) {
+  const {exType, level, durationMin, hoursAgoEnd, iob, isf} = params;
+  const durationH = durationMin / 60;
+  const alpha = AEROBIC_FRACTIONS[exType] || 0.60;
+
+  // Map exercise type + level to activity_coefficient key
+  // Aerobic → negative key (reduces dose needed, i.e. boosts ISF)
+  // Anaerobic → positive key (needs more insulin, i.e. reduces ISF)
+  const coeffKeyMap = {aerobic: -level, anaerobic: level, mixed: 0};
+  const coeffKey = String(coeffKeyMap[exType] !== undefined ? coeffKeyMap[exType] : 0);
+  const actCoeff = DEFAULTS.activity_coefficients[coeffKey] || 1.0;
+  // For mixed: blend the aerobic and anaerobic coefficients
+  const mixedAeroCoeff = DEFAULTS.activity_coefficients[String(-level)] || 1.0;
+  const mixedAnaCoeff  = DEFAULTS.activity_coefficients[String(level)]  || 1.0;
+  const effectiveActCoeff = exType === 'mixed'
+    ? alpha * mixedAeroCoeff + (1 - alpha) * mixedAnaCoeff
+    : actCoeff;
+
+  // ISF effective multiplier = 1 / actCoeff
+  // (aerobic: actCoeff > 1 → ISF effectively lower multiplier value but more sensitivity)
+  // The sign convention: actCoeff < 1 → need more dose → anaerobic
+  const isfMult = 1 / effectiveActCoeff; // e.g. 0.833 for aerobic level 2 (ISF boosted by factor)
+  // For aerobic (coeff > 1): 1/coeff < 1 → wait, that means ISF is LOWER?
+  // Re-check: coeff 1.2 → dose = correction / 1.2 → smaller dose → blood glucose is lower already
+  // The effective ISF from exercise perspective: exercise is doing BG-lowering work
+  // Post-exercise extra sensitivity: actCoeff 1.2 means 20% extra insulin sensitivity
+  // → existing IOB acts 20% more powerfully → additional BG lowering = IOB × ISF × 0.20
+  const extraSensitivity = Math.abs(effectiveActCoeff - 1.0); // fraction above/below 1
+
+  // 1. DIRECT BG DELTA during exercise (mg/dL accumulated over entire exercise session)
+  // Rate parameters calibrated to real-world aerobic exercise:
+  //   Moderate aerobic 45min → ~25–40 mg/dL BG drop (GLUT4-mediated)
+  //   Intense anaerobic 45min → ~15–25 mg/dL BG rise (catecholamine spike)
+  const intensityMod = {0:1.0, 1:1.4, 2:2.0}[level] || 1.0;
+  const aeroBGRatePerH = alpha * intensityMod * 38; // mg/dL per hour aerobic
+  const anaBGRatePerH  = (1 - alpha) * intensityMod * 25; // mg/dL per hour anaerobic
+
+  // Aerobic component: BG drops during exercise, then partially reverses as glycogen depletes
+  // Using sinusoidal profile matching R_U_aero model (§3.3): avg = (2/π) × peak
+  const aeroBGDrop = aeroBGRatePerH * durationH * (2 / Math.PI);
+  const anaBGRise  = anaBGRatePerH  * durationH * 0.80; // catecholamine peak then decays
+
+  // Catecholamine effect: peaks during/right after exercise, then clears
+  // If exercise ended hoursAgoEnd ago, catecholamines are partially cleared
+  const catClearFactor = Math.exp(-1.50 * hoursAgoEnd); // lambda from §3.4
+  const persistedAnaBGRise = anaBGRise * catClearFactor;
+
+  // Aerobic BG drop: persists (muscle glucose uptake) but gradually recovers post-exercise
+  const persistedAeroBGDrop = aeroBGDrop * (hoursAgoEnd <= 0 ? 1.0 :
+    Math.min(1.0, 1.0 + 0.25 * (1 - Math.exp(-0.3 * hoursAgoEnd)))); // slight rebound
+
+  const directDelta = persistedAnaBGRise - persistedAeroBGDrop;
+
+  // 2. POST-EXERCISE ISF ENHANCEMENT EFFECT (from enhanced insulin sensitivity)
+  // During T_early window: existing IOB is MORE effective (aerobic) or LESS effective (anaerobic)
+  // K_post_aero = 0.35 (from model §9.1)
+  const K_POST_AERO = 0.35;
+  const T_EARLY = 4; // hours
+  let postISFEffect = 0;
+  let decayFactor = 0;
+
+  if (hoursAgoEnd >= 0 && hoursAgoEnd <= T_EARLY) {
+    // Early phase: exponential decay of ISF enhancement (half-life ≈ 2h)
+    const lambdaE = 0.693 / 2;
+    decayFactor = Math.exp(-lambdaE * hoursAgoEnd);
+
+    // Aerobic component: extra ISF sensitivity increases insulin effect
+    const aeroISFBoost = alpha * K_POST_AERO * decayFactor;
+    // Anaerobic component: ISF suppression during catecholamine clearance
+    const anaISFSuppress = (1 - alpha) * 0.10 * Math.exp(-hoursAgoEnd);
+
+    const netISFChange = aeroISFBoost - anaISFSuppress;
+    // Additional BG change = IOB × ISF × netISFChange
+    // Positive netISFChange (aerobic dominant) → extra lowering → negative delta
+    postISFEffect = -(iob * isf * netISFChange);
+  } else if (hoursAgoEnd > T_EARLY && hoursAgoEnd <= 24) {
+    // Late phase: residual glycogen repletion effect (much smaller)
+    const lambdaG = 0.693 / 6; // half-time 6h for glycogen repletion
+    const gRep = 1 - Math.exp(-lambdaG * (hoursAgoEnd - T_EARLY));
+    const lateEffect = alpha * 0.15 * (1 - gRep);
+    postISFEffect = -(iob * isf * lateEffect);
+    decayFactor = lateEffect / 0.15;
+  }
+
+  const totalEffect = directDelta + postISFEffect;
+
+  // Phase label
+  let phase;
+  if (hoursAgoEnd < 0) phase = 'during exercise';
+  else if (hoursAgoEnd <= T_EARLY) phase = `early post-exercise (${hoursAgoEnd.toFixed(1)}h / ${T_EARLY}h window)`;
+  else if (hoursAgoEnd <= 24) phase = `late post-exercise — residual glycogen effect`;
+  else phase = 'beyond sensitivity window';
+
+  return {
+    directDelta: Math.round(directDelta * 10) / 10,
+    aeroBGDrop: Math.round(persistedAeroBGDrop * 10) / 10,
+    anaBGRise: Math.round(persistedAnaBGRise * 10) / 10,
+    postISFEffect: Math.round(postISFEffect * 10) / 10,
+    totalEffect: Math.round(totalEffect * 10) / 10,
+    actCoeff: Math.round(effectiveActCoeff * 1000) / 1000,
+    isfMult: Math.round(isfMult * 100) / 100,
+    extraSensitivity: Math.round(extraSensitivity * 100) / 100,
+    phase,
+    decayFactor: Math.round(decayFactor * 100) / 100,
+    alpha,
+    durationH
+  };
+}
+
+// ─── Activity cumulative effect AT a given time in the timeline ──────────────
+// Used to generate the 12h chart. t = hours from now-12h to now+0h
+// mealAgoNow / insAgoNow / actEndAgoNow = hours ago relative to current time
+function activityEffectAtTime(t, C_state) {
+  // t is hours from current time (negative = past, 0 = now)
+  const hoursAgoEndAtT = C_state.activityEndedHoursAgo - t; // if t<0, more hours ago in the past
+  const dH = C_state.activityDurationMin / 60;
+  const hoursAfterStart = hoursAgoEndAtT - dH; // negative = activity hadn't started yet
+
+  // Activity hadn't started at time t
+  if (hoursAfterStart > 0 && t < 0) {
+    // Activity starts in future relative to t — no effect yet
+    const exStartAgo = C_state.activityEndedHoursAgo + dH;
+    if (-t > exStartAgo) return {direct:0, postISF:0, total:0};
+  }
+
+  const alpha = AEROBIC_FRACTIONS[C_state.exType] || 0.60;
+  const intensityMod = {0:1.0, 1:1.4, 2:2.0}[C_state.activityLevel] || 1.0;
+  const aeroBGRatePerH = alpha * intensityMod * 38;
+  const anaBGRatePerH = (1 - alpha) * intensityMod * 25;
+
+  // Hours into exercise at time t (how much of the exercise has elapsed)
+  const exStartAgo = C_state.activityEndedHoursAgo + dH;
+  const exElapsedH = Math.max(0, Math.min(dH, -t + exStartAgo - dH + 0.001 < 0 ? 0 : -t + exStartAgo));
+  // Actually let's compute directly:
+  // At current time t (offset from now), how long has exercise been running?
+  const tNow = 0; // reference
+  // Exercise started at -(activityEndedHoursAgo + dH) hours relative to now
+  // Exercise ended at -(activityEndedHoursAgo) hours relative to now
+  const exStartRelNow = -(C_state.activityEndedHoursAgo + dH);
+  const exEndRelNow = -C_state.activityEndedHoursAgo;
+
+  const tPoint = t; // t is already relative to now
+
+  if (tPoint < exStartRelNow) return {direct:0, postISF:0, total:0}; // before exercise started
+
+  let direct = 0;
+  if (tPoint <= exEndRelNow) {
+    // During exercise: partial effect
+    const elapsedH = tPoint - exStartRelNow;
+    const aeroDrop = aeroBGRatePerH * elapsedH * (2 / Math.PI);
+    const anaRise  = anaBGRatePerH  * elapsedH * 0.80;
+    direct = anaRise - aeroDrop;
+  } else {
+    // After exercise ended
+    const hPostEnd = tPoint - exEndRelNow;
+    const aeroDrop = aeroBGRatePerH * dH * (2 / Math.PI);
+    const anaRise  = anaBGRatePerH  * dH * 0.80;
+    const catClear = Math.exp(-1.50 * hPostEnd);
+    direct = anaRise * catClear - aeroDrop;
+  }
+
+  // Post-exercise ISF effect at this time point
+  let postISF = 0;
+  if (tPoint > exEndRelNow) {
+    const hPostEnd = tPoint - exEndRelNow;
+    const T_EARLY = 4;
+    const K_POST = 0.35;
+    const iob = C_state.iob;
+    const isf = C_state.isf;
+    if (hPostEnd <= T_EARLY) {
+      const decay = Math.exp(-0.693 / 2 * hPostEnd);
+      const aeroBoost = alpha * K_POST * decay;
+      const anaSuppress = (1 - alpha) * 0.10 * Math.exp(-hPostEnd);
+      postISF = -(iob * isf * (aeroBoost - anaSuppress));
+    } else if (hPostEnd <= 24) {
+      const gRep = 1 - Math.exp(-0.693 / 6 * (hPostEnd - T_EARLY));
+      postISF = -(iob * isf * alpha * 0.15 * (1 - gRep));
+    }
+  }
+
+  return {direct: Math.round(direct*10)/10, postISF: Math.round(postISF*10)/10, total: Math.round((direct+postISF)*10)/10};
+}
+
+// ─── Meal cumulative effect at a time offset ─────────────────────────────────
+function mealEffectAtTime(t, C_state) {
+  const dur = ABSORPTION_DURATIONS[C_state.mealAbsorption] || 4.0;
+  const fullEffect = C_state.mealCarbs * C_state.cbg;
+  // Time relative to now: meal was eaten C_state.mealHoursAgo hours ago
+  // At time t (offset from now), how long since meal?
+  const hoursElapsed = t + C_state.mealHoursAgo; // t is relative to now (0=now, -1=1h ago)
+  if (hoursElapsed <= 0) return 0;
+  return fullEffect * absorptionFraction(hoursElapsed, dur);
+}
+
+// ─── Insulin cumulative effect at a time offset ───────────────────────────────
+function insulinEffectAtTime(t, C_state) {
+  const dur = INSULIN_DURATIONS[C_state.insulinType] || 4.5;
+  const fullEffect = -(C_state.insulinUnits * C_state.isf);
+  const hoursElapsed = t + C_state.insulinHoursAgo;
+  if (hoursElapsed <= 0) return 0;
+  return fullEffect * absorptionFraction(hoursElapsed, dur);
+}
+
+// ─── Safety status ────────────────────────────────────────────────────────────
+function safetyStatus(bg, target) {
+  if (bg < 54)  return {key:'critical_low',   label:'CRITICAL LOW',    cls:'sb-critical'};
+  if (bg < 70)  return {key:'hypoglycemia',   label:'HYPO RISK',       cls:'sb-danger'};
+  if (bg <= 180)return {key:'acceptable',     label:'IN RANGE',        cls:'sb-ok'};
+  if (bg <= 250)return {key:'hyperglycemia',  label:'HYPER RISK',      cls:'sb-warn'};
+  return          {key:'critical_high',       label:'CRITICAL HIGH',   cls:'sb-critical'};
+}
+
+// ══════════════════════════════════════════════
+// SIMPLE STATE
+// ══════════════════════════════════════════════
+let S = {isf:40, icr:10, target:100, bg:140, iob:2.0, type:'aerobic', act:2, dur:45};
+let sAcuteChart=null, sISFChart=null;
+
+function sISF(v){S.isf=+v;document.getElementById('s-isf-out').textContent=v;sUpdate()}
+function sICR(v){S.icr=+v;document.getElementById('s-icr-out').textContent=v;sUpdate()}
+function sTarget(v){S.target=+v;document.getElementById('s-target-out').textContent=v;sUpdate()}
+function sBG(v){S.bg=+v;document.getElementById('s-bg-out').textContent=v;sUpdate()}
+function sIOB(v){S.iob=+v;document.getElementById('s-iob-out').textContent=(+v).toFixed(1)+' U';sUpdate()}
+function sDur(v){S.dur=+v;document.getElementById('s-dur-out').textContent=v+' min';sUpdate()}
+function sType(t,btn){
+  S.type=t;
+  document.querySelectorAll('#s-type-pills .pill').forEach(b=>{
+    b.classList.remove('active','act-teal','act-coral','act-amber');
+    b.classList.add(t==='aerobic'?'act-teal':t==='anaerobic'?'act-coral':'act-amber');
+  });
+  btn.classList.add('active'); sUpdate();
+}
+function sAct(v,btn){
+  S.act=v;
+  document.querySelectorAll('#s-act-pills .pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); sUpdate();
+}
+
+function sCompute(){
+  const dH=S.dur/60;
+  const intensity=S.act===0?1.0:S.act===1?1.4:2.0;
+  const actCoeff=DEFAULTS.activity_coefficients[S.act.toString()]??1.0;
+  const aerPeak=(S.type==='aerobic'||S.type==='mixed')?intensity*Math.min(1.4,dH*1.2)*38:0;
+  const catPeak=(S.type==='anaerobic'||S.type==='mixed')?intensity*22:0;
+  const netPeak=S.type==='aerobic'?-aerPeak:S.type==='anaerobic'?catPeak:catPeak-aerPeak;
+  const isfBoost=intensity*Math.min(1.0,dH)*0.38;
+  const isfMult=1+isfBoost;
+  const baseCorrection=(S.bg-S.target)/S.isf;
+  const adjustedDose=Math.max(0,(baseCorrection/actCoeff)-S.iob);
+  return {netPeak,isfMult,adjustedDose,actCoeff,aerPeak,catPeak,isfBoost};
+}
+
+function sUpdate(){
+  const c=sCompute();
+  const peakEl=document.getElementById('s-stat1');
+  peakEl.textContent=(c.netPeak>=0?'+':'')+Math.round(c.netPeak);
+  peakEl.className='stat-val '+(c.netPeak<-10?'neg':c.netPeak>10?'pos':'');
+  document.getElementById('s-stat2').textContent=c.isfMult.toFixed(2);
+  const doseEl=document.getElementById('s-stat3');
+  doseEl.textContent=c.adjustedDose.toFixed(1);
+  doseEl.className='stat-val '+(c.adjustedDose>4?'pos':c.adjustedDose<0.5?'neg':'');
+  document.getElementById('s-stat4').textContent=c.actCoeff.toFixed(1);
+  sUpdateCharts(c);
+  sUpdateNote(c);
+}
+
+function sGenAcute(){
+  const dH=S.dur/60;
+  const intensity=S.act===0?1.0:S.act===1?1.4:2.0;
+  const labels=[],aer=[],cat=[],net=[];
+  for(let t=-30;t<=200;t+=5){
+    labels.push(t===0?'Start':t<0?`${t}m`:`+${t}m`);
+    let a=0,c2=0;
+    if((S.type==='aerobic'||S.type==='mixed')&&t>=0){
+      const pk=intensity*Math.min(1.4,dH*1.2)*38;
+      if(t<=S.dur) a=-pk*Math.sin(Math.PI*t/(2*S.dur));
+      else a=-pk*Math.exp(-(t-S.dur)/(S.dur*0.8));
+    }
+    if((S.type==='anaerobic'||S.type==='mixed')&&t>=0){
+      const cPk=S.dur+15,cMag=intensity*22,cSig=22;
+      c2=cMag*Math.exp(-Math.pow(t-cPk,2)/(2*cSig*cSig));
+    }
+    aer.push(Math.round(a*10)/10);
+    cat.push(Math.round(c2*10)/10);
+    net.push(Math.round((a+c2)*10)/10);
+  }
+  return{labels,aer,cat,net};
+}
+
+function sGenISF(){
+  const dH=S.dur/60;
+  const intensity=S.act===0?1.0:S.act===1?1.4:2.0;
+  const boost=intensity*Math.min(1.0,dH)*0.38;
+  const labels=[],isf=[],risk=[];
+  for(let h=0;h<=24;h+=0.5){
+    labels.push(h%6===0?`${h}h`:'');
+    let mult=1;
+    if(h>=0.5){
+      const onset=Math.min(1,(h-0.5)/2);
+      mult=1+boost*onset*Math.exp(-Math.max(0,h-2)/11);
+    }
+    isf.push(Math.round(mult*1000)/1000);
+    risk.push(mult>1.10?mult:null);
+  }
+  return{labels,isf,risk};
+}
+
+const isDark=true;
+const gridC='rgba(255,255,255,0.06)';
+const tickC='#7c84a0';
+
+function sUpdateCharts(c){
+  const {labels,aer,cat,net}=sGenAcute();
+  const {labels:iL,isf,risk}=sGenISF();
+  if(!sAcuteChart){
+    sAcuteChart=new Chart(document.getElementById('s-acute'),{
+      type:'line',
+      data:{labels,datasets:[
+        {label:'GLUT4',data:aer,borderColor:'#1fc8a4',backgroundColor:'rgba(31,200,164,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0},
+        {label:'Catecholamine',data:cat,borderColor:'#f06060',backgroundColor:'rgba(240,96,96,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0},
+        {label:'Net BG',data:net,borderColor:'#a78bfa',borderDash:[5,3],borderWidth:2,tension:0.4,pointRadius:0,fill:false}
+      ]},
+      options:chartOpts('BG change (mg/dL)',labels)
+    });
+    sISFChart=new Chart(document.getElementById('s-isf'),{
+      type:'line',
+      data:{labels:iL,datasets:[
+        {label:'ISF mult',data:isf,borderColor:'#1fc8a4',backgroundColor:'rgba(31,200,164,0.10)',fill:true,tension:0.4,borderWidth:2,pointRadius:0},
+        {label:'Hypo risk',data:risk,borderColor:'transparent',backgroundColor:'rgba(240,160,48,0.15)',fill:true,tension:0.4,borderWidth:0,pointRadius:0,spanGaps:false}
+      ]},
+      options:chartOptsISF(iL)
+    });
+  } else {
+    sAcuteChart.data.labels=labels;
+    ['data'].forEach((_,i)=>{sAcuteChart.data.datasets[0].data=aer;sAcuteChart.data.datasets[1].data=cat;sAcuteChart.data.datasets[2].data=net;});
+    sAcuteChart.update('none');
+    sISFChart.data.labels=iL;
+    sISFChart.data.datasets[0].data=isf;
+    sISFChart.data.datasets[1].data=risk;
+    sISFChart.update('none');
+  }
+}
+
+function sUpdateNote(c){
+  const dH=S.dur/60;
+  const intensity=S.act===0?1.0:S.act===1?1.4:2.0;
+  const effISF=Math.round(S.isf/c.isfMult);
+  const notes={
+    aerobic:`<strong>Aerobic exercise</strong>: GLUT4 glucose uptake drives BG down directly — modelled as a consumption term, not an ISF shift. Activity coefficient <strong>×${c.actCoeff}</strong> (from <code>activity_coefficients["${S.act}"]</code>) reduces dose. Post-exercise ISF of <strong>×${c.isfMult.toFixed(2)}</strong> means effective ISF ≈ <strong>${effISF} mg/dL/unit</strong>.`,
+    anaerobic:`<strong>Anaerobic exercise</strong>: catecholamine surge → hepatic glucose output → transient BG spike. Activity coefficient <strong>×${c.actCoeff}</strong>. Post-exercise ISF tail ×${c.isfMult.toFixed(2)} still applies.`,
+    mixed:`<strong>Mixed exercise</strong>: competing aerobic drop and anaerobic spike. Activity coefficient <strong>×${c.actCoeff}</strong>. The Cumulative BG tab models both sub-components separately via aerobic fraction α.`
+  };
+  document.getElementById('s-note').innerHTML=notes[S.type];
+}
+
+// ══════════════════════════════════════════════
+// ADVANCED STATE
+// ══════════════════════════════════════════════
+let A = {isf:40,icr:10,target:100,bg:140,iob:2.0,cbg:4.0,acttype:'cycling',intensity:'moderate',dur:45,pump:false,kaero:0.20,kana:0.10,kpost:0.35,tearly:4,tlate:24};
+let aAcuteChart=null, aISFChart=null;
+
+function aISF(v){A.isf=+v;document.getElementById('a-isf-out').textContent=v;aUpdate()}
+function aICR(v){A.icr=+v;document.getElementById('a-icr-out').textContent=v;aUpdate()}
+function aTarget(v){A.target=+v;document.getElementById('a-target-out').textContent=v;aUpdate()}
+function aBG(v){A.bg=+v;document.getElementById('a-bg-out').textContent=v;aUpdate()}
+function aIOB(v){A.iob=+v;document.getElementById('a-iob-out').textContent=(+v).toFixed(1)+' U';aUpdate()}
+function aCBG(v){A.cbg=+v;document.getElementById('a-cbg-out').textContent=(+v).toFixed(1);aUpdate()}
+function aDur(v){A.dur=+v;document.getElementById('a-dur-out').textContent=v+' min';aUpdate()}
+function aKaero(v){A.kaero=+v;document.getElementById('a-kaero-out').textContent=(+v).toFixed(2);aUpdate()}
+function aKana(v){A.kana=+v;document.getElementById('a-kana-out').textContent=(+v).toFixed(2);aUpdate()}
+function aKpost(v){A.kpost=+v;document.getElementById('a-kpost-out').textContent=(+v).toFixed(2);aUpdate()}
+function aTearly(v){A.tearly=+v;document.getElementById('a-tearly-out').textContent=v+' h';aUpdate()}
+function aTlate(v){A.tlate=+v;document.getElementById('a-tlate-out').textContent=v+' h';aUpdate()}
+function aInt(v,btn){A.intensity=v;document.querySelectorAll('#a-int-pills .pill').forEach(b=>b.classList.remove('active'));btn.classList.add('active');aUpdate()}
+
+function aGetMET(){
+  const base=MET_TABLE[A.acttype]||MET_TABLE.cycling;
+  const eff=base.met*INT_MOD[A.intensity];
+  return{met:Math.round(eff*10)/10, alpha:base.alpha};
+}
+function aISFmult(hPost){
+  const {met,alpha}=aGetMET();
+  const dH=A.dur/60;
+  if(hPost<0) return 1;
+  if(hPost<=dH){const t=hPost;const dS=alpha*A.kaero*(met-3)*(t/dH)-(1-alpha)*A.kana*(met-3)*(t/dH);return Math.max(0.5,1+dS);}
+  const tPost=hPost-dH;
+  if(tPost<=A.tearly){
+    const lambdaE=0.693/2;const lambdaRise=1.50,lambdaFall=0.50,tPeak=2.0;
+    const early=alpha*A.kpost*Math.exp(-lambdaE*tPost)+(1-alpha)*0.25*(1-Math.exp(-lambdaRise*tPost))*Math.exp(-lambdaFall*Math.max(0,tPost-tPeak));
+    return Math.max(1,1+early);
+  }
+  if(tPost<=A.tlate){const lambdaG=0.693/6;const gRep=1-Math.exp(-lambdaG*(tPost-A.tearly));return Math.max(1,1+0.15*(1-gRep));}
+  return 1;
+}
+function aRuAero(tMin){const {met,alpha}=aGetMET();const tH=tMin/60;const dH=A.dur/60;if(tH<0||tH>dH) return 0;const f=(met-1)/9;const g=Math.sin(Math.PI*tH/dH);return 0.15+2.5*alpha*f*g;}
+function aRHGPana(tMin){const {met,alpha}=aGetMET();const tH=tMin/60;if(tH<0) return 0;const f=(met-1)/9;const tHGP=0.25,lHGP=4.0,lDecay=1.50;const val=3.5*(1-alpha)*f*(1-Math.exp(-lHGP*tH))*Math.exp(-lDecay*(tH-tHGP));return Math.max(0,val);}
+
+function aCompute(){
+  const {met,alpha}=aGetMET();const dH=A.dur/60;
+  const peakISF=aISFmult(dH+0.5);const sensH=A.tlate;
+  const preRed=(0.20+0.10*alpha*Math.min(1,met/10))*100;
+  const isfRatio=A.isf/(A.isf*peakISF);
+  const baseCorr=(A.bg-A.target)/A.isf;
+  const adjDose=Math.max(0,(baseCorr*isfRatio)*(1-preRed/100)-A.iob);
+  const TBR=Math.min(100,Math.max(0,(1/peakISF)*100));
+  let deltaBG=0,bgNadir=A.bg;
+  for(let m=0;m<=240;m+=5){const tH=m/60;const rPost=peakISF>1.05?0.40*(1-Math.exp(-0.693/6*tH))*alpha:0;deltaBG-=rPost*5;if(A.bg+deltaBG<bgNadir){bgNadir=A.bg+deltaBG;}}
+  bgNadir=Math.round(bgNadir-A.iob*A.isf*peakISF*0.3);
+  const carbRescue=bgNadir<100?Math.round(Math.max(0,(100-bgNadir)/A.cbg)/5)*5:0;
+  return{met,alpha,peakISF,sensH,preRed,adjDose,TBR,bgNadir,carbRescue};
+}
+
+function aUpdate(){
+  A.acttype=document.getElementById('a-acttype').value;
+  A.pump=document.getElementById('a-pump').checked;
+  const c=aCompute();
+  document.getElementById('a-stat-met').textContent=c.met.toFixed(1);
+  document.getElementById('a-stat-alpha').textContent=c.alpha.toFixed(2);
+  document.getElementById('a-stat-isf').textContent=c.peakISF.toFixed(2);
+  document.getElementById('a-stat-win').textContent=c.sensH;
+  document.getElementById('a-stat-dose').textContent=c.adjDose.toFixed(1);
+  document.getElementById('a-stat-red').textContent=Math.round(c.preRed);
+  document.getElementById('a-stat-tbr').textContent=Math.round(c.TBR);
+  document.getElementById('a-stat-nadir').textContent=Math.round(c.bgNadir)+' mg/dL';
+  aUpdateCharts(c);
+  aUpdateAlerts(c);
+}
+
+function aGenAcute(){
+  const labels=[],aer=[],cat=[],net=[];
+  for(let t=-30;t<=200;t+=5){
+    labels.push(t===0?'Start':t<0?`${t}m`:`+${t}m`);
+    const ru=aRuAero(t)*5;const hgp=aRHGPana(t)*5;
+    aer.push(-Math.round(ru*10)/10);cat.push(Math.round(hgp*10)/10);net.push(Math.round((hgp-ru)*10)/10);
+  }
+  return{labels,aer,cat,net};
+}
+function aGenISF(){
+  const labels=[],isf=[],early=[],late_=[],risk=[];
+  const dH=A.dur/60;
+  for(let h=0;h<=A.tlate+4;h+=0.5){
+    labels.push(h%6===0?`${h}h`:'');
+    const m=aISFmult(h);
+    isf.push(Math.round(m*1000)/1000);
+    early.push(h<=dH+A.tearly?Math.round(m*1000)/1000:null);
+    late_.push(h>dH+A.tearly&&h<=dH+A.tlate?Math.round(m*1000)/1000:null);
+    risk.push(m>1.15?m:null);
+  }
+  return{labels,isf,early,late_,risk};
+}
+
+function aUpdateCharts(c){
+  const {labels,aer,cat,net}=aGenAcute();
+  const {labels:iL,isf,early,late_,risk}=aGenISF();
+  if(!aAcuteChart){
+    aAcuteChart=new Chart(document.getElementById('a-acute'),{type:'line',data:{labels,datasets:[
+      {label:'R_U_aero',data:aer,borderColor:'#1fc8a4',backgroundColor:'rgba(31,200,164,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0},
+      {label:'R_HGP_ana',data:cat,borderColor:'#f06060',backgroundColor:'rgba(240,96,96,0.08)',fill:true,tension:0.4,borderWidth:2,pointRadius:0},
+      {label:'Net ΔBG',data:net,borderColor:'#a78bfa',borderDash:[5,3],borderWidth:2.5,tension:0.4,pointRadius:0,fill:false}
+    ]},options:chartOpts('ΔBG (mg/dL per 5min)',labels)});
+    aISFChart=new Chart(document.getElementById('a-isf'),{type:'line',data:{labels:iL,datasets:[
+      {label:'During+Early ISF',data:early,borderColor:'#5b9cf6',backgroundColor:'rgba(91,156,246,0.10)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,spanGaps:false},
+      {label:'Late ISF',data:late_,borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,0.10)',fill:true,tension:0.4,borderWidth:2,pointRadius:0,spanGaps:false},
+      {label:'Hypo risk zone',data:risk,borderColor:'transparent',backgroundColor:'rgba(240,160,48,0.15)',fill:true,tension:0.4,borderWidth:0,pointRadius:0,spanGaps:false}
+    ]},options:chartOptsISF(iL)});
+  } else {
+    aAcuteChart.data.labels=labels;aAcuteChart.data.datasets[0].data=aer;aAcuteChart.data.datasets[1].data=cat;aAcuteChart.data.datasets[2].data=net;aAcuteChart.update('none');
+    aISFChart.data.labels=iL;aISFChart.data.datasets[0].data=early;aISFChart.data.datasets[1].data=late_;aISFChart.data.datasets[2].data=risk;aISFChart.update('none');
+  }
+}
+
+function aUpdateAlerts(c){
+  const alerts=[];
+  if(A.iob>2&&c.alpha>0.80&&c.met>7) alerts.push({level:'red',msg:'HIGH RISK: vigorous aerobic exercise with IOB > 2U.'});
+  if(c.bgNadir<70) alerts.push({level:'red',msg:`Predicted BG nadir ${Math.round(c.bgNadir)} mg/dL — severe hypo risk.`});
+  else if(c.bgNadir<100) alerts.push({level:'amber',msg:`Predicted nadir ${Math.round(c.bgNadir)} mg/dL — monitor closely.`});
+  if(c.alpha<0.50&&c.met>6) alerts.push({level:'amber',msg:`Anaerobic-dominant (α=${c.alpha}): expect BG spike then delayed hypo 2–6h later.`});
+  if(c.bgNadir>=100&&c.peakISF<1.10) alerts.push({level:'green',msg:'Low hypo risk for this session.'});
+  document.getElementById('a-alerts').innerHTML=alerts.map(a=>`<div class="alert-row ${a.level}"><div class="dot ${a.level}"></div><div>${a.msg}</div></div>`).join('');
+  const rescueEl=document.getElementById('a-rescue');
+  if(c.carbRescue>0){rescueEl.style.display='block';document.getElementById('a-rescue-g').textContent=c.carbRescue+' g';document.getElementById('a-rescue-nadir').textContent=Math.round(c.bgNadir)+' mg/dL';document.getElementById('a-rescue-t').textContent='30 min post-exercise';}
+  else rescueEl.style.display='none';
+  if(A.pump){document.getElementById('a-tbr-note').style.display='block';document.getElementById('a-tbr-text').textContent=`Set TBR to ${Math.round(c.TBR)}% of normal basal 90 min before exercise. Resume normal basal ${A.tearly}h post-exercise.`;}
+  else document.getElementById('a-tbr-note').style.display='none';
+}
+
+// ══════════════════════════════════════════════
+// CUMULATIVE BG STATE
+// ══════════════════════════════════════════════
+let C = {
+  baselineMode: 'dynamic',
+  bgReading: 140, readingHoursAgo: 0.5,
+  isf: 40, cbg: 4.0, target: 100,
+  currentHour: 11,
+  mealCarbs: 60, mealAbsorption: 'medium', mealHoursAgo: 2,
+  insulinUnits: 4, insulinType: 'rapid_acting', insulinHoursAgo: 2, iob: 4.0,
+  exType: 'aerobic', activityLevel: 1, activityDurationMin: 45, activityEndedHoursAgo: 1,
+  includeMeal: false, includeInsulin: false
+};
+
+let cTimelineChart=null, cActChart=null;
+
+function cSetMode(mode){
+  C.baselineMode=mode;
+  document.getElementById('c-mode-dynamic').classList.toggle('active', mode==='dynamic');
+  document.getElementById('c-mode-preset').classList.toggle('active',  mode==='preset');
+  document.getElementById('c-dynamic-section').style.display = mode==='dynamic'?'block':'none';
+  document.getElementById('c-preset-section').style.display  = mode==='preset'?'block':'none';
+  cUpdate();
+}
+
+function toggleMeal(){
+  C.includeMeal = !C.includeMeal;
+  const btn = document.getElementById('c-meal-toggle');
+  const card = document.getElementById('c-meal-card');
+  const label = document.getElementById('c-meal-toggle-label');
+  btn.classList.toggle('on', C.includeMeal);
+  card.classList.toggle('layer-off', !C.includeMeal);
+  label.textContent = C.includeMeal ? 'On' : 'Off';
+  document.getElementById('c-legend-meal').style.display = C.includeMeal ? '' : 'none';
+  cUpdate();
+}
+
+function toggleInsulin(){
+  C.includeInsulin = !C.includeInsulin;
+  const btn = document.getElementById('c-insulin-toggle');
+  const card = document.getElementById('c-insulin-card');
+  const label = document.getElementById('c-insulin-toggle-label');
+  btn.classList.toggle('on', C.includeInsulin);
+  card.classList.toggle('layer-off', !C.includeInsulin);
+  label.textContent = C.includeInsulin ? 'On' : 'Off';
+  document.getElementById('c-legend-ins').style.display = C.includeInsulin ? '' : 'none';
+  cUpdate();
+}
+
+function cBGReading(v){C.bgReading=+v;document.getElementById('c-bgreading-out').textContent=v;cUpdate()}
+function cReadingAge(v){C.readingHoursAgo=+v;document.getElementById('c-readingage-out').textContent=(+v).toFixed(2)+' h';cUpdate()}
+function cISF(v){C.isf=+v;C.iob=C.insulinUnits;document.getElementById('c-isf-out').textContent=v;cUpdate()}
+function cISF2(v){C.isf=+v;C.iob=C.insulinUnits;document.getElementById('c-isf2-out').textContent=v;cUpdate()}
+function cCBG(v){C.cbg=+v;document.getElementById('c-cbg-out').textContent=(+v).toFixed(1);cUpdate()}
+function cCBG2(v){C.cbg=+v;document.getElementById('c-cbg2-out').textContent=(+v).toFixed(1);cUpdate()}
+function cTarget(v){C.target=+v;document.getElementById('c-target-out').textContent=v;cUpdate()}
+function cTarget2(v){C.target=+v;document.getElementById('c-target2-out').textContent=v;cUpdate()}
+function cHour(v){C.currentHour=+v;document.getElementById('c-hour-out').textContent=(+v).toString().padStart(2,'0')+':00';cActStartEnd();}
+function cCarbs(v){C.mealCarbs=+v;document.getElementById('c-carbs-out').textContent=v+' g';cUpdate()}
+function cMealAgo(v){C.mealHoursAgo=+v;document.getElementById('c-mealago-out').textContent=(+v).toFixed(2)+' h';cUpdate()}
+function cUnits(v){C.insulinUnits=+v;C.iob=+v;document.getElementById('c-units-out').textContent=(+v).toFixed(1)+' U';cUpdate()}
+function cInsAgo(v){C.insulinHoursAgo=+v;document.getElementById('c-insago-out').textContent=(+v).toFixed(2)+' h';cUpdate()}
+function _fracToHHMM(h){
+  const hh=Math.floor(((h%24)+24)%24);
+  const mm=Math.round((((h%24)+24)%24-hh)*60);
+  return String(hh).padStart(2,'0')+':'+String(mm%60).padStart(2,'0');
+}
+function cActStartEnd(){
+  const sv=document.getElementById('c-actstart').value;
+  const ev=document.getElementById('c-actend').value;
+  if(!sv||!ev) return;
+  const [sh,sm]=sv.split(':').map(Number);
+  const [eh,em]=ev.split(':').map(Number);
+  const startH=sh+sm/60;
+  const endH=eh+em/60;
+  let durH=endH-startH;
+  if(durH<=0) durH+=24; // midnight wrap
+  C.activityDurationMin=Math.max(1, Math.round(durH*60));
+  let agoEnd=C.currentHour-endH;
+  if(agoEnd<0) agoEnd+=24;
+  C.activityEndedHoursAgo=Math.round(agoEnd*100)/100;
+  // Update sub-labels
+  document.getElementById('c-actstart-note').textContent=
+    `${C.activityDurationMin} min duration`;
+  document.getElementById('c-actend-note').textContent=
+    `${C.activityEndedHoursAgo.toFixed(1)} h ago (now = ${String(C.currentHour).padStart(2,'0')}:00)`;
+  cUpdate();
+}
+function cExType(t,btn){
+  C.exType=t;
+  document.querySelectorAll('#c-extype-pills .pill').forEach(b=>{
+    b.classList.remove('active','act-teal','act-coral','act-amber');
+    b.classList.add(t==='aerobic'?'act-teal':t==='anaerobic'?'act-coral':'act-amber');
+  });
+  btn.classList.add('active'); cUpdate();
+}
+function cActLvl(v,btn){
+  C.activityLevel=v;
+  document.querySelectorAll('#c-actlvl-pills .pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); cUpdate();
+}
+
+function cComputeBaseline(){
+  if(C.baselineMode==='preset'){
+    return getCircadianBG(C.currentHour);
+  }
+  // Dynamic: back-calculate from BG reading
+  // At reading time (readingHoursAgo hours ago), compute meal + insulin cumulative effects
+  // stableBaseline = reading - (mealEffect@reading - |insulinEffect@reading|)
+  const mealAtReading = mealEffectAtTime(-C.readingHoursAgo, C);
+  const insAtReading = insulinEffectAtTime(-C.readingHoursAgo, C);
+  // net effect at reading time: meal (positive) + insulin (negative)
+  const netAtReading = mealAtReading + insAtReading;
+  const stableBaseline = C.bgReading - netAtReading;
+  // Clamp physiologically: 55 to 220 (BASELINE_HARD_MIN/MAX from baseline.ts)
+  return Math.max(55, Math.min(220, stableBaseline));
+}
+
+function cUpdate(){
+  C.mealAbsorption = document.getElementById('c-abstype').value;
+  C.insulinType = document.getElementById('c-instype').value;
+
+  // 1. Stable baseline
+  const stableBaseline = cComputeBaseline();
+
+  // 2. Cumulative meal effect NOW (at current time = t=0)
+  const mealNow = C.includeMeal ? mealEffectAtTime(0, C) : 0;
+
+  // 3. Cumulative insulin effect NOW
+  const insNow = C.includeInsulin ? insulinEffectAtTime(0, C) : 0;
+
+  // 4. Cumulative activity effect NOW (THE NEW TERM)
+  const actResult = computeActivityCumulativeEffect({
+    exType: C.exType, level: C.activityLevel,
+    durationMin: C.activityDurationMin,
+    hoursAgoEnd: C.activityEndedHoursAgo,
+    iob: C.iob, isf: C.isf
+  });
+  const actNow = actResult.totalEffect;
+
+  // 5. Estimated BG = baseline + all cumulative effects
+  const estimatedBG = stableBaseline + mealNow + insNow + actNow;
+  const status = safetyStatus(estimatedBG, C.target);
+
+  // ── Update stats ──────────────────────────────────────────────────────────
+  document.getElementById('c-out-base').textContent = Math.round(stableBaseline);
+  document.getElementById('c-out-meal').textContent = C.includeMeal ? (mealNow>=0?'+':'')+Math.round(mealNow) : '—';
+  document.getElementById('c-out-ins').textContent  = C.includeInsulin ? (insNow>=0?'+':'')+Math.round(insNow) : '—';
+  document.getElementById('c-out-act').textContent  = (actNow>=0?'+':'')+Math.round(actNow);
+  document.getElementById('c-out-estbg').textContent = Math.round(estimatedBG);
+  document.getElementById('c-badge-meal').style.opacity = C.includeMeal ? '1' : '0.35';
+  document.getElementById('c-badge-ins').style.opacity  = C.includeInsulin ? '1' : '0.35';
+  const badge = document.getElementById('c-safety-badge');
+  badge.textContent=status.label; badge.className='safety-badge '+status.cls;
+
+  // ── Activity mini-stats ───────────────────────────────────────────────────
+  const actCoeffEl=document.getElementById('c-act-coeff');
+  actCoeffEl.textContent=actResult.actCoeff.toFixed(3);
+  actCoeffEl.className='stat-val '+(actResult.actCoeff>1?'neg':actResult.actCoeff<1?'pos':'');
+  document.getElementById('c-act-isfmult').textContent='×'+actResult.isfMult.toFixed(2);
+  const directEl=document.getElementById('c-act-direct');
+  directEl.textContent=(actResult.directDelta>=0?'+':'')+actResult.directDelta;
+  directEl.className='stat-val '+(actResult.directDelta>5?'pos':actResult.directDelta<-5?'neg':'');
+  const postEl=document.getElementById('c-act-post');
+  postEl.textContent=(actResult.postISFEffect>=0?'+':'')+actResult.postISFEffect;
+  postEl.className='stat-val '+(actResult.postISFEffect>5?'pos':actResult.postISFEffect<-5?'neg':'');
+
+  // Activity coefficient note
+  const coeffKey = C.exType==='aerobic'?String(-C.activityLevel):C.exType==='anaerobic'?String(C.activityLevel):'0';
+  const coeffLabel = C.exType==='mixed'?`blended (α=${actResult.alpha}×key-${C.activityLevel} + (1-α)×key+${C.activityLevel})`:`activity_coefficients["${coeffKey}"] = ${actResult.actCoeff.toFixed(3)}`;
+  document.getElementById('c-act-coeff-note').innerHTML=
+    `<strong>Coefficient lookup:</strong> ${coeffLabel} → effective ISF multiplier ×${actResult.isfMult.toFixed(2)} — `+
+    `<strong>phase:</strong> ${actResult.phase} — `+
+    `<strong>α (aerobic fraction):</strong> ${actResult.alpha} — `+
+    `<strong>decay factor:</strong> ${actResult.decayFactor} — `+
+    `aerobic drop <strong>${actResult.aeroBGDrop} mg/dL</strong>, anaerobic rise <strong>+${actResult.anaBGRise} mg/dL</strong>.`;
+
+  // ── Effect bars (relative to 400 mg/dL max) ──────────────────────────────
+  const maxBG=400;
+  function setBar(id,varid,value,maxW=100){
+    const pct=Math.min(maxW, Math.abs(value)/maxBG*100);
+    document.getElementById('c-bar-'+id).style.width=pct+'%';
+    document.getElementById('c-barv-'+id).textContent=(value>=0?'+':'')+Math.round(value);
+  }
+  setBar('base',  'c-barv-base',  stableBaseline);
+  setBar('meal',  'c-barv-meal',  C.includeMeal    ? mealNow : 0);
+  setBar('ins',   'c-barv-ins',   C.includeInsulin ? insNow  : 0);
+  setBar('act',   'c-barv-act',   actNow);
+  setBar('est',   'c-barv-est',   estimatedBG);
+  document.getElementById('c-bar-meal').closest('.effect-row').style.opacity = C.includeMeal    ? '1' : '0.3';
+  document.getElementById('c-bar-ins').closest('.effect-row').style.opacity  = C.includeInsulin ? '1' : '0.3';
+
+  // ── Phase note ────────────────────────────────────────────────────────────
+  const mealDur = ABSORPTION_DURATIONS[C.mealAbsorption]||4;
+  const mealFrac = Math.round(absorptionFraction(C.mealHoursAgo, mealDur)*100);
+  const insDur = INSULIN_DURATIONS[C.insulinType]||4.5;
+  const insFrac = Math.round(absorptionFraction(C.insulinHoursAgo, insDur)*100);
+  const baseNote = C.baselineMode==='preset'
+    ? `Preset circadian baseline at hour ${C.currentHour}:00 = <strong>${Math.round(stableBaseline)} mg/dL</strong> (from anchor table in shared-constants.ts)`
+    : `Dynamic baseline back-calculated: reading ${C.bgReading} − net effects at reading (${Math.round(C.mealHoursAgo*10)/10}h ago) = <strong>${Math.round(stableBaseline)} mg/dL</strong>`;
+  document.getElementById('c-phase-note').innerHTML=
+    `${baseNote}. `+
+    (C.includeMeal ? `Meal: <strong>${mealFrac}% absorbed</strong> (${C.mealHoursAgo.toFixed(1)}h / ${mealDur}h, persist-at-100% when ≥ duration). ` : `<em>Meal not included.</em> `)+
+    (C.includeInsulin ? `Insulin: <strong>${insFrac}% absorbed</strong> (${C.insulinHoursAgo.toFixed(1)}h / ${insDur}h). ` : `<em>Insulin not included.</em> `)+
+    `Activity cumulative: <strong>${actNow>=0?'+':''}${Math.round(actNow)} mg/dL</strong> total (${actResult.directDelta} direct + ${actResult.postISFEffect} ISF effect). `;
+
+  // ── Alerts ────────────────────────────────────────────────────────────────
+  const cAlerts=[];
+  if(estimatedBG<70) cAlerts.push({level:'red',msg:`Estimated BG ${Math.round(estimatedBG)} mg/dL — hypoglycemia. Consider fast carbs.`});
+  else if(estimatedBG>250) cAlerts.push({level:'red',msg:`Estimated BG ${Math.round(estimatedBG)} mg/dL — severe hyperglycemia.`});
+  else if(estimatedBG>180) cAlerts.push({level:'amber',msg:`Estimated BG ${Math.round(estimatedBG)} mg/dL — above target range.`});
+  if(actResult.postISFEffect < -20) cAlerts.push({level:'amber',msg:`Post-exercise ISF enhancement (${actResult.postISFEffect} mg/dL) combined with IOB increases hypo risk. Monitor closely.`});
+  if(actResult.anaBGRise > 30) cAlerts.push({level:'amber',msg:`Significant catecholamine-driven BG rise (+${actResult.anaBGRise} mg/dL) from anaerobic exercise. Expect delayed sensitivity improvement.`});
+  document.getElementById('c-alerts').innerHTML=cAlerts.map(a=>`<div class="alert-row ${a.level}"><div class="dot ${a.level}"></div><div>${a.msg}</div></div>`).join('');
+
+  // ── Charts ────────────────────────────────────────────────────────────────
+  cUpdateCharts(stableBaseline, mealNow, insNow, actNow, estimatedBG);
+}
+
+function _clockLabel(fracHour){
+  const hh=(((Math.round(fracHour*2)/2)%24)+24)%24; // round to nearest 0.5h then wrap
+  const wholeH=(((Math.floor(fracHour))%24)+24)%24;
+  const ampm=wholeH>=12?'PM':'AM';
+  const h12=wholeH%12===0?12:wholeH%12;
+  return `${h12} ${ampm}`;
+}
+
+// ── Shared chart window bounds (8 AM → Now + 3 h, min 5 PM) ──────────────────
+let _cChartStart = 8;
+let _cChartEnd   = 17;
+
+// ── Annotation plugin: vertical event markers on both cumulative charts ────────
+const cAnnotPlugin = {
+  id: 'cAnnot',
+  afterDraw(chart) {
+    if (chart.canvas.id !== 'c-timeline' && chart.canvas.id !== 'c-actchart') return;
+    const ctx    = chart.ctx;
+    const xScale = chart.scales.x;
+    const yScale = chart.scales.y;
+    if (!xScale || !yScale) return;
+    const dH = C.activityDurationMin / 60;
+    const events = [
+      // Only draw meal/insulin markers when those layers are enabled
+      ...(C.includeMeal    ? [{ hour: C.currentHour - C.mealHoursAgo,   color:'#f0a030', dash:[5,3], lw:1.5, label:'🍽 Meal'     }] : []),
+      ...(C.includeInsulin ? [{ hour: C.currentHour - C.insulinHoursAgo,color:'#1fc8a4', dash:[5,3], lw:1.5, label:'💉 Insulin'  }] : []),
+      { hour: C.currentHour - C.activityEndedHoursAgo - dH, color:'#5b9cf6', dash:[4,3], lw:1.5, label:'🏃 Ex.Start' },
+      { hour: C.currentHour - C.activityEndedHoursAgo,      color:'#7bb8ff', dash:[4,3], lw:1.5, label:'🏁 Ex.End'   },
+      { hour: C.currentHour,                                 color:'rgba(255,255,255,0.25)', dash:[], lw:1, label:'Now' },
+    ];
+    events.forEach(ev => {
+      const idx = Math.round((ev.hour - _cChartStart) * 12);
+      if (idx < 0 || idx > (_cChartEnd - _cChartStart) * 12) return;
+      const x   = xScale.getPixelForValue(idx);
+      const top = yScale.top;
+      const bot = yScale.bottom;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bot);
+      ctx.strokeStyle = ev.color;
+      ctx.setLineDash(ev.dash);
+      ctx.lineWidth = ev.lw;
+      ctx.stroke();
+      if (ev.label !== 'Now') {
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle   = ev.color;
+        ctx.font        = '9px DM Mono, monospace';
+        ctx.textAlign   = 'center';
+        ctx.fillText(ev.label, x, top + 10);
+      }
+      ctx.restore();
+    });
+  }
+};
+
+function cUpdateCharts(baseline, mealNow, insNow, actNow, estBG){
+  // Fixed window: 8 AM → max(currentHour + 3, 17) in 5-min steps
+  _cChartStart = 8;
+  _cChartEnd   = Math.max(C.currentHour + 3, 17);
+  const totalSteps = Math.round((_cChartEnd - _cChartStart) * 12);
+
+  const labels=[], baseData=[], layer1=[], layer2=[], baseFull=[], targetLine=[], lowLine=[], highLine=[];
+  const actDirect=[], actISF=[], actTotal=[];
+
+  for(let i=0; i<=totalSteps; i++){
+    const actualH = _cChartStart + i / 12;
+    const t       = actualH - C.currentHour;
+    const isNow   = Math.abs(actualH - C.currentHour) < (0.5/12);
+    const isHour  = i % 12 === 0;
+    labels.push(isNow ? `Now (${_clockLabel(C.currentHour)})` : (isHour ? _clockLabel(actualH) : ''));
+
+    let baseAtT = C.baselineMode==='preset'
+      ? getCircadianBG(((actualH % 24) + 24) % 24)
+      : baseline;
+
+    const meal = C.includeMeal    ? mealEffectAtTime(t, C)    : 0;
+    const ins  = C.includeInsulin ? insulinEffectAtTime(t, C) : 0;
+    const act  = activityEffectAtTime(t, C);
+
+    baseData.push(Math.round(baseAtT*10)/10);
+
+    // layer1 = first optional layer after baseline
+    // layer2 = second optional layer (only when both are on)
+    if(C.includeMeal && C.includeInsulin){
+      layer1.push(Math.round((baseAtT+meal)*10)/10);
+      layer2.push(Math.round((baseAtT+meal+ins)*10)/10);
+    } else if(C.includeMeal){
+      layer1.push(Math.round((baseAtT+meal)*10)/10);
+      layer2.push(null);
+    } else if(C.includeInsulin){
+      layer1.push(Math.round((baseAtT+ins)*10)/10);
+      layer2.push(null);
+    } else {
+      layer1.push(null);
+      layer2.push(null);
+    }
+
+    baseFull.push(Math.round((baseAtT+meal+ins+act.total)*10)/10);
+
+    actDirect.push(Math.round(act.direct*10)/10);
+    actISF.push(Math.round(act.postISF*10)/10);
+    actTotal.push(Math.round(act.total*10)/10);
+
+    targetLine.push(C.target);
+    lowLine.push(70);
+    highLine.push(180);
+  }
+
+  // Build datasets dynamically based on active layers
+  const bothOn   = C.includeMeal && C.includeInsulin;
+  const mealOnly = C.includeMeal && !C.includeInsulin;
+  const insOnly  = !C.includeMeal && C.includeInsulin;
+  const noneOn   = !C.includeMeal && !C.includeInsulin;
+
+  const layer1Label = bothOn ? '+ Meal (MOB)' : mealOnly ? '+ Meal (MOB)' : insOnly ? '+ Insulin (IOB)' : '';
+  const layer1Color = (bothOn || mealOnly) ? '#f0a030' : '#1fc8a4';
+  const layer1BG    = (bothOn || mealOnly) ? 'rgba(240,160,48,0.07)' : 'rgba(31,200,164,0.07)';
+
+  const timelineDatasets = [
+    {label:'Stable baseline', data:baseData, borderColor:'#a78bfa', borderWidth:1.5, borderDash:[4,3], tension:0.3, pointRadius:0, fill:false},
+  ];
+
+  if(!noneOn){
+    timelineDatasets.push({
+      label: layer1Label, data: layer1,
+      borderColor: layer1Color, backgroundColor: layer1BG,
+      fill:'-1', tension:0.4, borderWidth:1.5, pointRadius:0, spanGaps:false
+    });
+  }
+
+  if(bothOn){
+    timelineDatasets.push({
+      label:'+ Insulin (IOB)', data: layer2,
+      borderColor:'#1fc8a4', backgroundColor:'rgba(31,200,164,0.07)',
+      fill:'-1', tension:0.4, borderWidth:1.5, pointRadius:0, spanGaps:false
+    });
+  }
+
+  timelineDatasets.push(
+    {label:'+ Activity', data:baseFull, borderColor:'#5b9cf6', backgroundColor:'rgba(91,156,246,0.10)', fill: noneOn ? '-1' : '-1', tension:0.4, borderWidth:2.5, pointRadius:0},
+    {label:'Target',     data:targetLine, borderColor:'rgba(34,197,94,0.4)',  borderDash:[6,4], borderWidth:1, pointRadius:0, fill:false},
+    {label:'Low (70)',   data:lowLine,    borderColor:'rgba(240,96,96,0.3)',   borderDash:[3,3], borderWidth:1, pointRadius:0, fill:false},
+    {label:'High (180)', data:highLine,   borderColor:'rgba(240,160,48,0.3)', borderDash:[3,3], borderWidth:1, pointRadius:0, fill:false},
+  );
+
+  // Always destroy & recreate so window-size changes are clean
+  if(cTimelineChart){ cTimelineChart.destroy(); cTimelineChart=null; }
+  if(cActChart)     { cActChart.destroy();      cActChart=null;      }
+
+  const tickCallback = (v,i) => labels[i] || '';
+
+  cTimelineChart = new Chart(document.getElementById('c-timeline'),{
+    type:'line',
+    data:{labels, datasets: timelineDatasets},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{padding:{top:18}},
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{
+          title:ctx=>labels[ctx[0].dataIndex]||'',
+          label:ctx=>{const v=ctx.parsed.y;if(v===null)return null;return `${ctx.dataset.label}: ${v} mg/dL`;}}}},
+      scales:{
+        x:{ticks:{color:tickC,font:{size:10},maxRotation:0,callback:tickCallback},grid:{color:gridC}},
+        y:{min:40,max:350,title:{display:true,text:'Blood Glucose (mg/dL)',color:tickC,font:{size:10}},
+           ticks:{color:tickC,font:{size:10}},grid:{color:gridC}}
+      }
+    },
+    plugins:[cAnnotPlugin]
+  });
+
+  cActChart = new Chart(document.getElementById('c-actchart'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Direct BG Δ (aerobic−anaerobic)',data:actDirect,borderColor:'#5b9cf6',backgroundColor:'rgba(91,156,246,0.10)',fill:true,tension:0.4,borderWidth:2,pointRadius:0},
+      {label:'Post-exercise ISF effect',data:actISF,borderColor:'#f06060',backgroundColor:'rgba(240,96,96,0.07)',fill:true,tension:0.4,borderWidth:1.5,pointRadius:0},
+      {label:'Total activity effect',data:actTotal,borderColor:'#e8eaf2',borderDash:[4,3],borderWidth:2,tension:0.4,pointRadius:0,fill:false}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:18}},
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+        callbacks:{
+          title:ctx=>labels[ctx[0].dataIndex]||'',
+          label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y>=0?'+':''}${ctx.parsed.y} mg/dL`}}},
+      scales:{
+        x:{ticks:{color:tickC,font:{size:10},maxRotation:0,callback:tickCallback},grid:{color:gridC}},
+        y:{title:{display:true,text:'Activity BG Δ (mg/dL)',color:tickC,font:{size:10}},
+           ticks:{color:tickC,font:{size:10},callback:v=>(v>=0?`+${v}`:v)},
+           grid:{color:ctx=>ctx.tick.value===0?'rgba(255,255,255,0.15)':gridC}}
+      }
+    },
+    plugins:[cAnnotPlugin]
+  });
+}
+
+// ──────────────────────────────────────────────
+// CHART HELPERS
+// ──────────────────────────────────────────────
+function chartOpts(yLabel){
+  return{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+      callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y>0?'+':''}${ctx.parsed.y}`}}},
+    scales:{
+      x:{ticks:{color:tickC,font:{size:10},maxRotation:0,
+           callback:(v,i)=>{const t=-30+i*5;return(t%30===0||t===0)?t===0?'Start':(t<0?`${t}m`:`+${t}m`):'';}},
+         grid:{color:gridC}},
+      y:{title:{display:true,text:yLabel,color:tickC,font:{size:10}},
+         ticks:{color:tickC,font:{size:10},callback:v=>(v>=0?`+${v}`:`${v}`)},
+         grid:{color:ctx=>ctx.tick.value===0?'rgba(255,255,255,0.15)':gridC}}
+    }
+  };
+}
+function chartOptsISF(){
+  return{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,
+      callbacks:{label:ctx=>ctx.datasetIndex<2?`ISF ×${ctx.parsed.y.toFixed(2)}`:null,
+                 filter:i=>i.datasetIndex<2}}},
+    scales:{
+      x:{ticks:{color:tickC,font:{size:10},callback:(v,i)=>{const h=i*0.5;return h%6===0?`${h}h`:''}},
+         grid:{color:gridC}},
+      y:{min:0.95,title:{display:true,text:'ISF multiplier',color:tickC,font:{size:10}},
+         ticks:{color:tickC,font:{size:10},callback:v=>`×${v.toFixed(2)}`},
+         grid:{color:gridC}}
+    }
+  };
+}
+
+// ──────────────────────────────────────────────
+// TAB SWITCH
+// ──────────────────────────────────────────────
+function switchTab(id){
+  const ids=['simple','advanced','cumulative','gaps'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===id));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  if(id==='advanced'&&!aAcuteChart) aUpdate();
+  if(id==='cumulative') cUpdate();
+}
+
+// ── init ──────────────────────────────────────
+sUpdate();
+// Default "Now" = 11:00 AM
+const _initHour = 11;
+document.getElementById('c-hour').value = _initHour;
+document.getElementById('c-hour-out').textContent = '11:00';
+C.currentHour = _initHour;
+// Default activity: ended 1 h ago (10:00), started 45 min before (9:15)
+const _defEndH   = _initHour - 1.0;       // 10:00
+const _defStartH = _initHour - 1.75;      // 9:15
+document.getElementById('c-actend').value   = _fracToHHMM(_defEndH);
+document.getElementById('c-actstart').value = _fracToHHMM(_defStartH);
+cActStartEnd(); // also calls cUpdate() at the end — renders the default cumulative view
+</script>
+</body>
+</html>

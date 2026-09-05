@@ -1,0 +1,411 @@
+
+<style>
+  .ex-wrap { padding: 1rem 0; font-family: var(--font-sans); }
+  .ex-type-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+  .ex-type-btn { padding: 6px 16px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); font-size: 13px; cursor: pointer; transition: all .15s; }
+  .ex-type-btn.active { border-color: #378ADD; color: #0C447C; background: #E6F1FB; }
+  .ex-controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin-bottom: 1rem; }
+  .ex-ctrl { display: flex; flex-direction: column; gap: 4px; }
+  .ex-ctrl label { font-size: 11px; color: var(--color-text-secondary); }
+  .ex-ctrl span { font-size: 13px; font-weight: 500; color: var(--color-text-primary); min-width: 50px; }
+  .ex-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 1.25rem; }
+  .ex-stat { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; }
+  .ex-stat-label { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .ex-stat-val { font-size: 20px; font-weight: 500; }
+  .ex-stat-unit { font-size: 11px; color: var(--color-text-secondary); }
+  .ex-chart-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; margin-top: 1.25rem; }
+  .ex-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 8px; font-size: 12px; color: var(--color-text-secondary); }
+  .ex-legend span { display: flex; align-items: center; gap: 5px; }
+  .ex-swatch { width: 14px; height: 6px; border-radius: 2px; flex-shrink: 0; }
+  .ex-swatch-dash { width: 14px; height: 2px; border-radius: 1px; flex-shrink: 0; border-top: 2px dashed; }
+  .ex-note { background: var(--color-background-secondary); border-left: 3px solid #378ADD; border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0; padding: 10px 14px; margin-top: 1.25rem; font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; }
+  .ex-note strong { color: var(--color-text-primary); font-weight: 500; }
+  .ex-intensity-btns { display: flex; gap: 6px; }
+  .ex-int-btn { padding: 4px 10px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-secondary); background: var(--color-background-primary); color: var(--color-text-secondary); font-size: 12px; cursor: pointer; }
+  .ex-int-btn.active { border-color: #1D9E75; color: #085041; background: #E1F5EE; }
+  @media (max-width: 520px) { .ex-stats { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+</style>
+
+<div class="ex-wrap">
+  <div class="ex-type-row">
+    <button class="ex-type-btn active" id="btn-aerobic" onclick="setType('aerobic')">Aerobic</button>
+    <button class="ex-type-btn" id="btn-anaerobic" onclick="setType('anaerobic')">Anaerobic</button>
+    <button class="ex-type-btn" id="btn-mixed" onclick="setType('mixed')">Mixed</button>
+  </div>
+
+  <div class="ex-controls">
+    <div class="ex-ctrl">
+      <label>INTENSITY</label>
+      <div class="ex-intensity-btns">
+        <button class="ex-int-btn" id="int-light" onclick="setIntensity('light')">Light</button>
+        <button class="ex-int-btn active" id="int-moderate" onclick="setIntensity('moderate')">Moderate</button>
+        <button class="ex-int-btn" id="int-vigorous" onclick="setIntensity('vigorous')">Vigorous</button>
+      </div>
+    </div>
+    <div class="ex-ctrl">
+      <label>DURATION (min)</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" min="10" max="90" step="5" value="45" id="dur-slider" oninput="setDuration(this.value)" style="width:100px;" />
+        <span id="dur-out">45 min</span>
+      </div>
+    </div>
+    <div class="ex-ctrl">
+      <label>ISF (mg/dL per unit)</label>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="range" min="20" max="80" step="5" value="40" id="isf-slider" oninput="setISF(this.value)" style="width:100px;" />
+        <span id="isf-out">40</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ex-stats">
+    <div class="ex-stat">
+      <div class="ex-stat-label">Peak BG effect</div>
+      <div><span class="ex-stat-val" id="stat-peak">−</span> <span class="ex-stat-unit" id="stat-peak-unit">mg/dL</span></div>
+    </div>
+    <div class="ex-stat">
+      <div class="ex-stat-label">Direct effect window</div>
+      <div><span class="ex-stat-val" id="stat-window">−</span> <span class="ex-stat-unit">min</span></div>
+    </div>
+    <div class="ex-stat">
+      <div class="ex-stat-label">ISF boost (peak)</div>
+      <div><span class="ex-stat-val" id="stat-isf">−</span> <span class="ex-stat-unit">× normal</span></div>
+    </div>
+    <div class="ex-stat">
+      <div class="ex-stat-label">Sensitivity window</div>
+      <div><span class="ex-stat-val" id="stat-sens">−</span> <span class="ex-stat-unit">hours</span></div>
+    </div>
+  </div>
+
+  <div class="ex-chart-label">Acute BG effect during and after exercise (vs baseline)</div>
+  <div class="ex-legend">
+    <span><span class="ex-swatch" style="background:#378ADD;"></span>GLUT4 uptake drop (aerobic)</span>
+    <span><span class="ex-swatch" style="background:#D85A30;"></span>Catecholamine spike (anaerobic)</span>
+    <span><span class="ex-swatch-dash" style="border-color:#5F5E5A;"></span>Net BG change</span>
+  </div>
+  <div style="position:relative; height:240px;"><canvas id="acuteChart"></canvas></div>
+
+  <div class="ex-chart-label" style="margin-top:1.5rem;">Post-exercise insulin sensitivity — ISF multiplier (0 to 48 h)</div>
+  <div class="ex-legend">
+    <span><span class="ex-swatch" style="background:#1D9E75;"></span>ISF multiplier (higher = more insulin-sensitive)</span>
+    <span><span class="ex-swatch" style="background:#E4B400; opacity:.6;"></span>Late hypo risk zone</span>
+  </div>
+  <div style="position:relative; height:180px;"><canvas id="isfChart"></canvas></div>
+
+  <div class="ex-note" id="model-note"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+let exType = 'aerobic';
+let exIntensity = 1.0;
+let exDuration = 45;
+let exISF = 40;
+let acuteChart, isfChart;
+
+const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+const gridColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+const tickColor = isDark ? '#888' : '#999';
+const zeroLineColor = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)';
+
+function intensityLabel() {
+  if (exIntensity === 0.5) return 'light';
+  if (exIntensity === 2.0) return 'vigorous';
+  return 'moderate';
+}
+
+function computeAerobic(t, durationMin, intensity) {
+  const t_end = durationMin;
+  const dH = durationMin / 60;
+  const peakDrop = intensity * Math.min(1.4, dH * 1.2) * 38;
+  if (t < 0) return 0;
+  if (t <= t_end) return -peakDrop * Math.sin(Math.PI * t / (2 * t_end));
+  const decay = Math.exp(-(t - t_end) / (durationMin * 0.8));
+  return -peakDrop * decay;
+}
+
+function computeCatecholamine(t, durationMin, intensity) {
+  const catPeak = durationMin + 15;
+  const catMag = intensity * 22;
+  const catSigma = 22;
+  if (t < 0) return 0;
+  return catMag * Math.exp(-Math.pow(t - catPeak, 2) / (2 * catSigma * catSigma));
+}
+
+function generateAcuteData() {
+  const labels = [], aerArr = [], catArr = [], netArr = [];
+  for (let t = -30; t <= 200; t += 5) {
+    labels.push(t === 0 ? 'Start' : t < 0 ? `${t}m` : `+${t}m`);
+    const aer = (exType === 'aerobic' || exType === 'mixed') ? computeAerobic(t, exDuration, exIntensity) : 0;
+    const cat = (exType === 'anaerobic' || exType === 'mixed') ? computeCatecholamine(t, exDuration, exIntensity) : 0;
+    aerArr.push(Math.round(aer * 10) / 10);
+    catArr.push(Math.round(cat * 10) / 10);
+    netArr.push(Math.round((aer + cat) * 10) / 10);
+  }
+  return { labels, aerArr, catArr, netArr };
+}
+
+function computeISFMult(hPost, intensity, durationMin) {
+  const dH = durationMin / 60;
+  const boost = intensity * Math.min(1.0, dH) * 0.38;
+  const tau = 11;
+  if (hPost < 0.5) return 1;
+  const onset = Math.min(1, (hPost - 0.5) / 2.0);
+  return 1 + boost * onset * Math.exp(-Math.max(0, hPost - 2) / tau);
+}
+
+function generateISFData() {
+  const labels = [], isfArr = [], riskArr = [];
+  for (let h = 0; h <= 48; h += 0.5) {
+    labels.push(h % 6 === 0 ? `${h}h` : '');
+    const mult = computeISFMult(h, exIntensity, exDuration);
+    isfArr.push(Math.round(mult * 1000) / 1000);
+    riskArr.push(mult > 1.12 ? mult : null);
+  }
+  return { labels, isfArr, riskArr };
+}
+
+function buildExerciseZone(durationMin) {
+  const totalPts = 47;
+  const startIdx = 6;
+  const endIdx = startIdx + Math.round(durationMin / 5);
+  return Array.from({ length: totalPts }, (_, i) =>
+    (i >= startIdx && i <= endIdx) ? { x: i, bg: null } : null
+  );
+}
+
+function initCharts() {
+  const { labels: aLabels, aerArr, catArr, netArr } = generateAcuteData();
+  const { labels: iLabels, isfArr, riskArr } = generateISFData();
+
+  const sharedFont = { family: "'system-ui', sans-serif", size: 11 };
+
+  acuteChart = new Chart(document.getElementById('acuteChart'), {
+    type: 'line',
+    data: {
+      labels: aLabels,
+      datasets: [
+        {
+          label: 'GLUT4 drop',
+          data: aerArr,
+          borderColor: '#378ADD',
+          backgroundColor: 'rgba(55,138,221,0.12)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 0,
+        },
+        {
+          label: 'Catecholamine spike',
+          data: catArr,
+          borderColor: '#D85A30',
+          backgroundColor: 'rgba(216,90,48,0.12)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 0,
+        },
+        {
+          label: 'Net BG change',
+          data: netArr,
+          borderColor: '#888780',
+          borderDash: [5, 3],
+          fill: false,
+          tension: 0.4,
+          borderWidth: 1.5,
+          pointRadius: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y > 0 ? '+' : ''}${ctx.parsed.y} mg/dL`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: tickColor,
+            font: sharedFont,
+            maxRotation: 0,
+            callback: (v, i) => {
+              const t = -30 + i * 5;
+              if (t % 30 === 0 || t === 0) return t === 0 ? 'Start' : (t < 0 ? `${t}m` : `+${t}m`);
+              return '';
+            }
+          },
+          grid: { color: gridColor }
+        },
+        y: {
+          title: { display: true, text: 'BG change (mg/dL)', color: tickColor, font: { size: 11 } },
+          ticks: { color: tickColor, font: sharedFont, callback: v => (v >= 0 ? `+${v}` : `${v}`) },
+          grid: { color: (ctx) => ctx.tick.value === 0 ? zeroLineColor : gridColor }
+        }
+      }
+    }
+  });
+
+  isfChart = new Chart(document.getElementById('isfChart'), {
+    type: 'line',
+    data: {
+      labels: iLabels,
+      datasets: [
+        {
+          label: 'ISF multiplier',
+          data: isfArr,
+          borderColor: '#1D9E75',
+          backgroundColor: 'rgba(29,158,117,0.12)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 0,
+        },
+        {
+          label: 'Late hypo risk',
+          data: riskArr,
+          borderColor: 'transparent',
+          backgroundColor: 'rgba(228,180,0,0.18)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 0,
+          pointRadius: 0,
+          spanGaps: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            label: ctx => ctx.datasetIndex === 0 ? `ISF × ${ctx.parsed.y.toFixed(2)}` : null,
+            filter: item => item.datasetIndex === 0
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: tickColor,
+            font: sharedFont,
+            callback: (v, i) => {
+              const h = i * 0.5;
+              return h % 6 === 0 ? `${h}h` : '';
+            }
+          },
+          grid: { color: gridColor }
+        },
+        y: {
+          min: 0.95,
+          title: { display: true, text: 'ISF multiplier', color: tickColor, font: { size: 11 } },
+          ticks: {
+            color: tickColor,
+            font: sharedFont,
+            callback: v => `×${v.toFixed(2)}`
+          },
+          grid: { color: gridColor }
+        }
+      }
+    }
+  });
+
+  updateStats();
+  updateNote();
+}
+
+function updateStats() {
+  const dH = exDuration / 60;
+  const aerPeak = (exType === 'aerobic' || exType === 'mixed')
+    ? exIntensity * Math.min(1.4, dH * 1.2) * 38 : 0;
+  const catPeak = (exType === 'anaerobic' || exType === 'mixed')
+    ? exIntensity * 22 : 0;
+
+  const netPeak = exType === 'aerobic' ? -aerPeak
+    : exType === 'anaerobic' ? catPeak
+    : catPeak - aerPeak;
+
+  const window_ = exType === 'anaerobic' ? exDuration + 60 : exDuration + 90;
+
+  const isfBoost = exIntensity * Math.min(1.0, dH) * 0.38;
+  const isfPeak = 1 + isfBoost;
+  const sensH = isfBoost > 0.05 ? Math.round((-Math.log(0.05 / isfBoost)) * 11) : 0;
+
+  document.getElementById('stat-peak').textContent =
+    netPeak === 0 ? '0' : (netPeak > 0 ? `+${Math.round(netPeak)}` : `${Math.round(netPeak)}`);
+  document.getElementById('stat-peak-unit').textContent = 'mg/dL ' + (netPeak < 0 ? '(drop)' : netPeak > 0 ? '(rise)' : '');
+  document.getElementById('stat-window').textContent = Math.round(window_);
+  document.getElementById('stat-isf').textContent = isfPeak.toFixed(2);
+  document.getElementById('stat-sens').textContent = Math.min(48, sensH);
+}
+
+function updateNote() {
+  const dH = exDuration / 60;
+  const isfBoost = exIntensity * Math.min(1.0, dH) * 0.38;
+  const effectiveISF = Math.round(exISF * (1 + isfBoost));
+  const notes = {
+    aerobic: `Aerobic exercise drives GLUT4-mediated glucose uptake independent of insulin — BG drops directly during activity. In DiaTwin, this maps to a <strong>direct glucose consumption term</strong> in the BG differential equation (not an ISF change). Post-exercise, the enhanced ISF of <strong>×${(1+isfBoost).toFixed(2)}</strong> means existing IOB acts as if ISF were ~${effectiveISF} mg/dL/unit for the next ${Math.min(48, Math.round(-Math.log(0.05/Math.max(isfBoost,0.01)) * 11))}h — the primary cause of nocturnal hypoglycaemia.`,
+    anaerobic: `Anaerobic/high-intensity exercise triggers catecholamine surge (adrenaline, cortisol) → hepatic glucose output → transient BG spike. In DiaTwin, this maps to a <strong>counter-regulatory production term</strong> added to the BG ODE. The ISF tail of <strong>×${(1+isfBoost).toFixed(2)}</strong> still applies post-exercise and can surprise — BG spikes first then falls harder once IOB kicks in on sensitised receptors.`,
+    mixed: `Mixed exercise (e.g. team sports, HIIT) produces competing effects: the anaerobic catecholamine spike may temporarily mask the aerobic drop. In DiaTwin, both terms run simultaneously — the net BG trajectory depends on the ratio of aerobic vs. anaerobic phases. The post-exercise ISF tail <strong>×${(1+isfBoost).toFixed(2)}</strong> is the same regardless of which direction BG moved during the session.`
+  };
+  document.getElementById('model-note').innerHTML = notes[exType];
+}
+
+function updateCharts() {
+  const { aerArr, catArr, netArr } = generateAcuteData();
+  acuteChart.data.datasets[0].data = aerArr;
+  acuteChart.data.datasets[1].data = catArr;
+  acuteChart.data.datasets[2].data = netArr;
+  acuteChart.update('none');
+
+  const { isfArr, riskArr } = generateISFData();
+  isfChart.data.datasets[0].data = isfArr;
+  isfChart.data.datasets[1].data = riskArr;
+  isfChart.update('none');
+
+  updateStats();
+  updateNote();
+}
+
+function setType(t) {
+  exType = t;
+  ['aerobic','anaerobic','mixed'].forEach(x => {
+    document.getElementById('btn-' + x).classList.toggle('active', x === t);
+  });
+  updateCharts();
+}
+
+function setIntensity(s) {
+  const map = { light: 0.5, moderate: 1.0, vigorous: 2.0 };
+  exIntensity = map[s];
+  ['light','moderate','vigorous'].forEach(x => {
+    document.getElementById('int-' + x).classList.toggle('active', x === s);
+  });
+  updateCharts();
+}
+
+function setDuration(v) {
+  exDuration = +v;
+  document.getElementById('dur-out').textContent = v + ' min';
+  updateCharts();
+}
+
+function setISF(v) {
+  exISF = +v;
+  document.getElementById('isf-out').textContent = v;
+  updateCharts();
+}
+
+initCharts();
+</script>

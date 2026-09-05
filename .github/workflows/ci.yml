@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  foundation:
+    name: diatwin foundation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -r backend/requirements.txt
+      - name: diatwin foundation tests
+        run: pytest diatwin/tests -q
+
+  backend:
+    name: backend api and kernel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -r backend/requirements.txt
+      - name: Tests
+        working-directory: backend
+        env:
+          MONGO_URI: mongodb://localhost:27017/diatwin_test
+          SECRET_KEY: ci-secret-not-used-anywhere-real
+        run: pytest tests -q
+
+  parity:
+    name: python/typescript model parity
+    runs-on: ubuntu-latest
+    # The two implementations of the insulin model are independent on
+    # purpose. This job is what turns that into verification: it fails the
+    # build when they stop agreeing.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -r backend/requirements.txt
+      - name: Install node
+        working-directory: mobile
+        run: npm ci
+      - name: Generate shared cases
+        run: python -m diatwin.verify.parity generate
+      - name: Evaluate python side
+        run: python -m diatwin.verify.parity python
+      - name: Evaluate typescript side
+        working-directory: mobile
+        run: npx jest __tests__/parity --ci
+      - name: Compare
+        run: python -m diatwin.verify.parity compare
+
+  mobile:
+    name: mobile typecheck and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install
+        working-directory: mobile
+        run: npm ci
+      - name: Typecheck
+        working-directory: mobile
+        run: npx tsc --noEmit
+      - name: Tests
+        working-directory: mobile
+        run: npx jest --ci --testPathIgnorePatterns=parity

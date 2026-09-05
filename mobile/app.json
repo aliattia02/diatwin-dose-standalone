@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "DiaTwin",
+    "slug": "dia-twin",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "diatwin",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#8031A7"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.diatwin.mobile",
+      "runtimeVersion": "1.0.0",
+        "versionCode": 32,
+  "minSdkVersion": 26,
+      "newArchEnabled": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#8031A7"
+      },
+      "package": "com.diatwin.mobile",
+      "runtimeVersion": "1.0.0",
+      "minSdkVersion": 26,
+      "newArchEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "./plugins/withMinSdk",
+      "expo-router",
+      "expo-secure-store",
+      "expo-asset",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fd33316a-813f-4353-a367-61ed2933074b"
+      }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fd33316a-813f-4353-a367-61ed2933074b"
+    },
+    "owner": "aliattia"
+  }
+}

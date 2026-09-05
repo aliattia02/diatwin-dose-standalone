@@ -1,0 +1,46 @@
+# ── node_modules ──────────────────────────────────────────────────────────────
+node_modules/
+node_modules/**
+**/node_modules/
+**/node_modules/**
+
+# ── Android build artefacts ───────────────────────────────────────────────────
+android/app/build/
+android/app/build/**
+android/.gradle/
+android/.gradle/**
+android/.cxx/
+android/.cxx/**
+android/app/release/
+
+# ── Expo / Metro cache ────────────────────────────────────────────────────────
+.expo/
+.expo/**
+.metro-cache/
+
+# ── IDE / OS ──────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ── Windows shortcuts ─────────────────────────────────────────────────────────
+*.lnk
+
+# ── Env / secrets ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+
+# ── Dev / internal docs ───────────────────────────────────────────────────────
+*.md
+!README.md
+*.txt
+*.pdf
+tree_gen.py
+migrate_timezone_offset.py
+Active\ effect\ doc.pdf

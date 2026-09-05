@@ -1,0 +1,379 @@
+DiaTwin — Diabetes Digital Twin
+Presentation Script
+Advisory use only — does not replace clinical judgement
+================================================================================
+
+
+SLIDE 1 — TITLE
+--------------------------------------------------------------------------------
+
+DiaTwin
+Diabetes Digital Twin
+
+A real-time pharmacodynamic platform for insulin-requiring diabetes —
+turning passive logging into predictive self-care.
+
+[Feature pills]
+IOB Tracking | MOB Modelling | Dose Advisory
+
+[Stats]
+8.7 / 10 — Clinical Utility Score
+50K+ — Meal-outcome pairs validated
+
+Advisory use only — does not replace clinical judgement
+
+
+================================================================================
+SLIDE 2 — THE PROBLEM
+Managing T1D is a 24/7 balancing act
+--------------------------------------------------------------------------------
+
+The Precision Gap
+Doctor-set therapy plans are complex to apply daily. Patients lack tools to
+translate clinical parameters into real-time decisions.
+
+Data Without Insight
+CGM and finger-prick devices show current glucose levels — but offer no
+guidance on how much insulin to take or when.
+
+Risk of Harm
+Without IOB/MOB awareness, insulin stacking causes dangerous hypoglycemia.
+High cognitive burden leads to dosing errors.
+
+~1.3 million insulin-pen users in Germany alone lack structured dosing guidance
+
+
+================================================================================
+SLIDE 3 — WHAT IS DIATWIN?
+A pharmacodynamic digital twin for T1D
+--------------------------------------------------------------------------------
+
+DiaTwin builds a real-time model of each patient's glucose state — tracking how
+insulin and carbohydrates behave physiologically — to answer three critical
+questions every minute:
+
+  - What is my BG right now?
+  - Where will it go in the next few hours?
+  - Is it safe to eat or dose?
+
+[Core values]
+
+IOB — Insulin On Board
+Insulin still pharmacologically active — calculated via trapezoidal integration
+
+MOB — Meal On Board
+Carbohydrates still being absorbed — modelled via gamma-distribution kinetics
+
+Net — Net BG Effect
+Meal impact minus insulin impact — positive = rising, negative = falling
+
+Advisory use only — does not replace clinical judgement
+
+
+================================================================================
+SLIDE 4 — THE ENGINE
+Pharmacodynamics Engine
+--------------------------------------------------------------------------------
+
+Meal Absorption (MOB)
+Gamma-distribution curve modelling:
+  - Delayed gastric emptying onset
+  - Peak absorption rise
+  - Gradual metabolic tail
+  - 5 absorption speeds: very slow to very fast
+  - Personalised absorption modifier per patient
+
+Insulin Activity (IOB)
+Two curve families — S3 Clinical Guidelines:
+
+  Peaked Insulins (rapid, short, intermediate acting)
+  Gamma distribution with type-specific parameters
+
+  Peakless Insulins (long-acting, ultra-long acting)
+  4-phase model, capped at 75% max activity
+
+The same mathematical model runs identically in Python (backend) and TypeScript
+(frontend) — guaranteeing consistency across all platforms.
+
+
+================================================================================
+SLIDE 5 — FOR PATIENTS
+Predictive Self-Care
+--------------------------------------------------------------------------------
+
+Real-Time IOB & MOB
+See exactly how much insulin and meal carbs are still active — eliminating
+guesswork before a correction dose.
+
+Advisory Bolus Calculator
+Dose suggestions accounting for current BG, active IOB, planned meal, activity
+level, and time-of-day resistance.
+
+Pre-Bolus Timing
+Recommends optimal pre-meal injection window (0–20 min) based on the glycaemic
+index of the logged meal.
+
+Structured Meal Logging
+Extensive food database including local cuisine categories — reducing
+carb-counting burden and improving adherence.
+
+BG Rise Prediction
+MOB is converted into an estimated future glucose rise — letting patients
+anticipate hyperglycaemia before it occurs.
+
+Activity Adjustment
+Physical activity logging automatically adjusts dose suggestions — supporting
+safer exercise management.
+
+
+================================================================================
+SLIDE 6 — FOR PHYSICIANS
+Evidence-Based Remote Monitoring
+--------------------------------------------------------------------------------
+
+Remote Patient Monitoring
+Authorised physicians access a dedicated dashboard: BG history, meal logs,
+insulin records, and activity data for informed pre-consultation review.
+
+Glycaemic Response Analysis
+Meal-glucose correlation charts reveal postprandial response patterns across
+days or weeks — objective evidence for ICR or ISF titration.
+
+Clinical Parameter Review
+All patient-specific constants (ICR, CF, target glucose, absorption modifiers)
+are visible in a structured view.
+
+Pattern-Based Titration
+Time-in-range statistics, SMBG analysis, and glycaemic variability metrics
+(MAGE, CV%) provide a structured evidence base for dose conversations.
+
+Consent-Gated Access
+Bilateral authorisation model ensures patient data sovereignty. Physicians see
+only consented patients — GDPR-aligned clinical data governance.
+
+Multi-Patient Overview
+Full panel of authorised patients, each searchable by name — enabling efficient
+review workflows in specialist clinics or GP settings.
+
+
+================================================================================
+SLIDE 7 — THE DASHBOARD
+At-a-Glance Metabolic Control
+--------------------------------------------------------------------------------
+
+ActiveEffectsDisplay
+Primary home-screen widget — refreshes every 60 seconds synced to wall-clock
+:00 boundary.
+
+Metrics displayed:
+  - Last Meter Reading: Most recent fingerstick with time-since badge (e.g. "14 min ago")
+  - Insulin Card (IOB): BG reduction already absorbed / further drop still to come
+  - Meal Card (MOB): BG rise already absorbed / hidden rise still coming
+  - Current Est. BG: Baseline + cumulative net — colour-coded green/orange/red
+  - Projected Final BG: Where BG will land if nothing new is added
+
+Additional Visualizations:
+  - EffectsVisualization: IOB + MOB evolution over next few hours
+  - BloodSugarVisualization: Full BG history vs. model estimates
+  - MealVisualization: Active meals, absorption rates, pending BG rise
+  - InsulinVisualization: Dose history, active insulin, stacking risk
+
+Advisory use only — does not replace clinical judgement
+
+
+================================================================================
+SLIDE 8 — ARCHITECTURE
+Full-Stack Cross-Platform System
+--------------------------------------------------------------------------------
+
+Mobile (React Native / Expo)
+  - iOS + Android + Web
+  - TypeScript components
+  - Offline-capable with sync
+  - Libre CGM integration
+
+Frontend (React Web)
+  - JS + TS components
+  - Real-time visualization
+  - Doctor & Patient dashboards
+  - Import/Export support
+
+Backend (Python / Flask)
+  - MongoDB database
+  - Pharmacodynamics engine
+  - JWT authentication
+  - REST API endpoints
+
+Single source of truth: pharmacodynamic constants shared between Python backend
+and TypeScript frontend — zero drift
+
+
+================================================================================
+SLIDE 9 — MARKET
+A Growing, Underserved Market
+--------------------------------------------------------------------------------
+
+1.3M
+Insulin-pen users in Germany lacking structured dosing guidance
+
+8.7%
+CAGR for global diabetes digital management market
+
+~26K
+Conservative 2% German market penetration within 3 years
+
+€100/yr
+DiaTwin cost vs €3–5K/yr for CGM hardware
+
+Competitive Landscape:
+
+Feature              | DiaTwin               | CGM Only       | Basic Apps | Insulin Pumps
+---------------------+-----------------------+----------------+------------+------------------
+Intelligent Dosing   | Yes (IOB, MOB, Proj.) | No             | No         | Yes (Closed-loop)
+Works with Pen       | Yes                   | Yes            | Yes        | No
+Annual Cost          | ~€100                 | €3,000–5,000   | Low        | €10,000–16,000
+
+
+================================================================================
+SLIDE 10 — VALIDATION & TEAM
+Built on Clinical Evidence
+--------------------------------------------------------------------------------
+
+Clinical Evidence:
+  Grade 1.6 "Excellent" — Master's Thesis, core algorithms validated at DIT
+  8.7 / 10 — Clinical Utility Score by certified diabetologist
+  50,000+ pairs — Real clinical meal-outcome data
+  TRL 4–5 — Web + mobile prototypes operational
+
+Team & Advisors:
+  Ali Attia — Lead, Pharmacist, M.Sc. Digital Health
+  Prof. Dr. Klaus Parhofer — LMU Munich, Protocol Advisor
+  Prof. Dr. Katarina Braune — Charité/HPI, Clinical Trial Co-PI
+  ForTra Consultants — Regulatory pathway (CE IIa / DiGA)
+
+Partnerships: Charité · LMU Network · Abbott / Dexcom (API discussions)
+
+
+================================================================================
+SLIDE 11 — ROADMAP
+Path to CE IIa Certification & DiGA
+--------------------------------------------------------------------------------
+
+Now  (TRL 4–5)
+  - Core algorithms validated
+  - Web + mobile prototypes
+  - Clinical utility 8.7/10
+
+Phase I  (EXIST Funding)
+  - Team expansion
+  - Full-stack dev
+  - DiGA strategy co-founder
+
+Phase II  (TRL 6–7)
+  - Clinical trial N=100, 6 months
+  - Safety/efficacy validation
+  - Physician workflow integration
+
+Phase III  (Regulatory)
+  - CE Class IIa certification
+  - DiGA pathway approval
+  - International expansion
+
+
+================================================================================
+SLIDE 12 — WHO WE SERVE
+Two Target Patient Groups
+--------------------------------------------------------------------------------
+
+CONTINUOUS CGM USERS
+Germany / EU · Primary market
+
+Already wearing a CGM sensor — but missing structured dosing guidance to act
+on their data.
+
+What DiaTwin adds:
+  - Net Effect analysis on live glucose trends
+  - 4-hour BG projection (IOB + MOB overlay)
+  - Intelligent bolus advice beyond trend arrows
+  - Reduces unnecessary corrective doses
+  - Saves €3,000–5,000/year vs. CGM hardware alone
+
+"CGM Companion — keeps precision, slashes cost"
+
+                              VS
+
+SMBG / FINGER-PRICK USERS
+Global · Largest underserved group
+
+3–4 daily finger-sticks — significant gaps between readings where glucose
+direction is unknown.
+
+What DiaTwin provides:
+  - Intelligent Glucose Estimation between readings
+  - MOB modelling (5 meal types, portion-based)
+  - IOB tracking across overlapping doses
+  - Future glucose projection without CGM
+  - Trend insight at a fraction of CGM cost (~€100/yr)
+
+"CGM-level insight — without the sensor"
+
+
+================================================================================
+SLIDE 13 — PHYSICIAN CONTROL
+All Parameters Set & Managed by Doctors
+--------------------------------------------------------------------------------
+
+DiaTwin does not allow patients to modify clinical parameters. Every threshold,
+ratio, and limit is prescribed and adjusted exclusively by the treating
+physician — ensuring safety, clinical accountability, and regulatory compliance.
+
+Parameters (all Physician only):
+
+Insulin-to-Carb Ratio (ICR)  [Physician only]
+Defines how many grams of carbohydrate one unit of insulin covers. Personalised
+per patient and time-of-day.
+
+Correction / Sensitivity Factor  [Physician only]
+How much 1 unit of insulin lowers blood glucose. Used to calculate correction
+boluses against a target BG.
+
+Target Blood Glucose  [Physician only]
+The individual BG goal for each patient — used to calculate the correction delta
+and colour-code estimates.
+
+Safety Limits & Dose Caps  [Physician only]
+Maximum allowed bolus per dose and per day. Hard stops prevent the system from
+suggesting unsafe corrections.
+
+Absorption Modifiers  [Physician only]
+Patient-specific multiplier that scales the gamma-distribution absorption curves
+for meals and insulin activity.
+
+Basal Rate Equivalent  [Physician only]
+Long-acting insulin baseline parameters — onset, duration, and activity profile
+used in IOB calculations.
+
+Patients interact only with logging and viewing functions. Parameter access is
+gated behind physician authentication.
+
+
+================================================================================
+SLIDE 14 — CLOSING
+--------------------------------------------------------------------------------
+
+DiaTwin
+Diabetes Digital Twin
+
+"From reactive monitoring to predictive self-care."
+
+  - Pharmacodynamic precision for every patient, every dose
+  - Real-time IOB + MOB — glucose predicted, not just measured
+  - Physician-supervised, patient-centred, GDPR-compliant
+
+Advisory use only — does not replace clinical judgement
+
+
+================================================================================
+End of Presentation Script
+DiaTwin · Digital Twin Diabetes Care
+================================================================================

@@ -1,0 +1,501 @@
+FrontEnd Structure
+
+Main Components
+PatientDashboard: Manages the display of patient-specific data, showing health metrics and other relevant information for the patient.
+DoctorDashboard: Similar to PatientDashboard but tailored for doctors to view summarized data across multiple patients or specific patient updates.
+
+Supporting Components These components perform specific tasks and integrate into the main dashboards:
+
+Activity Components
+ActivityRecording: Captures activity data input from the patient.
+ActivityDataTable: Displays activity data in a structured table format.
+
+Blood Sugar Components
+BloodSugarInput: Handles input of blood sugar measurements.
+BloodSugarTable: Displays blood sugar data in tabular form.
+BloodSugarChart: Visualizes blood sugar data trends over time, aiding in monitoring.
+
+Insulin and Meal Management
+EnhancedMealInsulin: Manages insulin information associated with meal data.
+MealInput: Records meal-related data, which may include nutritional information and meal timings.
+MealHistory: Displays a history of meals, useful for tracking diet patterns.
+Food and Duration Management
+
+FoodDatabase: Provides an interface for food-related data entry or lookup, possibly including nutritional details.
+DurationInput: Manages the input of time-related data, which could be linked to activities or medication schedules.
+
+Authentication Components
+Register: Facilitates new user account creation.
+Signin: Manages user login and authentication.
+
+Constants
+PatientConstants: Likely contains predefined constants specific to patient data management, making it easier to maintain uniform data representation across components.
+
+Other Constants: Include files like activityConstants.js and conversionConstants.js to hold values or mappings that remain constant across sessions, simplifying data consistency in the app.
+
+i have created app  with the following structure
+for using reinforment learning and machine learning in adjusting patients insulin dose
+
+native3/
+├── frontend/
+│   └── src
+│       ├── Components
+│       │   ├── Main Components
+│       │   │   ├── PatientDashboard
+│       │   │   │   └── PatientConstants
+│       │   │   └── DoctorDashboard
+│       │   │       └── EnhancedPatientConstantsUI
+│       │   │
+│       │   ├── Supporting Components
+│       │   │   ├── Activity Components
+│       │   │   │   ├── ActivityRecording
+│       │   │   │   └── ActivityDataTable
+│       │   │   │
+│       │   │   ├── Blood Sugar Components
+│       │   │   │   ├── BloodSugarInput
+│       │   │   │   ├── BloodSugarTable
+│       │   │   │   └── BloodSugarChart
+│       │   │   │
+│       │   │   ├── Insulin and Meal Management
+│       │   │   │   ├── Insulin Input
+│       │   │   │   ├── MealInput
+│       │   │   │   │   └── FoodSection (subcomponent)
+│       │   │   │   └── MealHistory
+│       │   │   │
+│       │   │   ├── Food and Duration Management
+│       │   │   │   ├── FoodDatabase
+│       │   │   │   └── DurationInput
+│       │   │   │
+│       │   │   ├── Authentication Components
+│       │   │   │   ├── Register
+│       │   │   │   └── Signin
+│       │   │   │
+│       │   │   └── EnhancedPatientConstantsCalc (calculations)
+│       │
+│       ├── contexts
+│       │   └── ConstantsContext.js
+│       │
+│       └── Constants
+│           ├── SharedConstants
+│           └── index.js
+│
+├── backend/
+│   ├── main.py
+│   ├── config.py
+│   ├── activity.py
+│   ├── blood_sugar.py
+│   ├── constants.py
+│   ├── enhanced_meal_insulin.py
+│   ├── meal_insulin.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── food_data.py
+│   │
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── auth_routes.py
+│   │   ├── doctor_routes.py
+│   │   ├── food_routes.py
+│   │   ├── patient_routes.py
+│   │   └── test_routes.py
+│   │
+│   ├── services/
+│   │   └── food_service.py
+│   │
+│   └── utils/
+│       ├── __init__.py
+│       ├── auth.py
+│       └── error_handler.py
+
+Key Features
+1.	Diabetes Management System: 
+o	Meal insulin calculations
+o	Blood sugar monitoring
+o	Activity tracking
+o	Food data management
+2.	Authentication System: 
+o	Token-based authentication
+o	24-hour token expiry
+o	Doctor-specific routes
+3.	Data Management: 
+o	MongoDB integration
+o	Food data services
+o	Portion conversion utilities
+•  Food Management: 
+•	Multi-category food database
+•	Flexible search functionality
+•	Portion conversion system
+•	Special portion handling
+•  Authentication: 
+•	JWT-based authentication
+•	User verification
+•	Token expiration handling
+•	Secure route protection
+•  Error Handling: 
+•	Centralized error management
+•	Standardized API responses
+•	Detailed error logging
+
+Common Integration Points
+•	MongoDB connection available via app.mongo
+•	Logging via app.logger
+•	CORS configured for frontend integration
+•	Error handling middleware
+Database Integration
+•	MongoDB connection via app.mongo
+•	User authentication checks
+•	Food data storage and retrieval
+Authentication Flow
+1.	Token Requirements: 
+o	Bearer token in Authorization header
+o	Valid JWT signature
+o	Non-expired token
+o	Existing user in database
+2.	Error Handling: 
+o	Centralized error logging
+o	Standardized API responses
+o	Detailed error tracking
+
+Project Technical Overview
+Core Application Structure
+Application Factory (__init__.py)
+•	Creates and configures Flask application
+•	Key configurations: 
+o	MongoDB connection: mongodb://localhost:27017/native_new
+o	CORS enabled for http://localhost:3000
+o	Configurable environment (testing/production)
+o	Token expiry: 24 hours
+Main Application (main.py)
+•	Entry point for the application
+•	Registered Blueprints: 
+o	food_routes
+o	auth_routes
+o	doctor_routes
+o	test_routes
+o	meal_insulin_bp
+o	activity_bp
+o	blood_sugar_bp
+•	Global error handlers for 404 and 500
+•	MongoDB instance available to all blueprints via app.mongo
+•	Runs on host '0.0.0.0', port 5000 in debug mode
+Configuration (config.py)
+•	MongoDB configuration
+•	Logging setup (DEBUG level)
+•	CORS configuration
+•	Core app settings: 
+o	Secret key configuration
+o	UTC timezone
+o	Token expiration
+o	Allowed origins
+Constants (constants.py)
+Important calculation factors and default values:
+1.	Absorption Factors:
+{ 'fast': 1.0, 'medium': 0.9, 'slow': 0.8, 'unknown': 0.9 }
+2.	Timing Factors:
+{ 'breakfast': 1.2, 'normal': 1.0, 'late_night': 0.9 }
+
+3. Default Values:
+•	Insulin to Carb Ratio: 1/10
+•	Correction Factor: 50
+•	Target Glucose: 100
+•	Activity Coefficients: Range from -0.2 to 0.2
+4.	Insulin Timing Guidelines:
+•	Fast absorption: 15 minutes before meal
+•	Medium absorption: 10 minutes before meal
+•	Slow absorption: 5 minutes before meal
+Services
+Food Service System (food_service.py)
+1.	Food Categories:
+2.	{ 'basic': FOOD_DATABASE, 'starch': STARCH_LIST, 'fruits': FRUITS, 'dairy': MILK_AND_DAIRY, 'sweets': SWEETS_AND_DESSERTS, 'snacks': SNACKS, 'common_snacks': COMMON_SNACKS, 'high_protein': HIGH_PROTEIN_FOODS, 'high_fat': HIGH_FAT_FOODS, 'indian': INDIAN_DISHES, 'chinese': CHINESE_DISHES, 'italian': ITALIAN_DISHES }
+
+Key Functions:
+•	get_food_details(food_name): Retrieves food details from any category
+•	search_food(query, category=None): Searches food items with optional category filter
+•	calculate_absorption_factor(absorption_type, meal_timing): Calculates absorption based on food type and timing
+•	convert_to_standard_nutrients(portion_size, measurement_type, food_details, converter): Handles portion conversion
+Special Portion Measurements:
+{ 'plate': 300g, 'palm': 85g, 'handful': 30g, 'fist': 150g, 'bowl': 400ml }
+
+UTILS
+Authentication System (utils/auth.py)
+1.	Token-based Authentication:
+•	JWT implementation
+•	Token validation middleware
+•	User verification against MongoDB
+2.	Key Decorator: @token_required
+•	Validates Authorization header
+•	Decodes JWT token
+•	Verifies user existence
+•	Handles token expiration
+•	Error states: 
+o	Missing token (401)
+o	Expired token (401)
+o	Invalid token (401)
+o	User not found (401)
+Error Handling (utils/error_handler.py)
+1.	Global API Error Handler:
+•	Decorator: @api_error_handler
+•	Centralizes error logging
+•	Returns standardized 500 error response
+Logs detailed error information
+utils/__init__.py: 
+Exports core utility functions:
+•	token_required: Authentication decorator
+•	api_error_handler: Error handling decorator
+•	Creates a single import point for common utilities
+
+API Routes Structure
+routes/__init__.py:  
+A blueprint registry that:
+•	Imports all route blueprints (auth, doctor, food, test)
+•	Makes routes available for registration in main.py
+•	Centralizes route management
+•	Exports route blueprints via all
+
+Authentication Routes (auth_routes.py)
+1.	Endpoints:
+POST /login - Handles user authentication - Returns JWT token - Includes user type and basic info POST /register - New user registration - Sets default values for diabetes management - Validates unique username/email GET /dashboard - Protected route - Returns user profile info
+
+2.	User Registration Data:
+•	Default values set for new users: 
+o	insulin_to_carb_ratio
+o	correction_factor
+o	target_glucose
+o	activity_coefficients
+Doctor Routes (doctor_routes.py)
+1.	Protected Endpoints:
+GET /api/doctor/patients - Lists all patients - Filtered patient info (no passwords) GET /api/doctor/patient-constants/<patient_id> - Retrieves patient's medical constants POST /api/doctor/update-patient-constants - Updates patient's treatment parameters - Validates all required fields
+
+2.	Access Control:
+•	All routes require doctor user_type
+•	JWT validation for each request
+•	Error handling for unauthorized access
+Food Management Routes (food_routes.py)
+1.	Core Endpoints:
+GET /api/food/categories - Lists all food categories - Returns measurement systems - Includes standard portions GET /api/food/search - Search functionality with category filter - Returns detailed food information POST /api/food/custom - Add custom food items - Validates serving sizes and nutrients GET /api/food/nutritional-summary - Calculates meal nutrient totals - Converts portions to standard units
+2.	Additional Features:
+GET/POST /api/food/favorite - Manage favorite foods - User-specific favorites list GET /api/food/measurements - Lists supported measurement types - Standard portion conversions
+
+Testing Route (test_routes.py)
+GET /test
+- Simple health check endpoint
+- Verifies backend status
+Data Models
+Food Categories Structure:
+{ 'basic_foods': FOOD_DATABASE, 'starch': STARCH_LIST, 'vegetables': STARCHY_VEGETABLES, 'pulses': PULSES, 'fruits': FRUITS, 'dairy': MILK_AND_DAIRY, 'sweets': SWEETS_AND_DESSERTS, 'snacks': [SNACKS, COMMON_SNACKS], 'cuisines': { 'indian': INDIAN_DISHES, 'chinese': CHINESE_DISHES, 'italian': ITALIAN_DISHES } }
+
+Custom Food Structure:
+{ 'user_id': str, 'name': str, 'serving_size': { 'amount': float, 'unit': str }, 'carbs': float, 'protein': float, 'fat': float, 'description': str, 'absorption_type': str, 'created_at': datetime }
+API Integration Patterns
+Authentication Flow:
+# Login Request POST /login { "username": str, "password": str, "user_type": str } # Response { "token": jwt_token, "user_type": str, "firstName": str, "lastName": str }
+Food Management Flow:
+# Search Request GET /api/food/search?q=query&category=optional_category # Nutritional Summary Request POST /api/food/nutritional-summary { "meal_items": [ { "name": str, "portion": float, "measurement": str } ] }
+Doctor-Patient Management:
+# Update Patient Constants POST /api/doctor/update-patient-constants { "patientId": str, "constants": { "insulin_to_carb_ratio": float, "correction_factor": float, "target_glucose": float, "ACTIVITY_COEFFICIENTS": dict } }
+
+Error Handling
+1.	Common HTTP Status Codes: 
+o	400: Bad Request (Invalid input)
+o	401: Unauthorized (Invalid/missing token)
+o	403: Forbidden (Wrong user type)
+o	404: Not Found (Resource missing)
+o	500: Internal Server Error
+2.	Error Response Format:
+{ "error": "Error description", "message": "Optional detailed message" }
+Security Features
+1.	Authentication: 
+o	JWT-based token system
+o	24-hour token expiry
+o	User type verification
+o	Password hashing
+2.	Authorization: 
+o	Route-specific user type checking
+o	Protected routes with @token_required
+o	Patient data access control
+Models
+models/portion_converter.py:
+Key Components
+Base Measurement Units
+1.	Volume Measurements: 
+o	Base unit: milliliters (ml)
+o	Supported conversions: 
+	cup (240ml)
+	tablespoon (15ml)
+	teaspoon (5ml)
+2.	Weight Measurements: 
+o	Base unit: grams (g)
+o	Supported conversions: 
+	kilogram (1000g)
+	ounce (28.35g)
+	pound (453.6g)
+Core Functions
+convert_to_standard(amount, from_unit)
+•	Purpose: Converts any measurement to its base unit (ml or g)
+•	Parameters: 
+o	amount: Numerical value of the measurement
+o	from_unit: Original unit of measurement
+•	Returns: Converted value in base units (ml or g)
+convert_between_units(amount, from_unit, to_unit)
+•	Purpose: Converts measurements between different units
+•	Parameters: 
+o	amount: Numerical value to convert
+o	from_unit: Original unit
+o	to_unit: Target unit
+•	Returns: Converted value in target unit
+get_supported_measurements()
+•	Purpose: Provides all supported measurement types
+•	Returns: Dictionary containing: 
+o	volume: List of volume measurements
+o	weight: List of weight measurements
+o	standard_portions: Standard portion definitions
+Integration Points
+•	Works with food_data.py's STANDARD_PORTIONS
+•	Used by food_service.py for portion calculations
+•	Supports food_routes.py for API responses
+Usage Example
+converter = PortionConverter()
+# Convert 2 cups to milliliters
+ml_amount = converter.convert_to_standard(2, "cup")  # Returns 480
+# Convert between units
+oz_amount = converter.convert_between_units(1000, "g", "oz")  # Returns ~35.27
+models/__init__.py:
+ This file exports all food-related data models and the portion converter:
+•	Makes food databases accessible (various cuisine types, food categories)
+•	Exports the PortionConverter class
+•	Creates a centralized access point for all food-related constants
+
+Core Backends 
+
+1. Activity Management (activity.py)
+•	Handles activity tracking and impact calculations
+•	Key Features: 
+o	Records expected and completed activities
+o	Duration parsing/formatting (HH:MM format)
+o	Activity impact calculation based on intensity levels (-2 to 2)
+o	Historical activity retrieval for users and doctors
+o	Activity coefficient calculation for insulin adjustments
+2. Blood Sugar Management (blood_sugar.py)
+•	Manages blood sugar monitoring and data
+•	Key Features: 
+o	Blood sugar recording (mg/dL)
+o	Value validation (0-600 mg/dL range)
+o	Unit conversion (mg/dL ↔ mmol/L)
+o	Historical data retrieval with date filtering
+o	Doctor-specific patient data access
+3. Meal and Insulin Management (meal_insulin.py)
+•	Complex insulin calculation system
+•	Key Features: 
+o	Meal nutrition calculation
+o	Advanced insulin suggestions considering: 
+	Carb-to-insulin ratios
+	Protein/fat contributions
+	Activity impact
+	Time-of-day factors
+	Blood glucose corrections
+o	Portion conversion system
+o	Meal logging with detailed breakdowns
+o	Historical meal data retrieval
+Integration Points
+Database Schema
+1.	Activities Collection:
+{ user_id: String, type: String (expected/completed), level: Number (-2 to 2), duration: String (HH:MM), expectedTime/completedTime: DateTime, timestamp: DateTime }
+
+2.	Blood Sugar Collection:
+user_id: String, bloodSugar: Number (mg/dL), timestamp: DateTime }
+
+Meals Collection:
+{ user_id: String, mealType: String, foodItems: Array, activities: Array, nutrition: Object, bloodSugar: Number, suggestedInsulin: Number, insulinCalculation: Object, timestamp: DateTime }
+
+API Endpoints
+Activity Endpoints:
+•	POST /api/record-activities: Record expected/completed activities
+•	GET /api/activity-history: Get user's activity history
+•	GET /api/patient/{patient_id}/activity-history: Doctor access to patient activities
+Blood Sugar Endpoints:
+•	POST /api/blood-sugar: Record blood sugar reading
+•	GET /api/blood-sugar: Get user's blood sugar history
+•	GET /doctor/patient/{patient_id}/blood-sugar: Doctor access to patient readings
+Meal/Insulin Endpoints:
+•	POST /api/meal: Submit meal and get insulin calculation
+•	GET /api/meals: Get user's meal history
+•	GET /api/doctor/meal-history/{patient_id}: Doctor access to patient meals
+Key Calculations
+1.	Activity Impact:
+level_impact = { -2: -0.2, # Sleep -1: -0.1, # Very Low 1: 0.1, # High 2: 0.2 # Vigorous }
+
+2. Meal Timing Factors:
+
+timing_factors = { 'breakfast': 1.2, 'lunch': 1.0, 'dinner': 0.9, 'snack': 1.0 }
+
+3. Insulin Calculation Components:
+•	Base insulin = (carbs / insulin_to_carb_ratio)
+•	Protein/fat contribution = (protein * 0.1 + fat * 0.1) / insulin_to_carb_ratio
+•	Activity adjustment = base_insulin * (1 + activity_coefficient)
+•	Correction insulin = (current_glucose - target_glucose) / correction_factor
+Authentication & Security
+•	Token-based authentication required for all endpoints
+•	Doctor-specific route protection
+•	Input validation for all numerical values
+•	Standardized error handling and logging
+
+3. Enhanced Meal and Insulin Management (enhanced_meal_insulin.py)
+•	Advanced insulin calculation system with enhanced features
+•	Key Features: 
+o	Sophisticated absorption rate handling
+o	Detailed nutrition calculations
+o	Enhanced insulin requirement calculations
+o	Meal summary and analytics
+o	Improved meal timing factors
+Absorption Rates System
+DEFAULT_ABSORPTION_RATES = { 'fast': 1.2, # Simple sugars 'medium': 1.0, # Complex carbs 'slow': 0.8 # High fiber foods }
+
+Enhanced Nutrition Tracking
+•	Detailed nutrition breakdown: 
+o	Calories
+o	Carbohydrates
+o	Protein
+o	Fat
+o	Fiber
+o	Absorption-adjusted carbs
+Advanced Insulin Calculations
+1.	Base Components:
+2.	timing_coefficients = { 'breakfast': 1.1, # Dawn phenomenon 'late_night': 0.9, # Night sensitivity 'normal': 1.0 }
+Calculation Flow:
+•	Base insulin = carbs * insulin_to_carb_ratio
+•	Timing adjustment = base_insulin * timing_coefficient
+•	Activity adjustment = timing_adjusted_insulin * (1 + activity_coefficient)
+•	Final insulin = activity_adjusted_insulin + correction_insulin
+New API Endpoints
+1.	Enhanced Meal Endpoints:
+•	POST /api/v2/calculate-insulin: Advanced insulin calculation
+•	POST /api/v2/meal: Submit meal with enhanced data
+•	GET /api/v2/meals/{meal_id}: Get specific meal details
+•	GET /api/v2/meals/summary: Get meal analytics
+Enhanced Meal Schema
+{ "user_id": "String", "timestamp": "DateTime", "meal_type": "String", "meal_items": "Array", "nutrition": { "calories": "Number", "carbs": "Number", "protein": "Number", "fat": "Number", "fiber": "Number", "absorption_adjusted_carbs": "Number" }, "blood_glucose": "Number", "activities": "Array", "insulin_calculation": { "base_insulin": "Number", "activity_adjusted": "Number", "correction_dose": "Number", "total_suggested": "Number", "factors": { "activity_coefficient": "Number", "timing_adjustment": "Number" } }, "notes": "String", "tags": "Array", "meal_timing": "String" }
+
+Meal Summary Analytics
+•	Total meals count
+•	Average carbohydrates
+•	Average insulin doses
+•	Meal type distribution
+•	Common foods analysis
+•	Timing distribution
+Integration Points
+[Previous Integration Points sections remain the same]
+Additional Key Calculations
+1.	Absorption Factor Calculation:
+2.	base_factors = { 'fast': 1.0, 'medium': 0.9, 'slow': 0.8, 'unknown': 0.9 } timing_factors = { 'breakfast': 1.2, 'normal': 1.0, 'late_night': 0.9 } absorption_factor = base_factor * timing_factor
+
+Enhanced Nutrition Calculation:
+•	Per-item nutrition calculation
+•	Portion-adjusted values
+•	Absorption rate application
+•	Total nutrition aggregation
+3.	Advanced Insulin Requirement:
+•	Carb-based calculation
+•	Activity impact adjustment
+•	Meal timing modification
+•	Blood glucose correction
+•	Total insulin computation

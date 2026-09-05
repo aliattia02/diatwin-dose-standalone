@@ -1,0 +1,56 @@
+Pharmazeutische_Praxis_BYA264902/
+├── 0_Verwaltung_Administration/
+│   ├── Stundenplan_Praxis_26.01.-06.02.26.pdf
+│   ├── Rundschreiben_1_2025.pdf
+│   ├── Rundschreiben_2_2025.pdf
+│   ├── Vorlaeufige_Bescheinigung_Praktikum.pdf
+│   ├── Schlager_Begruessung.pdf
+│   ├── Kilian_Scharpf_BLAK_Info.pdf
+│   └── Apothekerversorgung_Kontakt.pdf
+├── 1_Betriebswirtschaft_Apothekenbetrieb/
+│   ├── 1.1_BWL_Handelsrecht/
+│   │   ├── Leippi_BWL_Handelsrecht.pdf
+│   │   └── Intensivkurs_BWL_Steuerrecht_1.HJ_2026.pdf
+│   ├── 1.2_Warenwirtschaft_Preise/
+│   │   ├── Aurnhammer_Wareneinkauf_Lagerhaltung.pdf
+│   │   └── Lernbecher_AMPreisVO.pdf
+│   └── 1.3_Betriebssicherheit_Hygiene/
+│       ├── Hoehe_Hygiene.pdf
+│       └── Wendelstein_Unfallverhuetung.pdf
+├── 2_Arzneimittelinformation_Beratung/
+│   ├── 2.1_Information_Kommunikation/
+│   │   ├── Kircher_Information_Beratung.pdf
+│   │   ├── Mayer_Information_Beratung.pdf
+│   │   ├── Steinbach_AM-Information.pdf
+│   │   ├── Steinbach_Linkliste.pdf
+│   │   └── Richter-Meyer_Kommunikation.pdf
+│   ├── 2.2_Medikationsmanagement/
+│   │   ├── Koczian_Medikationsanalyse.pdf
+│   │   ├── Koczian_Interaktionen_Anlage.pdf
+│   │   ├── Bauer_AMTS.pdf
+│   │   └── Lenhart_Arzneimittelsicherheit.pdf
+│   ├── 2.3_Verordnungen_Rezepte/
+│   │   └── Lenhart_Verordnungen.pdf
+│   └── 2.4_Besondere_Risiken/
+│       ├── Koczian_AM_Missbrauch.pdf
+│       └── Gross_Vergiftungen.pdf
+├── 3_Selbstmedikation_Beratung/
+│   ├── 3.1_Haeufige_Krankheitsbilder/
+│   │   ├── Wolf_Teil_1_Schmerz_Husten.pdf
+│   │   ├── Wolf_Teil_2_Sodbrennen_Obstipation.pdf
+│   │   └── Wolf_Teil_3_Schlaf_Allergie_Mykosen.pdf
+│   ├── 3.2_Besondere_Patientengruppen/
+│   │   └── Hinderer_Schwangerschaft_Stillzeit.pdf
+│   └── 3.3_Praevention_Gesundheitsfoerderung/
+│       ├── Dittrich_Impfberatung.pdf
+│       ├── Schlager_Gesundheitsfoerderung.pdf
+│       └── Zeichinger_Selbsthilfe.pdf
+└── 4_Produkte_Medizinprodukte/
+    ├── 4.1_Medizinprodukte_Verbandmittel/
+    │   ├── Rhein-Wetzel_Medizinprodukte.pdf
+    │   └── Rhein-Wetzel_Praeparatebeispiele.pdf
+    ├── 4.2_Koerperpflege/
+    │   └── Otto-Trgo_Koerperpflege.pdf
+    └── 4.3_Ernaehrung_Spezialprodukte/
+        ├── Ziegelmeier_Ernaehrungsberatung.pdf
+        └── Lawrowska_EEPE_Zyto.pdf

@@ -1,0 +1,22 @@
+# Modelling dependencies. Not needed to run the app, the foundation tests, or
+# the parity harness — diatwin.data, diatwin.core and diatwin.sim are stdlib
+# only, deliberately, so CI can gate every commit cheaply.
+#
+#     pip install -r requirements-ml.txt
+#
+numpy==2.2.1
+pandas==2.2.3
+scikit-learn==1.6.1
+pyarrow==18.1.0          # parquet, for the feature store
+matplotlib==3.10.0       # error grids and diagnostics
+
+# Gradient boosting — the right first model for tabular BG prediction.
+lightgbm==4.5.0
+
+# Experiment tracking. Local file backend by default; no server required.
+mlflow==2.19.0
+
+# --- RL step (install when you get there) --------------------------------
+# gymnasium==1.0.0
+# stable-baselines3==2.4.1
+# d3rlpy==2.6.2          # offline RL (CQL/IQL) — train from logged data first

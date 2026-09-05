@@ -1,0 +1,42 @@
+Synthesized digital twin updates with established diabetes models
+Great — I've read all three files. Here's a clear breakdown of what these updates represent and how they map to the underlying diabetes physiology literature.
+
+What the Update Does
+This is a major upgrade to the exercise modeling layer of your digital twin, replacing a previous categorical Gaussian model with a physiologically grounded Y/Z/W ODE system. The patch file (cumulative_effects_routes_patch.py) integrates this into the backend's cumulative effects calculation pipeline.
+
+Alignment to the Referenced Models
+Dalla Man, Breton & Cobelli (2009) — the core ODE
+The canonical reference is the Dalla Man glucose-insulin model (J Diabetes Sci Technol 2009), which introduced the distinction between:
+
+IIRd — insulin-independent glucose rate of disappearance during exercise (muscles consuming glucose via GLUT4 without needing insulin)
+IDRd — insulin-dependent glucose disappearance, which is amplified post-exercise via GLUT4 upregulation
+Your Y/Z/W ODE maps directly to this:
+
+Model Variable	Physiological Role	Time Constant
+Y	Filtered HR above baseline — proxy for energy expenditure / muscle activation	τ_HR = 5 min
+Z	Acute IIRd signal — insulin-independent glucose uptake during contraction	τ_Z = 10 min (fast decay post-exercise)
+W	Cumulative load ∫Y dt — drives post-exercise GLUT4 upregulation	τ_W = 90 min (slow decay)
+The bimodal output is the key design insight: Z drives the immediate BG drop (cumulative_activity_effect, negative mg/dL), while W drives the prolonged sensitivity_multiplier on ISF and carb ratio, which is exactly how Dalla Man 2009 separates acute from delayed exercise effects.
+
+Breton (2008) — HR as the exercise input signal
+Breton's paper (J Diabetes Sci Technol 2008) established that heart rate is the most practical real-world proxy for exercise intensity in closed-loop / artificial pancreas systems, since it's continuously available from wearables and avoids the need for direct VO₂ measurement. Your model directly implements this by:
+
+Accepting a wearable hr_trace (Garmin / Fitbit / Apple Watch) as priority input
+Falling back to a synthetic HR trace built from categorical intensity (light/moderate/vigorous) when no wearable data is present — preserving backward compatibility
+Romeres et al. (2021) — parameter refinement
+The Romeres paper refined the ODE parameters for free-living conditions (vs. controlled lab settings). Your constants (alpha = 0.0008, max_sensitivity_boost = 0.60, acute_rate_per_min = 0.15) reflect this calibration for real-world use.
+
+How It Integrates Into Your Digital Twin
+The patch adds a third term to cumulative_net_baseline:
+
+cumulative_net_baseline = meal_effect + insulin_effect + activity_effect
+Previously only meals and insulin were modeled. Activity was either ignored or handled coarsely. Now:
+
+Acute drop (Z-driven): computed session-by-session, summed, and subtracted from the baseline BG estimate in real time
+Sensitivity shift (W-driven): correction_factor is multiplied and carb_to_bg_ratio is divided by the multiplier, so any pending IOB/MOB projections in get_active_effects_full() are computed with activity-adjusted constants
+Activity on Board (AOB): analogous to IOB — quantifies remaining acute BG-lowering effect still to be delivered, useful for hypoglycemia prediction
+Key Design Decisions Worth Noting
+Sedentary levels (≤ −1) are excluded from BG-lowering effects. Their impact on insulin need is handled separately via activity_coefficients in patient constants — this is physiologically correct (being sedentary doesn't acutely lower BG the same way exercise does).
+8-hour cutoff on W: beyond 8 hours post-exercise, W has decayed to <1% of peak (5× τ_W), so sensitivity returns to baseline. This bounds the late hypoglycemia risk window.
+Weight scaling ((70 / weight_kg)^0.25): a standard allometric correction — heavier patients experience a smaller per-kg glucose drop for the same absolute workload.
+In short, this is a well-grounded upgrade: the math mirrors published closed-loop insulin delivery research, the HR-priority / categorical-fallback design is practical for real-world deployment, and the integration into cumulative_net_baseline cleanly extends your existing model without breaking it. Would you like help drafting documentation, writing tests, or visualizing the ODE dynamics?

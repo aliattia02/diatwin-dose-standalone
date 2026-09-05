@@ -1,0 +1,66 @@
+Overall verdict
+The plan is correct and the constraint of "zero breaking changes" is achievable. The gap you've identified is real: activitySensitivityMultiplier makes it all the way into the return object of calculateNetEffectAtTime (stored as activitySensitivityMultiplier) but is never multiplied into insulinImpact or its cumulative counterpart. Everything downstream just reads the un-boosted values.
+
+Refinements per phase
+Phase 1 — netEffectCalculationService.js
+Your split logic is right, but there are two subtleties worth nailing upfront:
+1a. What insulinImpact should represent in the return value.
+The cleanest contract for the rest of the codebase is: insulinImpact = the total boosted value (base × multiplier). That way netEffect = mealImpact + insulinImpact automatically accounts for the boost, and cumulativeNetBaseline stays accurate without any callers needing to know about the split. The split fields (insulinImpactBase, insulinSensitivityBoost) are additive, not replacements.
+js// Inside calculateNetEffectAtTime, after insulinImpact is computed:
+const insulinImpactBase  = insulinImpact;                                  // base, no exercise
+const insulinImpactBoosted = insulinImpactBase * activitySensitivityMultiplier;  // total
+const insulinSensitivityBoost = insulinImpactBoosted - insulinImpactBase;  // extra drop (also negative)
+
+// Replace the returned insulinImpact with the boosted total:
+// return { ..., insulinImpact: insulinImpactBoosted, insulinImpactBase, insulinSensitivityBoost }
+This means netEffect = mealImpact + insulinImpactBoosted which is the correct physiology — more exercise → ISF goes up → same absorbed insulin drops BG more.
+1b. pendingInsulinReduction also needs the multiplier. This field is totalActiveInsulin * correctionFactor and it feeds the projected BG calculations in calculateProjectedFinalBG. If IOB will clear at boosted ISF, ignoring this understates predicted hypo risk — particularly in the 1–3 h post-vigorous window where AOB and IOB overlap. Suggest adding pendingInsulinReductionBoosted = pendingInsulinReduction * activitySensitivityMultiplier and using the boosted value in projections.
+1c. cumulativeInsulinEffect split. Your plan mentions this but the implementation needs care. Since calculateNetEffectAtTime is called per-tick and the multiplier is already available as activitySensitivityMultiplier at that tick, the simplest correct approach is:
+jsconst cumulativeInsulinEffectBase    = cumulativeInsulinEffect;           // existing
+const cumulativeInsulinEffectBoosted = cumulativeInsulinEffectBase * activitySensitivityMultiplier;
+// Update cumulativeNetBaseline to use the boosted value
+const cumulativeNetBaseline = cumulativeMealEffect + cumulativeInsulinEffectBoosted + cumulativeActivityEffect;
+No double-counting risk: cumulativeActivityEffect is the direct BG drop from exercise (via IIRd/W-window PD model). The sensitivity boost is the indirect amplification of existing insulin — these are physiologically separate and should both be in the balance.
+
+Phase 2 — generateChartData in EffectsVisualization.js
+The mapping is straightforward since netEffectData now carries the new fields. One thing to watch: insulinImpact on the chart data point is currently computed as -Math.abs(netEffectData.insulinImpact || 0) (line 552). If Phase 1 makes insulinImpact the boosted total, this line stays identical — the Math.abs wrapping is just a defensive pattern against sign flips and remains correct.
+Add these to the timeline point object:
+jsinsulinImpactBase:         netEffectData.insulinImpactBase || 0,         // for purple area
+insulinSensitivityBoost:   netEffectData.insulinSensitivityBoost || 0,   // for rose area (negative)
+insulinSensitivityBoostAbs: Math.abs(netEffectData.insulinSensitivityBoost || 0), // for tooltip
+activitySensitivityMultiplier: ad.sensitivityMult,                       // for tooltip "×1.28"
+
+Phase 3 — Recharts <Area> stacking
+Recharts stackId with two negative-value series stacks them additively in the negative direction, which is exactly what you want. The purple area fills from 0 → insulinImpactBase, the rose area extends the fill from there to insulinImpact (total). The combined visual footprint equals the full boosted effect.
+jsx<Area
+  dataKey="insulinImpactBase"
+  stackId="insulin"
+  fill="#9c27b0"   // existing purple
+  stroke="#9c27b0"
+  name="Insulin (base)"
+  connectNulls
+/>
+<Area
+  dataKey="insulinSensitivityBoost"
+  stackId="insulin"
+  fill="#E91E8C"   // rose/magenta as planned
+  stroke="#E91E8C"
+  name="Sensitivity boost"
+  fillOpacity={0.7}
+  connectNulls
+/>
+One practical concern: when sensitivityMultiplier === 1.0 (no active exercise effect), insulinSensitivityBoost === 0. Recharts handles zero-valued stacked areas cleanly, so no null/conditional rendering is needed — the rose area simply disappears.
+
+Phase 4 — Tooltip
+Your breakdown format is exactly right. One small addition worth including: surface the source session that's driving the multiplier, not just the multiplier value itself. activityContributions (already in each chart data point) contains the per-session breakdown sorted by contribution. Take the first entry:
+jsxconst topSession = data.activityContributions?.[0];
+// → "×1.28 from 45 min vigorous, 2 h ago"
+// → source: topSession.intensity, topSession.duration_minutes, topSession.hours_since
+This uses data already fetched — no new API call needed.
+
+One suggested Phase 0 (before Phase 1)
+Add an integration test fixture before touching any logic. Create a snapshot of calculateNetEffectAtTime({ ..., activityPD: { sensitivity_multiplier: 1.3, ... } }) with a known insulin dose, and assert that insulinImpact === base × 1.3 and insulinSensitivityBoost === base × 0.3. This protects against silent regressions when future refactors touch the multiplier path — the current code has a latent bug that's invisible precisely because the multiplier was never applied.
+
+Summary of additions to your plan
+PhaseYour planSuggested addition1Apply multiplier to insulinImpact, split base/boostAlso boost pendingInsulinReduction; make insulinImpact the boosted total in the return contract1Split cumulativeInsulinEffectUse per-tick multiplier already in scope; no architectural change needed2Map insulinSensitivityBoost per tickAlso map activitySensitivityMultiplier for tooltip Phase 43Rose <Area> with stackIdConfirm zero-value behavior (multiplier=1.0) — no conditional render needed4Base/Boost/Total in tooltipAdd source session label from activityContributions[0]0 (new)—Snapshot test fixture before Phase 1
+The phases are in the right order. Phase 1 is the only one that touches calculation logic — everything else is additive display work on top of it.

@@ -1,0 +1,732 @@
+from typing import Dict, Any
+from constants import Constants
+
+# Initialize constants for use throughout the module
+base_constants = Constants()
+# Standardized Food Database
+# Full Food Database with corrected units
+FOOD_DATABASE = {
+    "rice": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 200,
+            "w_unit": "g"
+        },
+        "carbs": 44.0,
+        "protein": 5.0,
+        "fat": 0.4,
+        "fiber": 0.6,
+        "absorption_type": "fast",
+        "gi_index": 73,
+        "description": "Cooked white rice"
+    },
+    "egyptian_rice": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 200,
+            "w_unit": "g"
+        },
+        "carbs": 43.0,
+        "protein": 4.5,
+        "fat": 2.5,
+        "fiber": 0.8,
+        "absorption_type": "fast",
+        "gi_index": 72,
+        "description": "Egyptian-style short grain white rice cooked with oil or butter"
+    }
+}
+
+STARCH_LIST = {
+    "white_bread": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 50,
+            "w_unit": "g"
+        },
+        "carbs": 26.0,
+        "protein": 4.0,
+        "fat": 2.0,
+        "fiber": 1.2,
+        "absorption_type": "fast",
+        "gi_index": 75,
+        "description": "White bread slices"
+    },
+    "egyptian_whole_wheat_flatbread": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 80,
+            "w_unit": "g"
+        },
+        "carbs": 38.0,
+        "protein": 7.0,
+        "fat": 1.5,
+        "fiber": 5.5,
+        "absorption_type": "medium",
+        "gi_index": 57,
+        "description": "Egyptian whole wheat flatbread (baladi bread)"
+    },
+    "egyptian_fino_roll": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 60,
+            "w_unit": "g"
+        },
+        "carbs": 32.0,
+        "protein": 5.0,
+        "fat": 2.0,
+        "fiber": 1.0,
+        "absorption_type": "fast",
+        "gi_index": 74,
+        "description": "Egyptian soft white fino roll"
+    }
+}
+
+STARCHY_VEGETABLES = {
+    "potato": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "cup",
+            "w_amount": 85,
+            "w_unit": "g"
+        },
+        "carbs": 17.0,
+        "protein": 2.0,
+        "fat": 0.1,
+        "fiber": 2.2,
+        "absorption_type": "medium",
+        "gi_index": 85,
+        "description": "Medium white potato"
+    }
+}
+
+PULSES = {
+    "yellow_split_lentils": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 240,
+            "w_unit": "g"
+        },
+        "carbs": 45.0,
+        "protein": 27.0,
+        "fat": 2.4,
+        "fiber": 15.0,
+        "absorption_type": "slow",
+        "gi_index": 25,
+        "description": "Cooked yellow split lentils"
+    },
+    "stewed_fava_beans": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 240,
+            "w_unit": "g"
+        },
+        "carbs": 34.0,
+        "protein": 13.0,
+        "fat": 5.0,
+        "fiber": 9.0,
+        "absorption_type": "slow",
+        "gi_index": 40,
+        "description": "Egyptian stewed fava beans with olive oil, lemon and cumin"
+    },
+    "red_lentil_soup": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 300,
+            "w_unit": "g"
+        },
+        "carbs": 28.0,
+        "protein": 12.0,
+        "fat": 3.0,
+        "fiber": 7.0,
+        "absorption_type": "slow",
+        "gi_index": 30,
+        "description": "Egyptian red lentil soup with cumin and lemon"
+    }
+}
+
+FRUITS = {
+    "apple": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "cup",
+            "w_amount": 150,
+            "w_unit": "g"
+        },
+        "carbs": 21.0,
+        "protein": 0.5,
+        "fat": 0.3,
+        "fiber": 3.6,
+        "absorption_type": "medium",
+        "gi_index": 36,
+        "description": "Medium apple with skin"
+    },
+    "egyptian_mango": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "cup",
+            "w_amount": 165,
+            "w_unit": "g"
+        },
+        "carbs": 25.0,
+        "protein": 1.4,
+        "fat": 0.6,
+        "fiber": 2.6,
+        "absorption_type": "medium",
+        "gi_index": 51,
+        "description": "Egyptian mango (popular summer fruit in Egypt)"
+    },
+    "guava": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "cup",
+            "w_amount": 165,
+            "w_unit": "g"
+        },
+        "carbs": 19.0,
+        "protein": 2.7,
+        "fat": 0.9,
+        "fiber": 8.9,
+        "absorption_type": "medium",
+        "gi_index": 31,
+        "description": "Fresh Egyptian guava"
+    }
+}
+
+MILK_AND_DAIRY = {
+    "indian_cottage_cheese": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "cup",
+            "w_amount": 85,
+            "w_unit": "g"
+        },
+        "carbs": 3.0,
+        "protein": 14.0,
+        "fat": 22.0,
+        "fiber": 0.0,
+        "absorption_type": "slow",
+        "gi_index": 0,
+        "description": "Indian cottage cheese"
+    },
+    "egyptian_white_cheese": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "cup",
+            "w_amount": 85,
+            "w_unit": "g"
+        },
+        "carbs": 2.0,
+        "protein": 13.0,
+        "fat": 18.0,
+        "fiber": 0.0,
+        "absorption_type": "slow",
+        "gi_index": 0,
+        "description": "Egyptian white brined cheese (similar to feta)"
+    },
+    "egyptian_buttermilk": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "cup",
+            "w_amount": 240,
+            "w_unit": "g"
+        },
+        "carbs": 11.0,
+        "protein": 8.0,
+        "fat": 4.0,
+        "fiber": 0.0,
+        "absorption_type": "slow",
+        "gi_index": 36,
+        "description": "Egyptian cultured buttermilk/drinking yogurt"
+    }
+}
+
+SWEETS_AND_DESSERTS = {
+    "sugar": {
+        "serving_size": {
+            "amount": 2,
+            "unit": "tablespoon",
+            "w_amount": 30,
+            "w_unit": "g"
+        },
+        "carbs": 25.2,
+        "protein": 0.0,
+        "fat": 0.0,
+        "fiber": 0.0,
+        "absorption_type": "very_fast",
+        "gi_index": 65,
+        "description": "White granulated sugar"
+    },
+    "semolina_cake": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 80,
+            "w_unit": "g"
+        },
+        "carbs": 48.0,
+        "protein": 5.0,
+        "fat": 10.0,
+        "fiber": 1.5,
+        "absorption_type": "fast",
+        "gi_index": 68,
+        "description": "Egyptian semolina cake soaked in sugar syrup"
+    },
+    "egyptian_bread_pudding": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 200,
+            "w_unit": "g"
+        },
+        "carbs": 55.0,
+        "protein": 7.0,
+        "fat": 18.0,
+        "fiber": 1.5,
+        "absorption_type": "fast",
+        "gi_index": 65,
+        "description": "Egyptian bread pudding with nuts, coconut and cream"
+    },
+    "shredded_wheat_pastry": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 150,
+            "w_unit": "g"
+        },
+        "carbs": 60.0,
+        "protein": 9.0,
+        "fat": 16.0,
+        "fiber": 1.0,
+        "absorption_type": "fast",
+        "gi_index": 70,
+        "description": "Egyptian shredded wheat pastry filled with cheese or cream and soaked in syrup"
+    }
+}
+
+SNACKS = {
+    "veg_pizza": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 150,
+            "w_unit": "g"
+        },
+        "carbs": 70.0,
+        "protein": 16.0,
+        "fat": 20.0,
+        "fiber": 4.0,
+        "absorption_type": "medium",
+        "gi_index": 60,
+        "description": "6-inch vegetarian pizza"
+    },
+    "egyptian_falafel": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 100,
+            "w_unit": "g"
+        },
+        "carbs": 22.0,
+        "protein": 8.0,
+        "fat": 9.0,
+        "fiber": 4.5,
+        "absorption_type": "medium",
+        "gi_index": 40,
+        "description": "Egyptian falafel made from fava beans, herbs and spices"
+    },
+    "spiced_meat_stuffed_bread": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 200,
+            "w_unit": "g"
+        },
+        "carbs": 30.0,
+        "protein": 20.0,
+        "fat": 22.0,
+        "fiber": 2.0,
+        "absorption_type": "medium",
+        "gi_index": 52,
+        "description": "Egyptian spiced minced meat stuffed in bread and baked"
+    }
+}
+
+COMMON_SNACKS = {
+    "indian_crispy_snack_balls": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 120,
+            "w_unit": "g"
+        },
+        "carbs": 24.0,
+        "protein": 3.0,
+        "fat": 8.0,
+        "fiber": 1.5,
+        "absorption_type": "fast",
+        "gi_index": 70,
+        "description": "Indian street food snack with potato filling"
+    },
+    "fava_bean_sandwich": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 160,
+            "w_unit": "g"
+        },
+        "carbs": 42.0,
+        "protein": 11.0,
+        "fat": 6.0,
+        "fiber": 6.5,
+        "absorption_type": "medium",
+        "gi_index": 48,
+        "description": "Egyptian street food fava bean sandwich in baladi bread"
+    },
+    "egyptian_falafel_sandwich": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 150,
+            "w_unit": "g"
+        },
+        "carbs": 40.0,
+        "protein": 10.0,
+        "fat": 10.0,
+        "fiber": 5.0,
+        "absorption_type": "medium",
+        "gi_index": 45,
+        "description": "Egyptian falafel sandwich in baladi bread with tahini and salad"
+    },
+    "egyptian_flaky_pastry": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 120,
+            "w_unit": "g"
+        },
+        "carbs": 38.0,
+        "protein": 6.0,
+        "fat": 18.0,
+        "fiber": 1.0,
+        "absorption_type": "fast",
+        "gi_index": 65,
+        "description": "Egyptian flaky layered pastry eaten plain or with honey and cream"
+    }
+}
+
+HIGH_PROTEIN_FOODS = {
+    "beef_burger": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 300,
+            "w_unit": "g"
+        },
+        "carbs": 31.0,
+        "protein": 29.0,
+        "fat": 17.0,
+        "fiber": 1.4,
+        "absorption_type": "medium",
+        "gi_index": 55,
+        "description": "Beef burger with bun and vegetables"
+    },
+    "grilled_minced_meat_skewers": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 150,
+            "w_unit": "g"
+        },
+        "carbs": 6.0,
+        "protein": 22.0,
+        "fat": 16.0,
+        "fiber": 0.8,
+        "absorption_type": "slow",
+        "gi_index": 20,
+        "description": "Egyptian grilled minced meat skewers with herbs and spices"
+    },
+    "egyptian_stuffed_pigeon": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 300,
+            "w_unit": "g"
+        },
+        "carbs": 30.0,
+        "protein": 32.0,
+        "fat": 14.0,
+        "fiber": 2.0,
+        "absorption_type": "medium",
+        "gi_index": 45,
+        "description": "Egyptian stuffed pigeon with rice and herbs, a traditional delicacy"
+    }
+}
+
+HIGH_FAT_FOODS = {
+    "french_fries": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 300,
+            "w_unit": "g"
+        },
+        "carbs": 41.0,
+        "protein": 3.4,
+        "fat": 15.0,
+        "fiber": 3.8,
+        "absorption_type": "fast",
+        "gi_index": 75,
+        "description": "Medium portion"
+    },
+    "fried_eggplant": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 150,
+            "w_unit": "g"
+        },
+        "carbs": 14.0,
+        "protein": 2.0,
+        "fat": 14.0,
+        "fiber": 4.5,
+        "absorption_type": "medium",
+        "gi_index": 35,
+        "description": "Egyptian deep-fried eggplant slices, common side dish"
+    }
+}
+
+INDIAN_DISHES = {
+    "spicy_chickpea_curry_with_fried_bread": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 300,
+            "w_unit": "g"
+        },
+        "carbs": 65.0,
+        "protein": 15.0,
+        "fat": 22.0,
+        "fiber": 12.0,
+        "absorption_type": "medium",
+        "gi_index": 45,
+        "description": "Spicy chickpea curry with fried bread",
+        "components": {
+            "chickpea_curry": {
+                "carbs": 30,
+                "serving": "bowl",
+                "w_amount": 200,
+                "w_unit": "g"
+            },
+            "fried_bread": {
+                "carbs": 35,
+                "serving": "v_plate",
+                "w_amount": 100,
+                "w_unit": "g"
+            }
+        }
+    }
+}
+
+CHINESE_DISHES = {
+    "fried_rice": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 250,
+            "w_unit": "g"
+        },
+        "carbs": 45.0,
+        "protein": 6.0,
+        "fat": 12.0,
+        "fiber": 2.5,
+        "absorption_type": "medium",
+        "gi_index": 65,
+        "description": "Stir-fried rice with vegetables"
+    }
+}
+
+ITALIAN_DISHES = {
+    "lasagna": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 250,
+            "w_unit": "g"
+        },
+        "carbs": 35.0,
+        "protein": 18.0,
+        "fat": 14.0,
+        "fiber": 2.8,
+        "absorption_type": "medium",
+        "gi_index": 55,
+        "description": "Layered pasta with meat sauce and cheese"
+    }
+}
+
+EGYPTIAN_DISHES = {
+    "egyptian_rice_lentil_pasta": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 350,
+            "w_unit": "g"
+        },
+        "carbs": 75.0,
+        "protein": 14.0,
+        "fat": 5.0,
+        "fiber": 8.0,
+        "absorption_type": "medium",
+        "gi_index": 55,
+        "description": "Egypt's national dish of rice, lentils, macaroni, chickpeas and tomato sauce",
+        "components": {
+            "rice_lentils": {
+                "carbs": 40,
+                "serving": "bowl",
+                "w_amount": 150,
+                "w_unit": "g"
+            },
+            "macaroni": {
+                "carbs": 20,
+                "serving": "bowl",
+                "w_amount": 80,
+                "w_unit": "g"
+            },
+            "tomato_sauce": {
+                "carbs": 10,
+                "serving": "bowl",
+                "w_amount": 80,
+                "w_unit": "g"
+            },
+            "crispy_onions": {
+                "carbs": 5,
+                "serving": "tablespoon",
+                "w_amount": 20,
+                "w_unit": "g"
+            }
+        }
+    },
+    "jute_leaf_stew": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "bowl",
+            "w_amount": 250,
+            "w_unit": "g"
+        },
+        "carbs": 10.0,
+        "protein": 12.0,
+        "fat": 6.0,
+        "fiber": 4.0,
+        "absorption_type": "slow",
+        "gi_index": 25,
+        "description": "Egyptian jute leaf stew cooked with garlic and coriander, served with chicken or rabbit"
+    },
+    "egyptian_stuffed_vegetables": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 300,
+            "w_unit": "g"
+        },
+        "carbs": 48.0,
+        "protein": 8.0,
+        "fat": 6.0,
+        "fiber": 5.0,
+        "absorption_type": "medium",
+        "gi_index": 50,
+        "description": "Egyptian stuffed vegetables (peppers, zucchini, grape leaves) with herbed rice"
+    },
+    "egyptian_pasta_bechamel": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 300,
+            "w_unit": "g"
+        },
+        "carbs": 45.0,
+        "protein": 18.0,
+        "fat": 16.0,
+        "fiber": 2.0,
+        "absorption_type": "medium",
+        "gi_index": 55,
+        "description": "Egyptian baked pasta with spiced ground meat and béchamel sauce"
+    },
+    "egyptian_rice_bread_lamb_stew": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 350,
+            "w_unit": "g"
+        },
+        "carbs": 52.0,
+        "protein": 20.0,
+        "fat": 14.0,
+        "fiber": 2.5,
+        "absorption_type": "medium",
+        "gi_index": 58,
+        "description": "Egyptian festive dish of rice, toasted bread and lamb in tomato-garlic broth"
+    },
+    "beef_shawarma": {
+        "serving_size": {
+            "amount": 1,
+            "unit": "v_plate",
+            "w_amount": 250,
+            "w_unit": "g"
+        },
+        "carbs": 35.0,
+        "protein": 25.0,
+        "fat": 18.0,
+        "fiber": 2.0,
+        "absorption_type": "medium",
+        "gi_index": 50,
+        "description": "Egyptian beef shawarma wrap with tahini and pickles"
+    }
+}
+
+# Food categories mapping
+FOOD_CATEGORIES = {
+    'basic': FOOD_DATABASE,
+    'starch': STARCH_LIST,
+    'starchy_vegetables': STARCHY_VEGETABLES,
+    'pulses': PULSES,
+    'fruits': FRUITS,
+    'dairy': MILK_AND_DAIRY,
+    'sweets': SWEETS_AND_DESSERTS,
+    'snacks': SNACKS,
+    'common_snacks': COMMON_SNACKS,
+    'high_protein': HIGH_PROTEIN_FOODS,
+    'high_fat': HIGH_FAT_FOODS,
+    'indian': INDIAN_DISHES,
+    'chinese': CHINESE_DISHES,
+    'italian': ITALIAN_DISHES,
+    'egyptian': EGYPTIAN_DISHES
+}
+
+
+def validate_food_measurements(food_data: Dict[str, Any]) -> bool:
+    """
+    Validate that food measurements use supported units from Constants
+    """
+    constants = Constants()
+    supported_measurements = constants.get_supported_measurements()
+
+    serving_size = food_data.get('serving_size', {})
+    unit = serving_size.get('unit')
+    w_unit = serving_size.get('w_unit')
+
+    # Check if primary unit is supported
+    if unit not in supported_measurements['volume'] and unit not in supported_measurements['weight']:
+        return False
+
+    # Check if weight unit is supported
+    if w_unit and w_unit not in supported_measurements['weight']:
+        return False
+
+    return True

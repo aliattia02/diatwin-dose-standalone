@@ -1,0 +1,69 @@
+# ── node_modules (everywhere) ─────────────────────────────────────────────────
+node_modules/
+node_modules/**
+**/node_modules/
+**/node_modules/**
+
+# ── Backend — not needed by EAS ───────────────────────────────────────────────
+backend/
+backend/**
+
+# ── React web frontend — not needed by EAS ────────────────────────────────────
+frontend/
+frontend/**
+
+# ── Scripts / tooling ─────────────────────────────────────────────────────────
+scripts/
+scripts/**
+
+# ── Security reports / internal docs ─────────────────────────────────────────
+security-reports/
+security-reports/**
+
+# ── Android build artefacts ───────────────────────────────────────────────────
+mobile/android/app/build/
+mobile/android/app/build/**
+mobile/android/.gradle/
+mobile/android/.gradle/**
+mobile/android/.cxx/
+mobile/android/.cxx/**
+mobile/android/app/release/
+
+# ── Expo / Metro cache ────────────────────────────────────────────────────────
+mobile/.expo/
+mobile/.expo/**
+mobile/.metro-cache/
+
+# ── IDE / OS ──────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ── Windows shortcuts ─────────────────────────────────────────────────────────
+*.lnk
+
+# ── Env / secrets ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+backend/old.env
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+**/Dockerfile
+**/.dockerignore
+
+# ── Dev / internal docs ───────────────────────────────────────────────────────
+*.md
+!README.md
+*.txt
+*.pdf
+tree_gen.py
+mobile_str.py
+create_structure.py
+structure.txt
+IMPLEMENTATION_SUMMARY.md
+PHARMACODYNAMICS_ALIGNMENT_SUMMARY.md
+PHASE1_IMPLEMENTATION_SUMMARY.md

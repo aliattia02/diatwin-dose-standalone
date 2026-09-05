@@ -1,0 +1,52 @@
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── Charts/
+│   │   │   │   ├── dashboard-components.css
+│   │   │   │   │   # Dashboard & Data Management Styling (6 components + 2 additional)
+│   │   │   │   │   # Prefixes: dash-doctor-*, dash-patient-*, dash-import-*, 
+│   │   │   │   │   #           dash-history-*, dash-med-*, dash-constants-*,
+│   │   │   │   │   #           dash-food-*, dash-pc-*
+│   │   │   │   │   # Components:
+│   │   │   │   │   #   • DoctorDashboard.js - Doctor's patient management interface
+│   │   │   │   │   #   • PatientDashboard.js - Patient's main dashboard layout
+│   │   │   │   │   #   • ImportExport.js - Data import/export with user banner
+│   │   │   │   │   #   • MealHistory.js - Meal and activity records table with filtering
+│   │   │   │   │   #   • MedicationSchedule.js - Medication scheduling with effects
+│   │   │   │   │   #   • EnhancedPatientConstantsUI.js - Treatment constants management
+│   │   │   │   │   #   • FoodDatabase.js - Food search, custom foods, favorites
+│   │   │   │   │   #   • PatientConstants.js - Patient view of treatment constants
+│   │   │   │   │
+│   │   │   │   ├── global-visualization.css
+│   │   │   │   │   # Chart & Visualization Styling (7+ components)
+│   │   │   │   │   # For all data visualization and chart components
+│   │   │   │   │   # Components:
+│   │   │   │   │   #   • BloodSugarChart.js - Blood glucose line charts
+│   │   │   │   │   #   • BloodSugarVisualization.js - Glucose data visualization
+│   │   │   │   │   #   • InsulinVisualization.js - Insulin dosage charts
+│   │   │   │   │   #   • ActivityVisualization.js - Physical activity charts
+│   │   │   │   │   #   • CombinedGlucoseInsulinChart.js - Combined glucose/insulin view
+│   │   │   │   │   #   • GlycemicResponseTracker.js - Meal glycemic response tracking
+│   │   │   │   │   #   • MealVisualization.js - Meal analytics and trends
+│   │   │   │   │   #   • (Any other chart/graph components)
+│   │   │   │   │
+│   │   │   │   ├── input-components.css
+│   │   │   │   │   # Form Input & Data Entry Styling (6 components)
+│   │   │   │   │   # Prefixes: meal-*, food-*, bs-input-*, insulin-input-*, 
+│   │   │   │   │   #           activity-*, time-input-*
+│   │   │   │   │   # Components:
+│   │   │   │   │   #   • MealInput.js - Meal entry form with food selection
+│   │   │   │   │   #   • FoodSection.js - Food item selection and portion control
+│   │   │   │   │   #   • BloodSugarInput.js - Blood glucose measurement entry
+│   │   │   │   │   #   • InsulinInput.js - Insulin dosage recording
+│   │   │   │   │   #   • ActivityRecording.js - Physical activity logging
+│   │   │   │   │   #   • TimeInput.js - Reusable time/date picker component
+│   │   │   │   │
+│   │   │   │   └── portal-styling.css
+│   │   │   │       # Authentication & Portal Pages Styling (4+ components)
+│   │   │   │       # For user authentication and portal entry pages
+│   │   │   │       # Components:
+│   │   │   │       #   • Login.js - User login page
+│   │   │   │       #   • Register.js - New user registration
+│   │   │   │       #   • ForgotPassword.js - Password recovery request
+│   │   │   │       #   • ResetPassword.js - Password reset with token
+│   │   │   │       #   • (Any other auth/portal pages)
