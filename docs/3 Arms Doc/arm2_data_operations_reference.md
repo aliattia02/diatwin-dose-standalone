@@ -250,7 +250,7 @@ post_tail_window    =  40.0   min   (4 × tau_Z)
 | `calculate_gamma_absorption(hours, profile)` | `→ float` | Returns activity % (0–100); uses gamma distribution |
 | `calculate_meal_activity_percentage(hours, meal_profile, absorption_profiles)` | `→ float` | Resolves absorption type then delegates to `calculate_gamma_absorption` |
 | `get_meal_absorption_profile(meal, patient_constants, absorption_profiles)` | `→ dict` | Resolves type from `calculation_summary` → `nutrition` → `'medium'`; applies patient `absorption_modifiers` |
-| `calculate_absorbed_fraction(hours, profile, absorption_profiles)` | `→ float` (0–1) | 100-step trapezoidal integration; returns 1.0 after duration |
+| `calculate_absorbed_fraction(hours, profile, absorption_profiles)` | `→ float` (0–1) | 100-step **left-Riemann** sum, normalised by the same sum over the full duration; returns 1.0 after duration. This entry said "trapezoidal" until 2026-09-05; it never was, and `frontend/src/utils/mealPharmacodynamics.js` had implemented a trapezoid to match the description (D16). |
 | `calculate_meal_active_carbs(meal, current_time, patient_constants, absorption_profiles)` | `→ dict` | Full T1D model: `active_carbs`, `absorbed_carbs`, `current_bg_elevation`, `pending_bg_rise` |
 | `calculate_meal_total_carbs_for_window(meal, current_time, patient_constants, absorption_profiles)` | `→ dict` | Returns total carbs regardless of absorption state; used by MOB comparison panel |
 

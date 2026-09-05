@@ -7,6 +7,7 @@ import logging
 from datetime import timezone, timedelta
 from dotenv import load_dotenv
 import os
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -71,7 +72,54 @@ ALLOWED_ORIGINS = [
     "https://dia-twin.vercel.app",
     "https://diatwin.vercel.app",
     "https://diatwin-khgy6tusc-aliattia2de-6489s-projects.vercel.app",
+    "https://diatwin-ten.vercel.app",
+    "https://diatwin.clidatech.com",
 ]
+
+# Additional origins, comma-separated, without a code change:
+#
+#     CORS_EXTRA_ORIGINS=https://foo.vercel.app,https://app.example.com
+#
+# A hostname is not a secret, so this is a convenience rather than a place to
+# hide anything. It exists because every new deployment URL previously cost a
+# commit, a push and a redeploy of the backend.
+ALLOWED_ORIGINS += [
+    origin.strip().rstrip("/")
+    for origin in os.environ.get("CORS_EXTRA_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+# Vercel gives every preview deployment its own hostname
+# (diatwin-<hash>-clidatech.vercel.app), so no fixed list can keep up and
+# testing a branch would otherwise mean editing this file.
+#
+# Scoped to the team slug on purpose. A blanket `.*\.vercel\.app` would let
+# *anyone's* Vercel project call this API with credentials, which is a real
+# hole rather than a theoretical one: the browser sends cookies and the
+# Authorization header on requests it believes are permitted.
+ALLOWED_ORIGIN_PATTERNS = [
+    re.compile(r"^https://[a-z0-9-]+-clidatech\.vercel\.app$"),
+    re.compile(r"^https://[a-z0-9-]+-aliattia2de-6489s-projects\.vercel\.app$"),
+]
+
+
+def is_origin_allowed(origin):
+    """
+    One definition of "this origin may call us".
+
+    Both the preflight handler and the response handler use this. They used to
+    disagree — the preflight echoed back whatever ``Origin`` it was sent while
+    the response checked a list — so a blocked origin got a successful
+    preflight and then a response the browser threw away. The visible symptom
+    was an unexplained network error rather than a CORS message, which is a
+    slow thing to debug.
+    """
+    if not origin:
+        return False
+    origin = origin.rstrip("/")
+    if origin in ALLOWED_ORIGINS:
+        return True
+    return any(pattern.match(origin) for pattern in ALLOWED_ORIGIN_PATTERNS)
 
 
 def create_app_config(app):
@@ -99,7 +147,7 @@ def create_app_config(app):
     # CORS configuration
     CORS(app,
          resources={r"/*": {
-             "origins": ALLOWED_ORIGINS,
+             "origins": ALLOWED_ORIGINS + [p.pattern for p in ALLOWED_ORIGIN_PATTERNS],
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
              "allow_headers": [
                  "Content-Type",
@@ -120,7 +168,7 @@ def create_app_config(app):
     @app.after_request
     def after_request(response):
         origin = request.headers.get('Origin')
-        if origin in ALLOWED_ORIGINS:
+        if is_origin_allowed(origin):
             response.headers['Access-Control-Allow-Origin'] = origin
             response.headers['Access-Control-Allow-Credentials'] = 'true'
             response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'
@@ -132,7 +180,13 @@ def create_app_config(app):
     def handle_preflight():
         if request.method == "OPTIONS":
             response = jsonify({"status": "ok"})
-            origin = request.headers.get('Origin', 'http://localhost:3000')
+            origin = request.headers.get('Origin')
+            # Only echo an origin we actually permit. Echoing the caller's own
+            # Origin unconditionally — which this did — advertises every
+            # preflight as allowed, and the browser then blocks on the real
+            # response instead, with no CORS error to point at.
+            if not is_origin_allowed(origin):
+                return response, 200
             response.headers['Access-Control-Allow-Origin'] = origin
             response.headers['Access-Control-Allow-Credentials'] = 'true'
             response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS, PATCH'

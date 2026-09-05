@@ -1,24 +1,30 @@
 """
 Cross-language parity harness.
 
-The insulin, meal and activity models are implemented twice — once in Python
-under ``backend/utils/`` and once in TypeScript under ``mobile/utils/`` — on
-purpose, as independent implementations of the same mathematics. That is a
-recognised verification technique, but it only *is* verification if something
-actually compares the two. Otherwise it is just two chances to be wrong.
+The insulin, meal and activity models are implemented three times — in Python
+under ``backend/utils/``, in TypeScript under ``mobile/utils/``, and in
+JavaScript under ``frontend/src/utils/`` — on purpose, as independent
+implementations of the same mathematics. That is a recognised verification
+technique, but it only *is* verification if something actually compares them.
+Otherwise it is just three chances to be wrong.
 
 This module is that comparison.
 
     python -m diatwin.verify.parity generate    # write the shared case file
     python -m diatwin.verify.parity python      # evaluate the Python side
     cd mobile && npx jest __tests__/parity      # evaluate the TypeScript side
+    node diatwin/verify/frontend_eval.mjs       # evaluate the frontend side
     python -m diatwin.verify.parity compare     # assert agreement, exit 1 on drift
     python -m diatwin.verify.parity baseline    # re-record the known divergences
 
-Both sides read the *same* ``cases.json`` and write results keyed by case id,
-so neither implementation can influence the other's inputs. ``compare``
-returns a non-zero exit status on divergence, which is what makes it usable
-as a CI gate.
+Every side reads the *same* ``cases.json`` and writes results keyed by case id,
+so no implementation can influence another's inputs. ``compare`` returns a
+non-zero exit status on divergence, which is what makes it usable as a CI gate.
+
+All three pairs are compared rather than nominating one side as the reference.
+With two implementations a disagreement says only that they differ; with three,
+a case where two agree and one does not names the side that stands alone, and
+that is evidence about where an edit belongs.
 
 Case families
 -------------
@@ -66,7 +72,62 @@ FIXTURES = HERE / "fixtures"
 CASES_FILE = FIXTURES / "cases.json"
 PY_RESULTS = FIXTURES / "results_python.json"
 TS_RESULTS = FIXTURES / "results_typescript.json"
+FE_RESULTS = FIXTURES / "results_frontend.json"
 BASELINE = FIXTURES / "baseline_divergences.json"
+
+#: The three independent implementations. Order matters only for display.
+SIDE_NAMES = ("python", "typescript", "frontend")
+
+
+def sides() -> Dict[str, Path]:
+    """
+    Where each side writes its results.
+
+    Resolved on every call rather than frozen at import, so a test can point
+    the harness at throwaway files by setting the module-level paths. A dict
+    built once at import would capture the originals and quietly ignore that.
+    """
+    return {"python": PY_RESULTS, "typescript": TS_RESULTS, "frontend": FE_RESULTS}
+
+
+HOW_TO_RUN: Dict[str, str] = {
+    "python": "python -m diatwin.verify.parity python",
+    "typescript": "cd mobile && npx jest __tests__/parity",
+    "frontend": "node diatwin/verify/frontend_eval.mjs",
+}
+
+#: Every pair is compared. Comparing pairwise rather than against a nominated
+#: reference is the point: when one side stands alone, the pair table says
+#: which one, and that is evidence about where an edit belongs. A single
+#: "correct" side chosen in advance would assume the answer.
+PAIRS: List[tuple[str, str]] = [
+    ("python", "typescript"),
+    ("python", "frontend"),
+    ("typescript", "frontend"),
+]
+
+
+def pair_key(a: str, b: str) -> str:
+    """Stable name for a pair, used as the baseline file's key."""
+    return "|".join(sorted((a, b)))
+
+
+def _node() -> str:
+    """
+    The node executable, resolved through PATH.
+
+    ``shutil.which`` rather than a bare ``"node"`` because on Windows the
+    launcher is ``node.exe`` and ``subprocess.run`` without a shell will not
+    find it by the bare name in every environment.
+    """
+    import shutil
+    found = shutil.which("node")
+    if found is None:
+        raise SystemExit(
+            "node is not on PATH — the frontend side of the harness needs it.\n"
+            "  the other two sides still run:  python -m diatwin.verify.parity python")
+    return found
+
 
 #: Absolute tolerance per quantity, in that quantity's own units.
 TOLERANCE: Dict[str, float] = {
@@ -428,20 +489,27 @@ def evaluate_python() -> Dict[str, float]:
 
 # ─── Comparison ──────────────────────────────────────────────────────────────
 
-def _divergences() -> tuple[Dict[str, float], List[str], List[str], List[str]]:
-    """
-    Compare the two result files without judging them.
+def load_results() -> Dict[str, Dict[str, float]]:
+    """Read every side's result file. Raises FileNotFoundError if one is absent."""
+    return {
+        side: json.loads(path.read_text(encoding="utf-8"))
+        for side, path in sides().items()
+    }
 
-    Returns (worst delta per family, diverging ids, python-only ids,
-    typescript-only ids). Splitting this out is what lets ``compare`` and
+
+def _diverge_pair(
+    left: Dict[str, float], right: Dict[str, float],
+) -> tuple[Dict[str, float], List[str], List[str], List[str]]:
+    """
+    Compare two result maps without judging them.
+
+    Returns (worst delta per family, diverging ids, left-only ids,
+    right-only ids). Splitting this out is what lets ``compare`` and
     ``baseline`` share exactly one definition of "these differ".
     """
-    py = json.loads(PY_RESULTS.read_text(encoding="utf-8"))
-    ts = json.loads(TS_RESULTS.read_text(encoding="utf-8"))
-
-    only_py = sorted(set(py) - set(ts))
-    only_ts = sorted(set(ts) - set(py))
-    shared = sorted(set(py) & set(ts))
+    only_left = sorted(set(left) - set(right))
+    only_right = sorted(set(right) - set(left))
+    shared = sorted(set(left) & set(right))
 
     worst: Dict[str, float] = {}
     diverging: List[str] = []
@@ -449,7 +517,7 @@ def _divergences() -> tuple[Dict[str, float], List[str], List[str], List[str]]:
     for case_id in shared:
         kind = case_id.split("::", 1)[0]
         tol = TOLERANCE.get(kind, 1e-6)
-        a, b = py[case_id], ts[case_id]
+        a, b = left[case_id], right[case_id]
         if math.isnan(a) or math.isnan(b):
             diverging.append(case_id)
             continue
@@ -459,14 +527,76 @@ def _divergences() -> tuple[Dict[str, float], List[str], List[str], List[str]]:
         if delta > tol:
             diverging.append(case_id)
 
-    return worst, diverging, only_py, only_ts
+    return worst, diverging, only_left, only_right
+
+
+def _divergences(
+    results: Dict[str, Dict[str, float]] | None = None,
+) -> Dict[str, tuple[Dict[str, float], List[str], List[str], List[str]]]:
+    """Every pair's comparison, keyed by :func:`pair_key`."""
+    if results is None:
+        results = load_results()
+    return {
+        pair_key(a, b): _diverge_pair(results[a], results[b])
+        for a, b in PAIRS
+    }
+
+
+def _odd_one_out(
+    results: Dict[str, Dict[str, float]], diverging: Dict[str, List[str]],
+) -> Dict[str, List[str]]:
+    """
+    For each case that diverges at all, name the side that stands alone.
+
+    A case where two sides agree and the third does not is a much stronger
+    signal than three-way disagreement: it says where the edit belongs. The
+    return maps a side name — or ``"three-way"`` — to the case ids.
+    """
+    touched = sorted({cid for ids in diverging.values() for cid in ids})
+    verdict: Dict[str, List[str]] = {}
+    for case_id in touched:
+        bad = [(a, b) for a, b in PAIRS if case_id in diverging[pair_key(a, b)]]
+        if len(bad) == 3:
+            label = "three-way"
+        elif len(bad) == 2:
+            # The side common to both failing pairs is the one standing alone.
+            label = next(iter(set(bad[0]) & set(bad[1])))
+        else:
+            # Exactly one pair outside tolerance while each of those two sides
+            # is within tolerance of the third. Not an outlier — a case sitting
+            # on the tolerance boundary, and worth seeing as its own class
+            # rather than being filed under a side.
+            label = "straddle"
+        verdict.setdefault(label, []).append(case_id)
+    return verdict
 
 
 def load_baseline() -> Dict[str, Any]:
-    """The recorded divergences, or an empty baseline if none has been written."""
+    """
+    The recorded divergences, or an empty baseline if none has been written.
+
+    Normalises both the two-sided and the three-sided file shapes onto
+    ``pairs``. Before the frontend became a side, the file held a flat
+    ``cases`` list that meant python-versus-typescript and could not mean
+    anything else; that list is still read as exactly that pair. The 205 it
+    records are evidence of a decision taken in Arm 5 §5.1, and rewriting the
+    file to a new shape would quietly restate that decision as something a
+    tool did (rule 15).
+    """
     if not BASELINE.exists():
-        return {"note": "no baseline recorded", "cases": []}
-    return json.loads(BASELINE.read_text(encoding="utf-8"))
+        raw: Dict[str, Any] = {"note": "no baseline recorded", "cases": []}
+    else:
+        raw = json.loads(BASELINE.read_text(encoding="utf-8"))
+
+    pairs: Dict[str, List[str]] = {pair_key(a, b): [] for a, b in PAIRS}
+    if "pairs" in raw:
+        for key, ids in raw["pairs"].items():
+            pairs[key] = list(ids)
+    else:
+        pairs[pair_key("python", "typescript")] = list(raw.get("cases", []))
+
+    raw["pairs"] = pairs
+    return raw
 
 
 def write_baseline() -> Dict[str, Any]:
@@ -475,19 +605,24 @@ def write_baseline() -> Dict[str, Any]:
 
     Run this only after a deliberate decision about the divergence — either it
     has been accepted (Arm 5 §5.1) or it has been fixed and the file should
-    shrink. Running it to silence a failing build defeats the harness.
+    shrink. Running it to silence a failing build defeats the harness
+    (rule 15).
     """
-    _, diverging, _, _ = _divergences()
+    per_pair = _divergences()
+    pairs = {key: sorted(entry[1]) for key, entry in per_pair.items()}
     payload = {
         "note": (
-            "Case ids known to diverge between the Python and TypeScript "
-            "implementations. compare() fails only on divergence NOT listed "
-            "here. See Arm 5 §5.1 for why these are accepted. Regenerate with "
+            "Case ids known to diverge, per pair of implementations. compare() "
+            "fails only on divergence NOT listed here. See Arm 5 §5.1 for why "
+            "the python|typescript entries are accepted. Regenerate with "
             "`python -m diatwin.verify.parity baseline` only after a deliberate "
             "decision, never to quiet a red build."
         ),
-        "count": len(diverging),
-        "cases": sorted(diverging),
+        "count": sum(len(v) for v in pairs.values()),
+        # Kept so a reader who knows only the two-sided shape still finds the
+        # python-versus-typescript list where it has always been.
+        "cases": pairs[pair_key("python", "typescript")],
+        "pairs": pairs,
     }
     BASELINE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return payload
@@ -495,80 +630,124 @@ def write_baseline() -> Dict[str, Any]:
 
 def compare(*, verbose: bool = False) -> int:
     """
-    Compare the two result files. Returns a process exit status.
+    Compare all three result files, pairwise. Returns a process exit status.
 
     Divergence already recorded in the baseline is reported but does not fail
     the build; anything else does. A baselined case that has started agreeing
     is reported as well, because it means the baseline can shrink.
 
-    Reports the worst divergence per family so a failure names the curve to
-    look at, rather than only the first case that happened to trip.
+    Reports the worst divergence per family *per pair*, so a failure names both
+    the curve to look at and the side that carries it. Where two sides agree
+    and one does not, the odd-one-out summary says which — that is the whole
+    reason for having a third implementation rather than a second.
     """
-    for path, side in ((PY_RESULTS, "python"), (TS_RESULTS, "typescript")):
-        if not path.exists():
-            print(f"missing {side} results: {path}", file=sys.stderr)
-            print(f"  run:  python -m diatwin.verify.parity {side}"
-                  if side == "python" else
-                  "  run:  cd mobile && npx jest __tests__/parity", file=sys.stderr)
-            return 2
+    where = sides()
+    missing = [side for side, path in where.items() if not path.exists()]
+    if missing:
+        for side in missing:
+            print(f"missing {side} results: {where[side]}", file=sys.stderr)
+            print(f"  run:  {HOW_TO_RUN[side]}", file=sys.stderr)
+        return 2
 
-    py = json.loads(PY_RESULTS.read_text(encoding="utf-8"))
-    ts = json.loads(TS_RESULTS.read_text(encoding="utf-8"))
-    worst, diverging, only_py, only_ts = _divergences()
+    results = load_results()
+    per_pair = _divergences(results)
+    baseline_pairs = load_baseline()["pairs"]
 
-    baselined = set(load_baseline()["cases"])
-    diverging_set = set(diverging)
-    new = sorted(diverging_set - baselined)
-    fixed = sorted(baselined - diverging_set)
-    expected = sorted(diverging_set & baselined)
+    common = set.intersection(*(set(r) for r in results.values()))
+    families = sorted({c.split("::", 1)[0] for c in common})
+    print(f"parity: {len(common)} cases shared by all {len(SIDE_NAMES)} implementations "
+          f"across {len(families)} families")
 
-    shared = len(set(py) & set(ts))
-    families = sorted({c.split("::", 1)[0] for c in set(py) & set(ts)})
-    print(f"parity: {shared} shared cases across {len(families)} families")
+    # Worst delta per family per pair. One row per family keeps the three
+    # columns side by side, which is what makes an outlier visible at a glance.
+    header = f"  {'family':10}" + "".join(f"{pair_key(a, b):>26}" for a, b in PAIRS)
+    print(f"\n{header}")
     for kind in families:
-        delta = worst.get(kind, 0.0)
         tol = TOLERANCE.get(kind, 1e-6)
-        flag = "" if delta <= tol else "   <-- outside tolerance"
-        print(f"  {kind:10} worst delta = {delta:.3e}  (tol {tol:.0e}){flag}")
+        row = f"  {kind:10}"
+        for a, b in PAIRS:
+            worst = per_pair[pair_key(a, b)][0].get(kind, 0.0)
+            mark = " " if worst <= tol else "!"
+            row += f"{worst:>25.3e}{mark}"
+        print(f"{row}   (tol {tol:.0e})")
+    print("  ! = outside tolerance for that pair")
 
-    print(f"\nbaseline: {len(baselined)} recorded, {len(expected)} still diverging, "
-          f"{len(fixed)} now agreeing, {len(new)} new")
-
-    if only_py or only_ts:
-        print(f"\ncase-set mismatch: {len(only_py)} python-only, {len(only_ts)} typescript-only")
-        for case_id in (only_py + only_ts)[:5]:
-            print(f"  {case_id}")
-        print("  both sides must evaluate the same generated case file")
+    # A family or case dropping out of one side would make that pair pass by
+    # comparing nothing, which is the one failure mode a pairwise comparison
+    # cannot detect on its own.
+    mismatched = False
+    for a, b in PAIRS:
+        _, _, only_a, only_b = per_pair[pair_key(a, b)]
+        if only_a or only_b:
+            mismatched = True
+            print(f"\ncase-set mismatch {a} vs {b}: "
+                  f"{len(only_a)} {a}-only, {len(only_b)} {b}-only")
+            for case_id in (only_a + only_b)[:5]:
+                print(f"  {case_id}")
+    if mismatched:
+        print("  every side must evaluate the same generated case file")
         return 1
 
-    if fixed:
-        print(f"\n{len(fixed)} baselined case(s) now agree — the baseline can shrink:")
-        for case_id in fixed[:10]:
-            print(f"  {case_id}")
-        if len(fixed) > 10:
-            print(f"  ... and {len(fixed) - 10} more")
-        print("  re-record with:  python -m diatwin.verify.parity baseline")
+    diverging = {key: entry[1] for key, entry in per_pair.items()}
 
-    if new:
-        print(f"\n{len(new)} NEW divergence(s), not in the baseline:")
-        for case_id in new[:20]:
-            a, b = py[case_id], ts[case_id]
-            print(f"  {case_id}\n      python={a!r}  typescript={b!r}  "
-                  f"delta={abs(a - b):.6g} > {TOLERANCE.get(case_id.split('::', 1)[0], 1e-6):g}")
-        if len(new) > 20:
-            print(f"  ... and {len(new) - 20} more")
+    status = 0
+    print()
+    for a, b in PAIRS:
+        key = pair_key(a, b)
+        baselined = set(baseline_pairs.get(key, []))
+        diverging_set = set(diverging[key])
+        new = sorted(diverging_set - baselined)
+        fixed = sorted(baselined - diverging_set)
+        expected = sorted(diverging_set & baselined)
+        print(f"{key:26} {len(diverging_set):5} diverging   "
+              f"{len(baselined):5} baselined   {len(fixed):5} now agreeing   "
+              f"{len(new):5} NEW")
+
+        if fixed:
+            print(f"  {len(fixed)} baselined case(s) now agree — the baseline can shrink:")
+            for case_id in fixed[:10]:
+                print(f"    {case_id}")
+            if len(fixed) > 10:
+                print(f"    ... and {len(fixed) - 10} more")
+            print("    re-record with:  python -m diatwin.verify.parity baseline")
+
+        if new:
+            status = 1
+            print(f"  {len(new)} NEW divergence(s), not in the baseline:")
+            for case_id in new[:20]:
+                x, y = results[a][case_id], results[b][case_id]
+                tol = TOLERANCE.get(case_id.split("::", 1)[0], 1e-6)
+                print(f"    {case_id}\n        {a}={x!r}  {b}={y!r}  "
+                      f"delta={abs(x - y):.6g} > {tol:g}")
+            if len(new) > 20:
+                print(f"    ... and {len(new) - 20} more")
+
+        if verbose and expected:
+            print(f"  baselined (not failing the build): {len(expected)}")
+            for case_id in expected[:20]:
+                print(f"    {case_id}")
+
+    verdict = _odd_one_out(results, diverging)
+    if verdict:
+        print("\nwhere the disagreement sits:")
+        for label in sorted(verdict, key=lambda k: -len(verdict[k])):
+            ids = verdict[label]
+            fams = sorted({c.split("::", 1)[0] for c in ids})
+            how = (f"{label} disagrees with the other two"
+                   if label in SIDE_NAMES else
+                   "all three disagree" if label == "three-way" else
+                   "one pair outside tolerance, each within it of the third")
+            print(f"  {len(ids):5}  {how:52} [{', '.join(fams)}]")
+
+    if status:
         return 1
 
-    if verbose and expected:
-        print(f"\nbaselined divergences (not failing the build):")
-        for case_id in expected[:20]:
-            print(f"  {case_id}")
-
-    if expected:
+    total_baselined = sum(len(v) for v in baseline_pairs.values())
+    if total_baselined:
         print(f"\nparity OK — no new divergence "
-              f"({len(expected)} baselined, see Arm 5 §5.1)")
+              f"({total_baselined} baselined, see Arm 5 §5.1)")
     else:
-        print("\nparity OK — both implementations agree within tolerance")
+        print("\nparity OK — all three implementations agree within tolerance")
     return 0
 
 
@@ -576,8 +755,9 @@ def compare(*, verbose: bool = False) -> int:
 
 def main(argv: List[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[1])
-    parser.add_argument("command",
-                        choices=["generate", "python", "compare", "baseline", "all"])
+    parser.add_argument(
+        "command",
+        choices=["generate", "python", "frontend", "compare", "baseline", "all"])
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
 
@@ -587,6 +767,15 @@ def main(argv: List[str] | None = None) -> int:
     if args.command in ("python", "all"):
         results = evaluate_python()
         print(f"evaluated {len(results)} cases (python) -> {PY_RESULTS}")
+    if args.command in ("frontend", "all"):
+        # The frontend modules are ES modules with no React in them, so Node
+        # runs them directly. Shelling out keeps that evaluator a peer of the
+        # jest one rather than something Python re-implements.
+        import subprocess
+        script = HERE / "frontend_eval.mjs"
+        proc = subprocess.run([_node(), str(script)], cwd=HERE.parents[1])
+        if proc.returncode:
+            return proc.returncode
     if args.command == "compare":
         return compare(verbose=args.verbose)
     if args.command == "baseline":

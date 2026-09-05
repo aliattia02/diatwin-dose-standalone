@@ -11,7 +11,14 @@
  * meal_on_board_routes.py to ensure consistency.
  * 
  * Author: Enhanced MOB System
- * Version: 2.0
+ * Version: 2.1
+ * Changes in 2.1:
+ *   - D16 fix: calculateAbsorbedFraction() integrates with a left-Riemann sum,
+ *     matching Python calculate_absorbed_fraction() and the mobile client. It
+ *     used the trapezoidal rule under a comment claiming it matched Python.
+ *     Found by the three-way parity harness. See the note on that function for
+ *     why the trapezoid was not kept despite being more accurate on four of
+ *     the six profiles.
  * ============================================================================
  */
 
@@ -80,9 +87,30 @@ export function calculateMealActivity(hoursSinceMeal, profile) {
 
 /**
  * Calculate absorbed fraction using numerical integration
- * 
- * Uses trapezoidal rule (matches Python implementation)
- * 
+ *
+ * Left-Riemann sum over 100 steps, matching Python
+ * `calculate_absorbed_fraction` and `mobile/utils/glucose/
+ * meal-pharmacodynamics.ts`.
+ *
+ * This used the trapezoidal rule until the parity harness gained a third side
+ * and found it (D16). The comment here claimed it matched Python; it did not,
+ * and the difference reached 3.9e-03 in absorbed fraction — 0.93 mg/dL on a
+ * 60 g meal, below display precision, which is why nobody saw it.
+ *
+ * The trapezoid is not simply better and was not kept for that reason.
+ * Measured against composite Simpson at 200,000 intervals it wins on four
+ * profiles (up to 13.9x on `medium`) and loses on `very_slow` and `mixed`.
+ * The reason is that the activity curve is not smooth: it has a jump of about
+ * 5 percentage points exactly at `onset_hours`, where the pre-onset ramp ends
+ * at 5 and the gamma density starts at 0 because t^(k-1) -> 0 for k > 1. A
+ * trapezoid assumes smoothness, so which rule wins depends on where that jump
+ * falls relative to the grid.
+ *
+ * Whether 100 left-Riemann steps is the right rule at all is a live question
+ * for all three implementations, not this one. Changing it moves every
+ * absorbed-carb number in the product and has to move on every side at once,
+ * or the harness reports the improvement as a regression.
+ *
  * @param {number} hoursSinceMeal - Hours since meal
  * @param {object} profile - Absorption profile
  * @returns {number} Fraction absorbed (0-1)
@@ -112,36 +140,22 @@ export function calculateAbsorbedFraction(hoursSinceMeal, profile) {
   const dt = hoursSinceMeal / steps;
   let integral = 0.0;
 
-  // Integrate from 0 to hoursSinceMeal
-  for (let i = 0; i <= steps; i++) {
+  // Integrate from 0 to hoursSinceMeal. Left-Riemann: i runs to steps - 1 and
+  // every sample carries the same weight.
+  for (let i = 0; i < steps; i++) {
     const t = i * dt;
-    const activity = calculateMealActivity(t, profile);
-    
-    // Trapezoidal rule: weight endpoints by 0.5
-    if (i === 0 || i === steps) {
-      integral += activity * 0.5;
-    } else {
-      integral += activity;
-    }
+    integral += calculateMealActivity(t, profile) * dt;
   }
-  integral *= dt;
 
-  // Calculate total area (0 to duration)
+  // Total area (0 to duration), on its own grid, for normalization.
   const total_steps = 100;
   const total_dt = profile.duration_hours / total_steps;
   let total_integral = 0.0;
 
-  for (let i = 0; i <= total_steps; i++) {
+  for (let i = 0; i < total_steps; i++) {
     const t = i * total_dt;
-    const activity = calculateMealActivity(t, profile);
-    
-    if (i === 0 || i === total_steps) {
-      total_integral += activity * 0.5;
-    } else {
-      total_integral += activity;
-    }
+    total_integral += calculateMealActivity(t, profile) * total_dt;
   }
-  total_integral *= total_dt;
 
   return total_integral > 0 ? integral / total_integral : 0.0;
 }

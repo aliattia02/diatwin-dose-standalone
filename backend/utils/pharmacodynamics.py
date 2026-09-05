@@ -5,7 +5,16 @@ Centralized calculation engine for:
 - Meal absorption (gamma distribution)
 - Insulin activity (gamma distribution + peakless models)
 - IOB (Insulin On Board) via trapezoidal integration
-- MOB (Meal On Board) / absorbed carbs via trapezoidal integration
+- MOB (Meal On Board) / absorbed carbs via a 100-step LEFT-RIEMANN sum
+
+Note the two integrals do not use the same rule. `calculate_iob` weights its
+endpoints by 0.5 (trapezoid); `calculate_absorbed_fraction` does not, and sums
+i in range(steps) rather than range(steps + 1). This line claimed both were
+trapezoidal until 2026-09-05, as did Arm 2 — and the web frontend had
+implemented a trapezoid for the absorbed fraction to match the description,
+which the three-way parity harness then found (D16). Whether either rule is
+the right one is open; changing one moves every absorbed-carb figure in the
+product and has to move on all three implementations at once.
 
 Used by: meal_routes.py, medication_routes.py, meal_insulin.py
 

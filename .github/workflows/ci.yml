@@ -43,11 +43,12 @@ jobs:
         run: pytest tests -q
 
   parity:
-    name: python/typescript model parity
+    name: three-way model parity
     runs-on: ubuntu-latest
-    # The two implementations of the insulin model are independent on
-    # purpose. This job is what turns that into verification: it fails the
-    # build when they stop agreeing.
+    # The three implementations of the models — Python, the mobile client and
+    # the web frontend — are independent on purpose. This job is what turns
+    # that into verification: it fails the build when any pair stops agreeing,
+    # and names the side that stands alone when two of three still do.
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -55,7 +56,9 @@ jobs:
           python-version: '3.12'
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # >= 22.15: the frontend parity evaluator needs module.registerHooks
+          # and ES module syntax detection for a typeless package.
+          node-version: '22'
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - name: Install python
@@ -73,6 +76,8 @@ jobs:
       - name: Evaluate typescript side
         working-directory: mobile
         run: npx jest __tests__/parity --ci
+      - name: Evaluate frontend side
+        run: node diatwin/verify/frontend_eval.mjs
       - name: Compare
         run: python -m diatwin.verify.parity compare
 
@@ -83,7 +88,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Kept in step with the parity job so both run the same runtime.
+          node-version: '22'
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - name: Install

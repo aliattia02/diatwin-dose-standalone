@@ -18,8 +18,12 @@ open defects, and links to everything else. Then:
   the older `native3` copy. Read this before assuming any file's history.
 - `docs/engineering/arm5_verification_and_modelling.md` — the verification
   reference. **§10 is the project's invariants. Read it before writing code.**
-- `docs/engineering/2026-09-05-mobile-calculation-coverage.md` — the most
-  recent session: what was measured, what was fixed, what was deliberately not.
+- `docs/engineering/2026-09-05-three-way-parity.md` — the most recent session:
+  the frontend joined the parity harness, the 205 divergences resolved
+  two-against-one, and D14–D16. Read this before the leads below; several are
+  partly answered in it.
+- `docs/engineering/2026-09-05-mobile-calculation-coverage.md` — the session
+  before that: what was measured, what was fixed, what was deliberately not.
 - `docs/3 Arms Doc/` — Arms 0–4, what the system *is*. Treat them as a
   statement of intent; `docs/engineering/arm-docs-audit.md` records where they
   are already known to be wrong.
@@ -30,12 +34,17 @@ even collect.
 
 ## Current state
 
+*This table goes stale. Verify it before trusting it — the run commands are at
+the bottom of this file, and a session has already been started against a
+handoff whose task was long finished.*
+
 | | |
 |---|---|
-| Tests | 656 — 280 backend, 317 mobile, 59 foundation. All green. |
-| Parity | 1,578 cases, 6 families. 205 baselined divergences, all insulin. `compare` exits 0. |
-| Mobile typecheck | 198 errors (194 application, 4 in a test file). Not a gate. |
-| Open defects | D9 (below), plus D2–D5 from the earlier session |
+| Tests | 662 — 280 backend, 317 mobile, 65 foundation. All green. |
+| Parity | **3 implementations**, 1,578 cases, 6 families, compared pairwise. 205 baselined on two pairs — the same 205, all insulin, all the mobile client against the other two. `python\|frontend` diverges nowhere. `compare` exits 0. |
+| Mobile typecheck | 197 errors. Not a gate. |
+| Open defects | D9 (below), plus D2–D5 from the earlier session. D14–D16 were found and fixed on 5 September. |
+| CI | Pushed. `master` is level with `origin/master`. |
 
 ## Standing decisions — do not re-litigate
 
@@ -93,6 +102,13 @@ findable answer — start here rather than surveying.
 
 ### 1. Make the parity harness three-way
 
+> **Done, 5 September 2026.** See
+> [`2026-09-05-three-way-parity.md`](./2026-09-05-three-way-parity.md). The
+> frontend agrees with Python on all 1,578 cases; the mobile client stands
+> alone on the 205. Leads 2 and 3 below are partly answered there too — what
+> remains of both is the onset discontinuity, which is a modelling decision.
+> Leads 4 and 5 are untouched.
+
 `frontend/src/utils/` holds the third independent implementation —
 `insulinPharmacodynamics.js` (991 lines), `mealPharmacodynamics.js` (682),
 `activityPharmacodynamics.js`. **The parity harness does not touch any of
@@ -134,9 +150,17 @@ gamma density's mode is at `(k−1)·θ`, always left of the normalisation point
 so normalising by the value at `peak_hours` pushes an interval above 100 and
 the clamp flattens it. 18–33 % of each absorption window is clamped.
 
-Is the normalisation wrong, or is `peak_hours` mis-named? Python and mobile
-agree, so parity will not catch it — this needs the mathematics. Check the
-frontend's meal curve too; it may differ.
+Is the normalisation wrong, or is `peak_hours` mis-named? All three
+implementations agree, so parity will not catch it — this needs the
+mathematics. The frontend was checked on 5 September and does **not** differ:
+`calculateMealActivity` is line-for-line the same algorithm as Python's
+`calculate_gamma_absorption`, and `meal_act` agrees to 2.8e-14 on every pair.
+
+Related and newly measured: the curve has a **jump discontinuity of ~5
+percentage points exactly at `onset_hours`** — the pre-onset ramp ends at 5 and
+the gamma density starts at 0 because `t^(k-1) → 0` for `k > 1`, so absorption
+rate falls at the moment onset completes. Shared by all three. Resolve it
+alongside this lead; they are the same normalisation.
 
 ### 3. The absorbed-fraction integral is a left-Riemann sum on a moving grid
 
@@ -145,12 +169,20 @@ quadrature grid changes with the integration limit. The result is not monotone
 in h: measured backward steps of 1.4e-3 (`very_fast`), 1.1e-3 (`fast`),
 6.7e-4 (`medium`).
 
-Bounded below display precision and asserted as a bound. But left-Riemann at a
-fixed step count is a poor choice for a smooth integrand. Quantify the
-*absolute* error against accurate quadrature (or a closed form, if the
-truncated gamma admits one) and say whether `steps = 100` is adequate across
-all six profiles. Any change moves every absorbed-carb number in the app and
-must move on all sides of the harness simultaneously.
+**Substantially answered on 5 September.** Measured against composite Simpson
+at 200,000 intervals, the left-Riemann sum is within **3.9e-03** of the true
+absorbed fraction on the worst profile, and a 100-step trapezoid is within
+6.3e-03. Neither rule dominates: the trapezoid wins on four profiles (13.9× on
+`medium`) and loses on `very_slow` and `mixed`.
+
+`steps = 100` is **not** the binding constraint. The integrand is not smooth —
+see the onset discontinuity under lead 2 — and that is worth more than the
+choice of rule. Raising `steps` would not fix a discontinuity.
+
+The frontend had implemented a trapezoid, following a description of Python
+that was wrong in three places; it was aligned to left-Riemann (D16) so the
+question stays one decision applied to all three sides at once. What remains is
+the discontinuity, which is lead 2's.
 
 ### 4. The acute exercise effect does not depend on intensity
 
@@ -237,13 +269,14 @@ Left open because it changes what a patient sees. **Ask before fixing.**
 
 ```bash
 cd backend && pytest tests -q            # 280 passed, 1 skipped
-pytest diatwin/tests -q                  # 59 passed
+pytest diatwin/tests -q                  # 65 passed
 cd mobile && npx jest                    # 317 passed
-cd mobile && npx tsc --noEmit            # 198 errors, not yet a gate
+cd mobile && npx tsc --noEmit            # 197 errors, not yet a gate
 
 python -m diatwin.verify.parity generate
 python -m diatwin.verify.parity python
 cd mobile && npx jest __tests__/parity
+node diatwin/verify/frontend_eval.mjs    # needs Node >= 22.15, no npm packages
 python -m diatwin.verify.parity compare  # exit 0
 ```
 

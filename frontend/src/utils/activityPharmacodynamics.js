@@ -24,7 +24,14 @@
  *   Romeres D, Dalla Man C et al.   — Am J Physiol Endocrinol Metab 2021;321:E122
  *   Breton MD                       — J Diabetes Sci Technol 2008;2(1):169-174
  *
- * Version: 1.1
+ * Version: 1.2
+ * Changes in 1.2:
+ *   - D15 fix: getActivityOnBoard() now implements the bg_drop_override linear
+ *     absorption path before falling through to the ODE path, exactly mirroring
+ *     Python get_activity_on_board() and mobile _sessionAOB(). Previously,
+ *     CGM-confirmed sessions always took the ODE path, so the measured drop
+ *     magnitude was discarded entirely: AOB was identical for an override of
+ *     25, of 60, and for none at all. Found by the three-way parity harness.
  * Changes in 1.1:
  *   - calculateActivitySensitivityMultiplier: skip activities that started before
  *     the patient's daily reset time (mirrors delivered-drop / IOB reset behaviour).
@@ -335,6 +342,37 @@ export function getActivityOnBoard(activity, currentTimeMs, pc) {
   }
 
   const elapsed     = Math.max(0, (currentTimeMs - startMs) / 60000);
+
+  // ── CGM-measured override: mirror the linear model in
+  //    calculateActivityCumulativeEffect so AOB is consistent (D15 fix) ──────
+  //
+  // Without this branch the ODE path ran for CGM-confirmed sessions too, so
+  // the measured drop magnitude was discarded: AOB came back identical for
+  // an override of 25, of 60, and for no override at all. Worse than the
+  // mismatch with the backend was the one inside this file — the delivered
+  // effect above honours the override while the remaining effect did not, so
+  // delivered + remaining did not sum to the total (10.0 of 60 at t=0).
+  //
+  // Uses abs() so the unsigned AOB magnitude is always positive regardless of
+  // bg_direction; the sign is applied only by calculateActivityCumulativeEffect.
+  // Mirrors Python get_activity_on_board() and mobile _sessionAOB() exactly.
+  if (activity.bg_drop_override != null) {
+    const dropMag   = Math.abs(parseFloat(activity.bg_drop_override));
+    const tail      = durationMin * 0.4;
+    const full      = durationMin + tail;
+    const absorbed  = full > 0 ? Math.min(1, Math.max(0, elapsed / full)) : 1;
+    const remaining = Math.max(0, dropMag * (1 - absorbed));
+    return {
+      remaining_bg_drop: Math.round(remaining * 10) / 10,
+      absorbed_fraction: Math.round(absorbed * 1000) / 1000,
+      minutes_elapsed:   Math.round(elapsed * 10) / 10,
+      is_active:         elapsed < durationMin,
+      intensity,
+      bg_direction:      bgDir,
+    };
+  }
+
+  // ── ODE path (no CGM override) ───────────────────────────────────────────
   const totalDrop   = integrateZDrop(trace, 0, fullWindow, hrBase, weightKg);
   const elapsedDrop = integrateZDrop(trace, 0, Math.min(elapsed, fullWindow), hrBase, weightKg);
 

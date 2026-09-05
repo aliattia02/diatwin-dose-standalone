@@ -11,6 +11,7 @@ Scope
               backend/sweep_orphaned_meals.py
   TypeScript: mobile/__tests__/parity.test.ts
               mobile/__tests__/time-manager.test.ts
+  JavaScript: diatwin/verify/frontend_eval.mjs
   CI:         .github/workflows/ci.yml
 
 Cross-references
@@ -19,9 +20,11 @@ Cross-references
   Arm 1 (Constants & Ingestion) owns: constants.py · stored schemas
          → §3 normalizes the shapes Arm 1 writes; §5 embeds Arm 1 profiles
   Arm 2 (Data Operations) owns: pharmacodynamics.py · the TS calculation stack
-         → §4 wraps Arm 2's kernel as a simulator; §5 compares its two
-           implementations against each other
-  Arm 3 (Visualization) — no dependency
+         → §4 wraps Arm 2's kernel as a simulator; §5 compares its three
+           implementations against each other, pairwise
+  Arm 3 (Visualization) owns: frontend/src/utils/ — the third implementation
+         → §5 evaluates it as the harness's third side; it has no tests of
+           its own, so the harness is its only coverage
   Arm 4 (Mobile Client)  owns: TimeManager · services
          → §6 covers the TimeManager suite
 ================================================================
@@ -73,12 +76,15 @@ description, and supplies the foundation the ML and RL work will be built on.
 | Suite | Tests | Runtime | Command |
 |---|---:|---:|---|
 | `backend/tests` | 280 | 21 s | `cd backend && pytest tests -q` |
-| `diatwin/tests` | 59 | 1.4 s | `pytest diatwin/tests -q` |
-| `mobile` (8 suites) | 317 | 10 s | `cd mobile && npx jest` |
-| **Total** | **656** | | |
+| `diatwin/tests` | 65 | 1.6 s | `pytest diatwin/tests -q` |
+| `mobile` (8 suites) | 317 | 7 s | `cd mobile && npx jest` |
+| **Total** | **662** | | |
 
-`mobile/` typecheck is not yet a gate: `npx tsc --noEmit` reports 198 errors —
-194 in application code and 4 in `__tests__/time-manager.test.ts`.
+`frontend/src/utils/` has no test suite of its own. Its three pharmacodynamic
+modules are covered by the parity harness (§5) across 1,578 cases each; the
+other thirteen files in that directory are uncovered.
+
+`mobile/` typecheck is not yet a gate: `npx tsc --noEmit` reports 197 errors.
 
 ---
 
@@ -240,63 +246,103 @@ and CI.
 
 ## §5 Cross-language parity
 
-`diatwin/verify/parity.py` + `mobile/__tests__/parity.test.ts`.
+`diatwin/verify/parity.py` + `mobile/__tests__/parity.test.ts` +
+`diatwin/verify/frontend_eval.mjs`.
 
-The insulin, meal and activity models are implemented independently in Python
-(`backend/utils/pharmacodynamics.py`,
-`backend/utils/activity_pharmacodynamics.py`) and TypeScript
+The insulin, meal and activity models are implemented independently **three
+times** — in Python (`backend/utils/pharmacodynamics.py`,
+`backend/utils/activity_pharmacodynamics.py`), in TypeScript
 (`mobile/utils/insulin/pharmacodynamics.ts`,
 `mobile/utils/glucose/meal-pharmacodynamics.ts`,
-`mobile/utils/activity/activity-pharmacodynamics.ts`) **by design**, as
-independent implementations of the same mathematics. That is a recognised
-verification strategy — but it only *is* verification when something compares
-the two.
+`mobile/utils/activity/activity-pharmacodynamics.ts`) and in JavaScript
+(`frontend/src/utils/insulinPharmacodynamics.js`,
+`frontend/src/utils/mealPharmacodynamics.js`,
+`frontend/src/utils/activityPharmacodynamics.js`) — **by design**. That is a
+recognised verification strategy, but it only *is* verification when something
+compares them.
 
 ```
 python -m diatwin.verify.parity generate    # shared case file
 python -m diatwin.verify.parity python      # Python side
 cd mobile && npx jest __tests__/parity      # TypeScript side
+node diatwin/verify/frontend_eval.mjs       # frontend side
 python -m diatwin.verify.parity compare     # exit 1 on NEW divergence
 python -m diatwin.verify.parity baseline    # re-record known divergences
 ```
 
-Both sides read the same `cases.json` with profiles **embedded**, so a stale
+Every side reads the same `cases.json` with profiles **embedded**, so a stale
 constants export cannot be mistaken for a model difference. 1,578 cases across
-six families. Neither side judges; `compare` is the single definition of
-agreement.
+six families, evaluated by all three. No side judges; `compare` is the single
+definition of agreement.
 
-| Family | Compares | Cases | Worst delta |
-|---|---|---:|---|
-| `activity` | `calculate_insulin_activity` | 161 | 3.9e+01 (baselined) |
-| `iob` | `calculate_iob` | 805 | 1.2e+00 (baselined) |
-| `meal_act` | `calculate_gamma_absorption` | 108 | 2.8e-14 |
-| `meal_abs` | `calculate_absorbed_fraction` | 108 | 5.6e-16 |
-| `act_bg` | acute exercise BG effect (Y/Z/W ODE) | 198 | 0.0 |
-| `act_aob` | activity on board (Y/Z/W ODE) | 198 | 0.0 |
+All three **pairs** are compared rather than nominating a reference
+implementation. This is what the third side buys: with two implementations a
+disagreement says only that they differ, and picking which to edit is an
+opinion. With three, a case where two agree and one does not names the side
+that stands alone.
 
-The meal and activity families agree exactly. The activity cases span three
-intensity tiers, four durations, nine elapsed times, four patient weights,
-non-default heart-rate reserves, both BG directions, the wearable-trace path
-and the CGM-override path.
+| Family | Compares | Cases | py\|ts | py\|fe | ts\|fe |
+|---|---|---:|---|---|---|
+| `activity` | `calculate_insulin_activity` | 161 | 3.9e+01 (baselined) | 1.4e-14 | 3.9e+01 (baselined) |
+| `iob` | `calculate_iob` | 805 | 1.2e+00 (baselined) | 7.1e-15 | 1.2e+00 (baselined) |
+| `meal_act` | `calculate_gamma_absorption` | 108 | 2.8e-14 | 2.8e-14 | 2.8e-14 |
+| `meal_abs` | `calculate_absorbed_fraction` | 108 | 5.6e-16 | 2.2e-16 | 5.6e-16 |
+| `act_bg` | acute exercise BG effect (Y/Z/W ODE) | 198 | 0.0 | 0.0 | 0.0 |
+| `act_aob` | activity on board (Y/Z/W ODE) | 198 | 0.0 | 0.0 | 0.0 |
 
-`HR_MODEL` cannot be embedded as a case *input* — neither implementation
-accepts the ODE parameters as arguments; both read their own constants. It is
-embedded as a checksum instead, and each side asserts its own copy matches
-before evaluating. A desync then fails as a sync problem rather than surfacing
-as a model difference.
+**Python and the frontend agree on every one of the 1,578 cases**, to machine
+precision. Every divergence in the harness is the mobile client against the
+other two, and all of it is the insulin split in §5.1. The activity cases span
+three intensity tiers, four durations, nine elapsed times, four patient
+weights, non-default heart-rate reserves, both BG directions, the
+wearable-trace path and the CGM-override path.
+
+`HR_MODEL` cannot be embedded as a case *input* — no implementation accepts the
+ODE parameters as arguments; each reads its own constants. It is embedded as a
+checksum instead, and every side asserts its own copy matches before
+evaluating. A desync then fails as a sync problem rather than surfacing as a
+model difference.
+
+### 5.0.1 The frontend evaluator
+
+`frontend/` is a Create React App project whose only test runner is
+`react-scripts test`. Installing that toolchain to evaluate 1,578 arithmetic
+cases would make the third side the most expensive to run, in CI most of all.
+The three frontend modules contain no React, so Node runs them directly, with
+no npm packages and two narrow shims:
+
+- `activityPharmacodynamics.js` imports `'../constants/shared_constants'` with
+  no extension. Webpack resolves that; Node's ESM resolver does not. A
+  `module.registerHooks` resolve hook appends `.js` rather than editing the
+  shipped source, so the harness adapts to the code under test.
+- `mealPharmacodynamics.js` reads `window.DEBUG_ABSORPTION_PROFILE`.
+  `globalThis.window = {}` makes that `undefined`, exactly as a browser with
+  the flag unset does. It gates a `console.log` and nothing else.
+
+Neither shim touches a number. Both need **Node ≥ 22.15**, which the evaluator
+checks and reports before it reaches a syntax error inside a source file.
 
 ### 5.0 The baseline gate
 
-`fixtures/baseline_divergences.json` records the case ids known to diverge.
-`compare` exits non-zero only for divergence **not** listed there, and reports
-baselined cases that have started agreeing so the file can shrink. Without it
-the job would be red on every run because of §5.1, and a gate that is always
-red stops being read.
+`fixtures/baseline_divergences.json` records the case ids known to diverge,
+**keyed by pair**. `compare` exits non-zero only for divergence **not** listed
+under that pair, and reports baselined cases that have started agreeing so the
+file can shrink. Without it the job would be red on every run because of §5.1,
+and a gate that is always red stops being read.
+
+Divergence is a property of a pair, not of a case. A case accepted between
+Python and the mobile client says nothing about the frontend, and keying the
+file on case id alone would silently grant one decision to all three pairs. A
+file written before the frontend existed — a flat `cases` list — is still read
+as exactly what it could only have meant, python-versus-typescript.
 
 `diatwin/tests/test_parity_harness.py` covers the machinery — that baselining
-one case does not excuse another, that a family disappearing from the case file
-is reported as a set mismatch rather than as agreement, that missing result
-files exit 2, and that the committed baseline contains only insulin cases.
+one case does not excuse another, that baselining a case for one pair does not
+excuse it on another, that every pair really is compared, that the odd-one-out
+summary names a side only when there is one to name, that a family disappearing
+from the case file is reported as a set mismatch rather than as agreement, that
+a missing frontend result exits 2 rather than passing on the two sides that did
+run, and that the committed baseline contains only insulin cases.
 
 ### 5.1 Current state: 205 of 1,578 diverge, all of them insulin
 
@@ -322,11 +368,21 @@ Net effect: for `regular_insulin`, the three mixed insulins,
 compute different activity curves for the same dose. Rapid-acting analogues
 are unaffected, which is presumably why it never surfaced in use.
 
+**The third implementation breaks the tie.** `frontend/src/utils/` agrees with
+Python **exactly** on all 966 insulin cases — worst delta 1.4e-14 on the
+activity curve and 7.1e-15 on IOB. Two independent implementations take the
+Python reading of both branch conditions; the mobile client stands alone on
+both. That is evidence about where an edit belongs, not proof of what is
+clinically right — the α for a platykurtic intermediate-acting curve is a
+pharmacokinetics question — but it settles which file is the outlier.
+
 **Not yet fixed.** Correcting it changes clinical behaviour and deserves a
-deliberate decision. The harness holds the line meanwhile: the 205 are recorded
-in `fixtures/baseline_divergences.json` and `compare` fails on any divergence
-outside it (§5.0). They are the only baselined cases — every meal and activity
-case agrees exactly.
+deliberate decision. The harness holds the line meanwhile: the same 205 case
+ids are recorded under `python|typescript` and `typescript|frontend` in
+`fixtures/baseline_divergences.json`, and `compare` fails on any divergence
+outside it (§5.0). They are the only baselined cases, on any pair — every meal
+and activity case agrees exactly, and `python|frontend` has **zero** divergence
+across all 1,578.
 
 ---
 
@@ -503,13 +559,20 @@ legitimate record shape the sweep must not touch.
 |---|---|
 | `foundation` | `pytest diatwin/tests -q` |
 | `backend` | `pytest tests -q` with dummy `MONGO_URI` / `SECRET_KEY` |
-| `parity` | generate → Python → TypeScript → compare |
+| `parity` | generate → Python → TypeScript → frontend → compare |
 | `mobile` | `tsc --noEmit`, then `jest` excluding parity |
 
-**Not yet pushed** as of 2026-09-05, by decision. `pytest` and `mongomock` are
-declared in `requirements-dev.txt`, kept separate from
-`backend/requirements.txt` so the foundation suite runs without the Flask
-stack.
+Both Node jobs pin **Node 22**: the frontend evaluator needs
+`module.registerHooks` (22.15) and ES module syntax detection for a package
+with no `"type"` field (22.7), and on Node 20 it fails with a syntax error
+raised from inside a shipped source file.
+
+`pytest` and `mongomock` are declared in `requirements-dev.txt`, kept separate
+from `backend/requirements.txt` so the foundation suite runs without the Flask
+stack. The install pair is `backend/requirements.txt` + `requirements-dev.txt`.
+The **root** `requirements.txt` is an unrelated `pip freeze` that pins a
+conflicting `pytest` and contains neither Flask nor pymongo; CI has always used
+the correct pair, and `SETUP.md` no longer points at the wrong one (D14).
 
 ---
 
@@ -519,7 +582,7 @@ stack.
 |---|---|---|
 | Arm 0 | `main.py`, `config.py`, auth, schedulers | §2 stubs the schedulers and the Atlas ping. The blueprint registration order in `main.py` is enforced by the route-inventory duplicate check. |
 | Arm 1 | `constants.py`, stored schemas, ingestion | §3 normalizes the shapes Arm 1 writes. §5 embeds Arm 1's pharmacokinetic profiles in the case file. §7's classification depends on the link fields documented in Arm 1 §12. |
-| Arm 2 | `pharmacodynamics.py`, the TS calculation stack | §4 wraps Arm 2's kernel unchanged. §5 compares its two implementations. `test_pharmacodynamics.py` asserts Arm 2 §9's sign conventions. |
+| Arm 2 | `pharmacodynamics.py`, the TS calculation stack | §4 wraps Arm 2's kernel unchanged. §5 compares its three implementations pairwise. `test_pharmacodynamics.py` asserts Arm 2 §9's sign conventions. |
 | Arm 3 | Charts, `useActiveEffects` | No dependency. Arm 3's components remain untested. |
 | Arm 4 | `TimeManager`, services, stores | §6.1 covers `TimeManager`. The other services remain untested. |
 
