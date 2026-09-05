@@ -16,7 +16,7 @@ and new reference documents that extend the arm series.
 | [`arm-docs-audit.md`](./arm-docs-audit.md) | Audit | Accuracy audit of Arms 0–4 against the code at `b8964b6`. Route coverage, one contradiction that turned out to be a live bug, and a prioritised list of edits. |
 | [`2026-09-05-verification-pass.md`](./2026-09-05-verification-pass.md) | Session report | Documentation cleanup, the modelling foundation, 468 tests, 8 defects, and what is suggested next. |
 | [`2026-09-05-mobile-calculation-coverage.md`](./2026-09-05-mobile-calculation-coverage.md) | Session report | The three uncovered mobile calculation modules, 656 tests, four new parity families, the baseline gate, and defects D9–D13 — four fixed, D9 left open. |
-| [`next-session-prompt.md`](./next-session-prompt.md) | Handoff | A self-contained prompt for resuming this work, with four task variants. Paste it into a fresh session. |
+| [`next-session-prompt.md`](./next-session-prompt.md) | Handoff | A self-contained prompt for the next session: rigorous analysis of the models' logic and mathematics, with five measured leads. Paste it into a fresh session. |
 
 ---
 

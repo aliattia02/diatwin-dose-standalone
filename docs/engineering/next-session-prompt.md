@@ -1,216 +1,258 @@
-# Handoff Prompt — Next Testing & Analysis Session
+# Next session — rigorous analysis of the logic and mathematics
 
-Copy the block below into a fresh session. It is self-contained: a session with
-no memory of 5 September 2026 can act on it.
-
-Swap the **Task** section for one of the [variants](#variants) when you want to
-push on something else.
+*Written 5 September 2026. Paste the whole of this file into a fresh session.*
 
 ---
 
-## The prompt
+This is the DiaTwin repository — a Type 1 diabetes digital twin. Flask +
+MongoDB backend, Expo/React Native mobile client, a React web frontend, and a
+pharmacodynamic kernel that models insulin, carbohydrate and exercise effects
+on blood glucose.
 
-```
-This is the DiaTwin / native3 repo — a Type 1 diabetes digital twin. Flask +
-MongoDB backend, Expo/React Native mobile client, and a pharmacodynamic kernel
-that models insulin and carbohydrate absorption.
+## Start here
 
-Read docs/engineering/README.md first. It is the entry point to the current
-engineering state and links to Arm 5 (the verification and modelling
-reference), an accuracy audit of the older arm docs, and a session report from
-5 September 2026. Read Arm 5 §10 before writing any code — those are the
-project's invariants.
+Read `docs/engineering/README.md` first. It is the entry point: current state,
+open defects, and links to everything else. Then:
 
-CURRENT STATE
-- 468 tests pass: 280 backend (backend/tests), 148 mobile (mobile, jest),
-  40 foundation (diatwin/tests). All green.
-- backend/tests/conftest.py has a working harness: mongomock, stubbed
-  schedulers, and fixtures for patients/doctors/tokens/seeded data.
-- diatwin/ is a stdlib-only package: canonical event schema, a normalizer that
-  absorbs four historical timestamp encodings and the insulin dual write, a
-  5-minute grid with explicit missingness, and the PD kernel wrapped as a
-  forward simulator.
-- diatwin/verify/parity.py compares the Python and TypeScript insulin models
-  over 966 shared cases. 205 currently diverge — that is a recorded baseline,
-  not a regression.
-- mobile typecheck reports 194 errors and is not yet a gate.
+- `REPOSITORIES.md` (root) — what this repository is and how it differs from
+  the older `native3` copy. Read this before assuming any file's history.
+- `docs/engineering/arm5_verification_and_modelling.md` — the verification
+  reference. **§10 is the project's invariants. Read it before writing code.**
+- `docs/engineering/2026-09-05-mobile-calculation-coverage.md` — the most
+  recent session: what was measured, what was fixed, what was deliberately not.
+- `docs/3 Arms Doc/` — Arms 0–4, what the system *is*. Treat them as a
+  statement of intent; `docs/engineering/arm-docs-audit.md` records where they
+  are already known to be wrong.
 
-STANDING DECISIONS — do not re-litigate these
-- The deployment is a closed test environment. Access-control findings are
+`SETUP.md` takes a clean clone to a green test run. One gotcha: copy
+`backend/.env.example` to `backend/.env` first, or the backend suite cannot
+even collect.
+
+## Current state
+
+| | |
+|---|---|
+| Tests | 656 — 280 backend, 317 mobile, 59 foundation. All green. |
+| Parity | 1,578 cases, 6 families. 205 baselined divergences, all insulin. `compare` exits 0. |
+| Mobile typecheck | 198 errors (194 application, 4 in a test file). Not a gate. |
+| Open defects | D9 (below), plus D2–D5 from the earlier session |
+
+## Standing decisions — do not re-litigate
+
+- The deployment is a **closed test environment**. Access-control findings are
   recorded in tests, not escalated.
-- The Python/TypeScript duplication of the insulin model is DELIBERATE —
-  independent implementations for cross-verification. Do not propose merging
-  them. The parity harness is what makes the design pay off.
-- /api/bulk-import is kept but intentionally left non-functional (it raises
-  NameError; routes/import_routes.py never imports current_app). Fixing it
-  would activate a dormant unauthenticated bulk-write endpoint — a separate
-  decision for later.
-- The 205 parity divergences are baselined. CI fails on NEW divergence only.
-- Do not commit or push anything unless I ask.
+- **The multiple implementations of the models are deliberate architecture.**
+  The Python backend, the React web frontend (`frontend/src/utils/`) and the
+  React Native mobile client each implement the pharmacodynamic models
+  independently. This is for cross-validation, and to make later machine
+  learning and reinforcement learning work easier to integrate — a model can be
+  swapped or instrumented on one surface without disturbing the others. **Do
+  not propose merging or deleting any of them.** The parity harness is what
+  turns the duplication into verification rather than three chances to be
+  wrong.
+- `/api/bulk-import` is kept but intentionally non-functional. Fixing it would
+  activate a dormant unauthenticated bulk-write endpoint.
+- The 205 insulin parity divergences are **baselined**, not accepted as
+  correct. `compare` fails on new divergence only.
+- **The 25 AZT1D/HUPA study accounts still need rotating.** Their plaintext
+  credentials are in `aliattia11/native`'s history. Not fixable from here.
+- Do not commit or push anything unless asked.
 
-CONVENTIONS
-- diatwin/data, diatwin/core, diatwin/sim, diatwin/verify import stdlib only.
-  Modelling dependencies go in diatwin/ml/ and requirements-ml.txt.
-- The kernel takes timezone-NAIVE UTC. The canonical schema uses AWARE UTC.
-  Conversion happens only in diatwin/sim/patient.py.
-- Tests that pin current (wrong) behaviour must say so in the docstring and
-  name the defect. Tests that assert a fix must say that instead.
-- Prefer property assertions over pinned magic numbers for the kernel —
-  conservation, monotonicity, sign, boundedness. Exact cross-language values
-  are the parity harness's job.
-- Reference docs (armN_*.md) describe current state and carry no history.
+## Conventions
+
+- `diatwin/data`, `diatwin/core`, `diatwin/sim`, `diatwin/verify` import stdlib
+  only. Modelling dependencies go in `diatwin/ml/` and `requirements-ml.txt`,
+  and nothing is added there until it runs and is tested (rule 9).
+- The kernel takes timezone-**naive** UTC. The canonical schema uses **aware**
+  UTC. Conversion happens only in `diatwin/sim/patient.py`.
+- A test that pins current (wrong) behaviour must say so in its docstring and
+  name the defect. A test that asserts a fix must say that instead, and must be
+  shown to fail against the pre-fix code.
+- Prefer property assertions over pinned magic numbers — conservation,
+  monotonicity, sign, boundedness. Exact cross-language values are the parity
+  harness's job (rule 11: neither language asserts agreement on its own).
+- Reference docs (`armN_*.md`) describe current state and carry no history.
   Session reports are dated and immutable.
 
-TASK
-Extend test coverage to the three uncovered mobile calculation modules, which
-are ~2,500 lines with zero tests and feed the same displays the tested code
-feeds:
+---
 
-  mobile/utils/glucose/blood-glucose-estimation.ts   1,059 lines
-  mobile/utils/glucose/meal-pharmacodynamics.ts        747 lines
-  mobile/utils/activity/activity-pharmacodynamics.ts   733 lines
+# The task
 
-For each: read it, work out what its invariants actually are, then write tests
-in mobile/__tests__/ following the style of __tests__/time-manager.test.ts.
-Where a module mirrors backend logic, check the two agree and extend
-diatwin/verify/parity.py with a new case family rather than asserting
-agreement inside the TypeScript test.
+**Attack the mathematics, not the plumbing.** The previous session established
+that the code does what it says. This session asks whether what it says is
+*right*: are the models dimensionally sound, numerically stable, internally
+consistent across the three implementations, and faithful to the literature
+they cite?
 
-WORKING STYLE
-- Measure before you claim. Several findings in the last session looked like
-  bugs and turned out to be correct-but-undocumented behaviour once measured.
-  If a test fails, first establish whether the code or your assumption is
-  wrong, then say which.
-- Negative cases matter more than positive ones. A test that proves the code
-  leaves legitimate data alone is worth more than one proving it handles the
-  happy path.
+Coverage exists now. Correctness has not been established.
+
+## Concrete leads, in priority order
+
+These were found and measured but not resolved. Each is a real question with a
+findable answer — start here rather than surveying.
+
+### 1. Make the parity harness three-way
+
+`frontend/src/utils/` holds the third independent implementation —
+`insulinPharmacodynamics.js` (991 lines), `mealPharmacodynamics.js` (682),
+`activityPharmacodynamics.js`. **The parity harness does not touch any of
+them** (zero references). Two of three surfaces are cross-checked; the web
+frontend is not checked against anything.
+
+That gap is currently hiding evidence. The 205 baselined divergences come down
+to a branch condition, and the third implementation breaks the tie:
+
+| | α = 4.5 branch condition |
+|---|---|
+| Python `backend/utils/pharmacodynamics.py:404` | `curve_type in ['gamma_moderate','gamma_standard']` |
+| Frontend `insulinPharmacodynamics.js:146` | `curveType === 'gamma_moderate' \|\| === 'gamma_standard'` |
+| Mobile `mobile/utils/insulin/pharmacodynamics.ts:497` | `curveType === 'gamma_broad'` |
+
+Python and the frontend agree **exactly**; the mobile client stands alone. And
+per Arm 5 §5.1 **no insulin carries `gamma_moderate` or `gamma_standard`** —
+those are *meal* curve names — so in Python and the frontend that branch is
+dead and all five `gamma_broad` insulins fall through to α 3.0, where mobile
+gives them α 4.5.
+
+Two votes against one is evidence about where the edit belongs, not proof of
+what is right. The question to answer is what α *should* be for a platykurtic
+intermediate-acting curve, from the pharmacokinetics. But extending the harness
+to three sides is worth doing regardless: it is the mechanism the architecture
+was built for, and it currently covers two thirds of the surface.
+
+The harness is designed for this — `diatwin/verify/parity.py` reads and writes
+per-side result files keyed by case id, and `compare` is the single definition
+of agreement. Adding a third evaluator means a third results file and a
+three-way comparison, not a redesign.
+
+### 2. `peak_hours` is not where the meal curve peaks
+
+Measured: for every shipped absorption profile, the gamma activity curve
+saturates at 100 % over a *plateau* ending exactly at `peak_hours`, opening
+well before it (for `medium`, ~0.83 h against a configured peak of 1.5 h). The
+gamma density's mode is at `(k−1)·θ`, always left of the normalisation point,
+so normalising by the value at `peak_hours` pushes an interval above 100 and
+the clamp flattens it. 18–33 % of each absorption window is clamped.
+
+Is the normalisation wrong, or is `peak_hours` mis-named? Python and mobile
+agree, so parity will not catch it — this needs the mathematics. Check the
+frontend's meal curve too; it may differ.
+
+### 3. The absorbed-fraction integral is a left-Riemann sum on a moving grid
+
+`calculate_absorbed_fraction` integrates 0→h with `dt = h/steps`, so the
+quadrature grid changes with the integration limit. The result is not monotone
+in h: measured backward steps of 1.4e-3 (`very_fast`), 1.1e-3 (`fast`),
+6.7e-4 (`medium`).
+
+Bounded below display precision and asserted as a bound. But left-Riemann at a
+fixed step count is a poor choice for a smooth integrand. Quantify the
+*absolute* error against accurate quadrature (or a closed form, if the
+truncated gamma admits one) and say whether `steps = 100` is adequate across
+all six profiles. Any change moves every absorbed-carb number in the app and
+must move on all sides of the harness simultaneously.
+
+### 4. The acute exercise effect does not depend on intensity
+
+`Z` obeys `dZ/dt = (1 − Z)` while in-exercise, so with `dt = 1 min` it
+saturates to 1 in a single Euler step for any intensity clearing the onset
+gate. The acute integral is `Z × acute_rate_per_min`, so a light 45-minute walk
+and a vigorous 45-minute interval session produce **byte-identical** BG drops.
+Intensity reaches only the sensitivity multiplier — which itself caps at +60 %
+for any session of 15 minutes or more, at every tier.
+
+For realistic session lengths the model cannot distinguish a stroll from a hard
+workout in either channel.
+
+Check against Dalla Man, Breton & Cobelli (J Diabetes Sci Technol 2009;
+3(1):56-67), cited by `docs/documentation/activity-pd-implementation.md`. In
+the source model, is the acute insulin-independent uptake term a binary gate,
+or proportional to `Y`? Is `dt = 1 min` adequate for a rate constant of
+1 min⁻¹, or is the Euler step aliasing a continuous rise into a step?
+
+### 5. D9 — the daily reset is 24 h stale east of +07:00
+
+Still open, characterised by tests in two suites. `getDailyResetTime` in
+`blood-glucose-estimation.ts` anchors on the *UTC* calendar date rather than
+the patient's local one; `getLastResetTime` only rolls back, never forward.
+Condition: `timezone_offset_minutes > daily_reset_hour × 60`, affecting
+`offset_hours − reset_hour` hours of each day.
+
+Three of six mobile reset implementations have it. The fix is to consolidate on
+`TimeManager` — `utils/insulin/timeline-generator.ts` already is, from D13's
+fix. Remaining: `blood-glucose-estimation.ts`, the inline guard in
+`meal-pharmacodynamics.ts`, `hooks/useActiveEffects.ts`, and
+`utils/calculations/cumulative-effects.ts` (which re-exports the first).
+
+Left open because it changes what a patient sees. **Ask before fixing.**
+
+## Beyond the leads
+
+- **Dimensional analysis.** Trace units end to end: `carb_to_bg_factor`
+  (mg/dL per g), `correction_factor` (mg/dL per U), `acute_rate_per_min`
+  (mg/dL per min), `alpha`. `calculateNetEffect` mixes an instantaneous *rate*
+  (`totalActiveEffect`) with a cumulative *amount* (`totalBGElevation`); the
+  code comments record two past bugs from exactly that confusion. Are the
+  remaining uses consistent, on all three surfaces?
+- **Conservation and boundedness** across the composed model, not per module.
+  Can `estimatedBG` or `projectedFinalBG` go negative, or leave physiological
+  range, under any admissible input?
+- **Numerical stability.** Euler at `dt = 1 min` for Y/Z/W; the gamma log-form
+  `exp((k−1)·ln t − t/θ)` near t→0; cancellation in `1 − IOB_fraction` for
+  large doses.
+- **Uncovered calculation code**: `mobile/utils/calculations/cumulative-effects.ts`,
+  `hooks/useActiveEffects.ts`, `diatwin/core/grid.py`,
+  `diatwin/data/normalize.py`, and the whole `frontend/src/utils/` tree.
+- **ML/RL readiness.** The architecture exists partly to support later learning
+  work, so the leakage discipline matters now, not later: rule 6 requires
+  anything producing a prediction or training row for time `T` to read
+  `timeline.as_of(T)`, which filters on `observed_at`, not `t`. Check that the
+  canonical layer actually enforces it and that `resample()`/`lag()`/`lead()`
+  honour rule 7 (missing stays missing; no interpolation across a gap longer
+  than `MAX_INTERPOLATION_GAP`; no zero-padding). A model trained on leaked
+  data will look excellent and be worthless.
+- **Clinical plausibility.** Do the composed outputs land where a
+  diabetologist would accept? `docs/Clinical Validation/` is **not in this
+  repository** (real subject data, deliberately excluded) — copy it in locally
+  from `native3` if needed, and do not commit it.
+
+## Working style
+
+- **Measure before you claim.** Several findings last session looked like bugs
+  and turned out to be correct-but-undocumented once measured. If a test fails,
+  first establish whether the code or your assumption is wrong, then say which.
+- **Negative cases matter more than positive ones.** A test proving the code
+  leaves legitimate data alone is worth more than one proving the happy path.
+- **A regression test that passes against the pre-fix code is not evidence.**
+  Revert the fix, watch the test fail, restore. Last session one such test was
+  written, measured, found inert, and deleted rather than kept.
 - When you find a real defect, characterize it with a test before fixing it,
-  and check whether it appears in docs/3 Arms Doc/ — the last session found a
-  live bug that had been sitting in the documentation as a contradiction.
-- Report honestly. If something is uncovered, say so rather than padding.
+  and check whether it appears in `docs/3 Arms Doc/` — the last two sessions
+  each found a live bug sitting in the documentation as a contradiction.
+- **Report honestly.** If something is uncovered or unresolved, say so rather
+  than padding. If a question needs a clinician or the primary literature
+  rather than more code, say that.
 
-VERIFY
-  cd backend && pytest tests -q
-  pytest diatwin/tests -q
-  cd mobile && npx jest
-  cd mobile && npx tsc --noEmit          # 194 errors, not yet a gate
+## Verify
 
-When you finish, add a dated session report to docs/engineering/ following the
-conventions in its README, and update the "Current state" table there.
+```bash
+cd backend && pytest tests -q            # 280 passed, 1 skipped
+pytest diatwin/tests -q                  # 59 passed
+cd mobile && npx jest                    # 317 passed
+cd mobile && npx tsc --noEmit            # 198 errors, not yet a gate
+
+python -m diatwin.verify.parity generate
+python -m diatwin.verify.parity python
+cd mobile && npx jest __tests__/parity
+python -m diatwin.verify.parity compare  # exit 0
 ```
 
----
+`parity baseline` re-records the accepted divergences. Rule 15: run it only
+after a deliberate decision, never to quiet a red build.
 
-## Variants
+## When you finish
 
-Replace the **TASK** block with one of these.
-
-### A — Extend the parity harness
-
-```
-TASK
-diatwin/verify/parity.py currently covers only the insulin model
-(calculate_insulin_activity and calculate_iob). Extend it to the two other
-surfaces where Python and TypeScript both implement the same mathematics:
-
-  1. Meal absorption — calculate_meal_active_carbs / calculate_absorbed_fraction
-     against mobile/utils/glucose/meal-pharmacodynamics.ts
-  2. Cumulative effects and the daily reset —
-     calculate_total_cumulative_effects against
-     mobile/utils/calculations/cumulative-effects.ts
-
-Keep the existing design: one shared cases.json with all inputs embedded (never
-looked up by name on either side), each language evaluating and writing
-results, and compare as the single definition of agreement. Add a tolerance
-entry per new quantity in its own units.
-
-Expect to find divergence. Report it the way the insulin result was reported:
-group by whatever dimension the split tracks, then find the root cause in the
-source rather than listing failing cases. Do not fix divergence without asking
-— it changes clinical behaviour.
-```
-
-### B — Triage the TypeScript errors
-
-```
-TASK
-mobile currently has 194 TypeScript errors, which is why `tsc --noEmit` is not
-a CI gate. Triage them:
-
-  1. Group by root cause, not by error code. Many will trace to a handful of
-     shared type-shape problems.
-  2. Separate real runtime bugs from type-shape noise. At least one is real:
-     getAvailableInsulinTypes() at utils/insulin/pharmacodynamics.ts:1368-1371
-     reads camelCase keys off snake_case objects, so four fields are undefined
-     at runtime. It is currently latent because nothing calls it.
-  3. Resolve the phantom shared/ package — mobile/package.json declares
-     "@native/shared": "file:../shared" and two type files import from
-     ../../shared/src/types, but no shared/ directory exists, so a clean
-     npm install fails. Either restore it or remove the dependency.
-  4. Propose an order that gets to zero, with the count each step removes.
-
-Fix the real bugs. For the type-shape work, show me the plan before doing it
-in bulk.
-```
-
-### C — Cover the sync services
-
-```
-TASK
-backend/services/libre_service.py (587 lines) and
-backend/services/watch_sync_service.py (447 lines) have no tests. They are the
-two paths that write CGM and heart-rate data into the database on a timer, so
-a fault in either is silent until a patient reports missing data.
-
-Both make outbound HTTP calls, so this needs request mocking (responses or
-respx against the existing pytest harness — add it to requirements-dev.txt).
-Cover at minimum: a successful sync, an auth failure, a malformed payload, a
-partial page, a duplicate reading arriving twice, and the per-user interval
-check that stops the scheduler hammering the upstream.
-
-The schedulers themselves are stubbed in conftest.py — test the _perform_sync
-functions directly rather than through the scheduler.
-```
-
-### D — Start the ML data layer
-
-```
-TASK
-Write diatwin/data/repository.py — the single Mongo read path for modelling.
-Input: a patient id and a time range. Output: a PatientTimeline (see
-diatwin/data/schema.py). Nothing else under diatwin/ may touch the driver.
-
-It must use normalize_all() so the dual write is deduplicated and the four
-timestamp encodings are collapsed, and it must surface the per-stream `dropped`
-counts rather than swallowing them.
-
-Then run it over the AZT1D 25 (docs/Clinical Validation/) and report the drop
-rates per stream. A high drop rate is the finding, not an error — it says which
-stream needs attention before any model is trained.
-
-Open question to answer with evidence, not assumption: `meals` and `meals_only`
-hold overlapping data. Work out which is authoritative for modelling, write the
-reasoning down, and make the repository enforce it.
-
-Note: this needs numpy/pandas only at the ml/ layer. The repository itself
-should stay stdlib + pymongo.
-```
-
----
-
-## Before any of these
-
-Two operational items from the last session are still open and are worth
-clearing first, because both affect what the tests read:
-
-1. **Run the orphan sweep.** Meals deleted before the 5 September fix left
-   `meals` records and `medication_logs` rows behind, still inflating IOB.
-
-   ```bash
-   cd backend && python sweep_orphaned_meals.py                      # report
-   cd backend && python sweep_orphaned_meals.py --export backup.json
-   cd backend && python sweep_orphaned_meals.py --export backup.json --apply
-   ```
-
-2. **Push `.github/workflows/ci.yml`.** 468 tests that nothing runs are 468
-   tests you will stop trusting.
+Add a dated session report to `docs/engineering/` following the conventions in
+its README, and update the "Current state" table there. If you change a model's
+behaviour, update `arm5_verification_and_modelling.md` too — it is a reference
+document and must describe the present, not the past.
