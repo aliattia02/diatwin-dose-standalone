@@ -66,6 +66,22 @@ export const validateEmail = (email: string): ValidationResult => {
 /**
  * Validate password strength
  */
+/**
+ * Password policy.
+ *
+ * Relaxed deliberately for the testing phase. The backend applies **no**
+ * password rule at all — `register()` in `backend/routes/auth_routes.py` hashes
+ * whatever it is given — so these two constants are the only thing standing
+ * between a user and a one-character password.
+ *
+ * To restore the production policy: set the minimum length back to eight and
+ * turn the letter-and-number requirement on. `__tests__/password-policy.test.ts`
+ * pins the current values, so it will fail and tell you to update it — which is
+ * the point, since a policy that can be relaxed silently is not a policy.
+ */
+export const PASSWORD_MIN_LENGTH = 6;
+export const PASSWORD_REQUIRE_LETTER_AND_NUMBER = false;
+
 export const validatePassword = (password: string): ValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -75,13 +91,19 @@ export const validatePassword = (password: string): ValidationResult => {
     return { isValid: false, errors, warnings };
   }
 
-  if (password.length < 8) {
-    errors.push('Password must be at least 8 characters');
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    errors.push(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
   }
 
-  // Check for at least one letter and one number
-  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+  if (PASSWORD_REQUIRE_LETTER_AND_NUMBER &&
+      (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password))) {
     errors.push('Password must contain at least one letter and one number');
+  }
+
+  // A warning, not an error: it surfaces in the UI without blocking a test
+  // account, and it comes back the moment the policy is restored.
+  if (!PASSWORD_REQUIRE_LETTER_AND_NUMBER && password.length < 8) {
+    warnings.push('Short password — fine for testing, not for a real account');
   }
 
   return { isValid: errors.length === 0, errors, warnings };

@@ -43,7 +43,8 @@ import {
   validatePassword,
   validateUsername,
   validateDateOfBirth,
-  validateRequired
+  validateRequired,
+  PASSWORD_MIN_LENGTH
 } from '@/utils/validation';
 
 // Constants
@@ -79,15 +80,15 @@ export default function RegisterScreen() {
 
     // Username
     const usernameResult = validateUsername(formData.username);
-    if (!usernameResult.isValid) newErrors.username = usernameResult.error || '';
+    if (!usernameResult.isValid) newErrors.username = usernameResult.errors.join('. ');
 
     // Email
     const emailResult = validateEmail(formData.email);
-    if (!emailResult.isValid) newErrors.email = emailResult.error || '';
+    if (!emailResult.isValid) newErrors.email = emailResult.errors.join('. ');
 
     // Password
     const passwordResult = validatePassword(formData.password);
-    if (!passwordResult.isValid) newErrors.password = passwordResult.error || '';
+    if (!passwordResult.isValid) newErrors.password = passwordResult.errors.join('. ');
 
     // Confirm password
     if (formData.password !== formData.confirmPassword) {
@@ -96,15 +97,15 @@ export default function RegisterScreen() {
 
     // First name
     const firstNameResult = validateRequired(formData.firstName, 'First name');
-    if (!firstNameResult.isValid) newErrors.firstName = firstNameResult.error || '';
+    if (!firstNameResult.isValid) newErrors.firstName = firstNameResult.errors.join('. ');
 
     // Last name
     const lastNameResult = validateRequired(formData.lastName, 'Last name');
-    if (!lastNameResult.isValid) newErrors.lastName = lastNameResult.error || '';
+    if (!lastNameResult.isValid) newErrors.lastName = lastNameResult.errors.join('. ');
 
     // Date of birth
     const dobResult = validateDateOfBirth(formData.dateOfBirth);
-    if (!dobResult.isValid) newErrors.dateOfBirth = dobResult.error || '';
+    if (!dobResult.isValid) newErrors.dateOfBirth = dobResult.errors.join('. ');
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -254,7 +255,7 @@ export default function RegisterScreen() {
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               error={errors.password}
-              helperText="At least 8 characters with letters and numbers"
+              helperText={`At least ${PASSWORD_MIN_LENGTH} characters`}
               required
               rightIcon={
                 <Text style={styles.showPasswordText}>
