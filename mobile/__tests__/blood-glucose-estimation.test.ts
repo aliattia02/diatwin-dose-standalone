@@ -120,48 +120,53 @@ describe('getDailyResetTime / getLastResetTime', () => {
     }
   });
 
-  it('PINS D9: it is 24 h stale for offsets east of +07:00', () => {
-    // MEASURED, not assumed. getDailyResetTime takes the UTC midnight of the
-    // supplied instant and shifts it, so the calendar day it anchors on is the
-    // *UTC* one. TimeManager, the Python backend (which delegates to Python
-    // TimeManager) and activity-pharmacodynamics.ts all anchor on the patient's
-    // local date. getLastResetTime only ever rolls its candidate back, never
-    // forward, so once the patient's local date runs ahead of the UTC date the
-    // boundary returned is exactly one day early.
+  it('D9 (fixed): agrees with TimeManager at every offset, all day', () => {
+    // Was: getDailyResetTime took the UTC midnight of the supplied instant and
+    // shifted it, so the calendar day it anchored on was the *UTC* one, while
+    // TimeManager, the Python backend and activity-pharmacodynamics.ts all
+    // anchor on the patient's local date. Once the patient's local date ran
+    // ahead of the UTC date the boundary came back exactly one day early.
     //
-    // Condition: timezone_offset_minutes > daily_reset_hour x 60. The affected
-    // slice of each day is (offset_hours - reset_hour) hours long — measured at
-    // +08:00 -> 1 h, +09:00 -> 2 h, +10:00 -> 3 h, +12:00 -> 5 h, +13:00 -> 6 h,
-    // +14:00 -> 7 h. Offsets at or west of +07:00 are never affected, which is
-    // why this has not surfaced in use.
+    // Condition was timezone_offset_minutes > daily_reset_hour x 60, and the
+    // affected slice of each day was (offset_hours - reset_hour) hours long:
+    // measured at +08:00 -> 1 h, +09:00 -> 2 h, +10:00 -> 3 h, +12:00 -> 5 h,
+    // +13:00 -> 6 h, +14:00 -> 7 h. Offsets at or west of +07:00 were never
+    // affected, which is why it never surfaced in use.
     //
-    // The same shape of bug is in the inline getLastResetMs inside
-    // calculateStackedMealEffect (meal-pharmacodynamics.ts).
-    //
-    // When this test starts failing, the defect has been fixed: replace the
-    // body with the TimeManager equality asserted in the test above, and widen
-    // that test's offset list to cover the whole range.
-    const staleWindowHours: Record<number, number> = {};
-    for (const offset of [480, 540, 600, 720, 780, 840]) {
-      let stale = 0;
-      let worstDelta = 0;
+    // Fixed by delegating to TimeManager rather than recomputing the boundary —
+    // removing the class of bug rather than one instance. This test now sweeps
+    // the full offset range at every hour of the day; it fails against the
+    // pre-fix code at 21 of the 24-hour x 6-offset combinations below.
+    for (const offset of [-720, -300, 0, 60, 330, 420, 480, 540, 600, 720, 780, 840]) {
       for (let h = 0; h < 24; h++) {
         const now = new Date(Date.UTC(2026, 2, 1, h, 0, 0));
-        const delta = Math.abs(
-          getLastResetTime(now, 7, offset).getTime() - timeManagerReset(now.getTime(), 7, offset));
-        if (delta > 0) { stale += 1; worstDelta = Math.max(worstDelta, delta); }
+        expect([offset, h, getLastResetTime(now, 7, offset).getTime()])
+          .toEqual([offset, h, timeManagerReset(now.getTime(), 7, offset)]);
+        expect([offset, h, getDailyResetTime(now, 7, offset).getTime()])
+          .toEqual([offset, h, timeManagerReset(now.getTime(), 7, offset)]);
       }
-      staleWindowHours[offset] = stale;
-      // The error, when it happens, is exactly one day — never a partial shift.
-      expect([offset, worstDelta]).toEqual([offset, stale > 0 ? 24 * HOUR : 0]);
     }
-    expect(staleWindowHours).toEqual({ 480: 1, 540: 2, 600: 3, 720: 5, 780: 6, 840: 7 });
   });
 
-  it('PINS D9: a meal from the previous window is counted at an eastern offset', () => {
-    // The consequence, stated in mg/dL rather than in hours. The guard is
-    // supposed to exclude anything before the boundary; at an eastern offset it
-    // excludes nothing, so a meal an hour *before* the reset contributes exactly
+  it('D9 (fixed): the reset is never in the future and never more than a day back', () => {
+    // The property that makes it a *daily* boundary at all. The old rollback in
+    // getLastResetTime could only ever move backwards, which is how the error
+    // reached a full 24 h; asserting both bounds catches a regression in either
+    // direction.
+    for (const offset of [-720, 0, 420, 780, 840]) {
+      for (let h = 0; h < 24; h++) {
+        const now = new Date(Date.UTC(2026, 2, 1, h, 0, 0));
+        const reset = getLastResetTime(now, 7, offset).getTime();
+        expect([offset, h, reset <= now.getTime()]).toEqual([offset, h, true]);
+        expect([offset, h, now.getTime() - reset < 24 * HOUR]).toEqual([offset, h, true]);
+      }
+    }
+  });
+
+  it('D9 (fixed): a meal from the previous window is excluded at an eastern offset', () => {
+    // The consequence, stated in mg/dL rather than in hours. The guard excludes
+    // anything before the boundary; before the fix, at an eastern offset it
+    // excluded nothing, so a meal an hour *before* the reset contributed exactly
     // what the same meal an hour *after* it would.
     const now = new Date(Date.UTC(2026, 2, 1, 20, 0, 0));
 
@@ -171,9 +176,8 @@ describe('getDailyResetTime / getLastResetTime', () => {
       meal(60, eastReset - HOUR), now, PC, PROFILES, 7, east);
     const afterBoundary = calculateMealCumulativeEffect(
       meal(60, eastReset + HOUR), now, PC, PROFILES, 7, east);
-    expect(beforeBoundary).toBeGreaterThan(0);            // <- should be 0
-    expect(beforeBoundary).toBeGreaterThan(afterBoundary); // older, so more absorbed
-    expect(beforeBoundary).toBeCloseTo(213.6, 1);          // 60 g, 3 h into a 4 h window
+    expect(beforeBoundary).toBe(0);          // excluded, as it always should have been
+    expect(afterBoundary).toBeGreaterThan(0); // and the one inside the window counts
 
     // The same meal, same clock, at an offset west of the reset hour: excluded.
     const west = -300;  // UTC-5

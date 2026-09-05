@@ -747,6 +747,15 @@ class Constants:
         'acute_rate_per_min':   0.15,    # mg/dL per minute at Z = 1 (calibrated)
         'hr_max_pop':          190.0,    # Population reference HRmax (bpm)
         'hr_base_pop':          70.0,    # Population resting HR (bpm)
+        # D22. Heart-rate reserve fraction at which the acute signal Z reaches
+        # 1.0 — i.e. the intensity `acute_rate_per_min` was calibrated against.
+        # Set to the vigorous tier (INTENSITY_HR_FRACTION['vigorous'] = 0.80) so
+        # vigorous exercise keeps exactly its previous BG drop while lighter
+        # intensities scale down proportionally instead of saturating to the
+        # same value. PROVISIONAL — see docs/engineering/2026-09-05-pre-ml-audit.md
+        # §6; the shape of the intensity response needs the Dalla Man / Breton /
+        # Cobelli model and clinical review.
+        'z_reference_hr_reserve': 0.80,
     }
 
     # HR as fraction of (HRmax − HRbase) above HRbase for each intensity tier.
@@ -1592,6 +1601,8 @@ export interface HrModel {
   acute_rate_per_min: number;
   hr_max_pop: number;
   hr_base_pop: number;
+  /** D22: HR-reserve fraction at which the acute signal Z reaches 1.0. */
+  z_reference_hr_reserve: number;
 }
 
 export interface MealType {

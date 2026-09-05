@@ -1365,10 +1365,10 @@ export function getAvailableInsulinTypes(): InsulinTypeOption[] {
         value.type.split('_')[0]
       } acting)`,
       type: value.type,
-      onset_hours: value.onsetHours,
-      peak_hours: value.peakHours,
-      duration_hours: value.durationHours,
-      is_peakless: value.isPeakless,
+      onset_hours: value.onset_hours,
+      peak_hours: value.peak_hours,
+      duration_hours: value.duration_hours,
+      is_peakless: value.is_peakless,
     }))
     .sort((a, b) => {
       // Sort by action type: rapid, short, intermediate, long, mixed

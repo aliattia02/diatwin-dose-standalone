@@ -203,14 +203,46 @@ function interpolateHr(trace, t, hrBase) {
 }
 
 /**
+ * The level the acute signal Z relaxes toward, in [0, 1].
+ *
+ * D22. dZ/dt used to be (1 - Z), which with dt = 1 minute drives Z to exactly
+ * 1.0 in a single Euler step from any starting value. Heart rate decided only
+ * *whether* the exercise gate opened, never how far, so a light 45-minute walk
+ * and a vigorous 45-minute session produced byte-identical BG drops —
+ * 6.45 mg/dL each, measured.
+ *
+ * Intensity is the Karvonen heart-rate reserve fraction,
+ * (HR - HRbase) / (HRmax - HRbase), the standard proxy for %VO2max — the
+ * quantity Dalla Man, Breton & Cobelli (J Diabetes Sci Technol 2009;3(1):56-67)
+ * drive insulin-independent glucose utilisation from. It is divided by
+ * z_reference_hr_reserve (0.80, the vigorous tier) so vigorous exercise still
+ * reaches Z = 1 and keeps exactly the drop acute_rate_per_min was calibrated
+ * to produce. Only lighter intensities change, and only downward.
+ *
+ * PROVISIONAL — linear in HR reserve is the simplest defensible choice, not a
+ * validated response. See docs/engineering/2026-09-05-pre-ml-audit.md §6.
+ *
+ * Mirrors Python _z_intensity_target().
+ */
+function zIntensityTarget(hr, hrBase, hrMax) {
+  const reserve = hrMax - hrBase;
+  if (reserve <= 0) return 1.0;
+  let fraction = (hr - hrBase) / reserve;
+  const reference = HR_MODEL.z_reference_hr_reserve ?? 0.8;
+  if (reference > 0) fraction /= reference;
+  return Math.min(1, Math.max(0, fraction));
+}
+
+/**
  * Euler-integrate Y/Z/W ODEs up to `elapsedMin` minutes.
  * Returns { Y, Z, W }.
  * Mirrors Python _simulate_hr_ode().
  */
-function simulateHrOde(trace, elapsedMin, hrBase) {
+function simulateHrOde(trace, elapsedMin, hrBase, hrMax) {
   let Y = 0, Z = 0, W = 0;
   const { tau_HR, tau_Z, tau_W, a, dt } = HR_MODEL;
   const threshold = hrBase * (1 + a);
+  const hrMaxEff  = hrMax && hrMax > 0 ? hrMax : HR_MODEL.hr_max_pop;
   const lastT     = trace.length > 0 ? trace[trace.length - 1][0] : 0;
   const steps     = Math.ceil(elapsedMin / dt);
 
@@ -224,7 +256,9 @@ function simulateHrOde(trace, elapsedMin, hrBase) {
     const dY = (hrAbove / tau_HR) - (Y / tau_HR);
     Y = Math.max(0, Y + dY * dt);
 
-    const dZ = (inEx && onsetOk) ? (1 - Z) : (-Z / tau_Z);
+    // D22: relax toward the bout's intensity, not toward 1.0.
+    const zTarget = zIntensityTarget(hr, hrBase, hrMaxEff);
+    const dZ = (inEx && onsetOk) ? (zTarget - Z) : (-Z / tau_Z);
     Z = Math.min(1, Math.max(0, Z + dZ * dt));
 
     const dW = inEx ? Y : (-W / tau_W);
@@ -238,12 +272,13 @@ function simulateHrOde(trace, elapsedMin, hrBase) {
  * Returns UNSIGNED magnitude (sign applied by caller via bg_direction).
  * Mirrors Python _integrate_z_drop().
  */
-function integrateZDrop(trace, fromMin, toMin, hrBase, weightKg) {
+function integrateZDrop(trace, fromMin, toMin, hrBase, weightKg, hrMax) {
   if (toMin <= fromMin) return 0;
 
   let Y = 0, Z = 0, W = 0;
   const { tau_HR, tau_Z, tau_W, a, dt, acute_rate_per_min } = HR_MODEL;
   const threshold  = hrBase * (1 + a);
+  const hrMaxEff   = hrMax && hrMax > 0 ? hrMax : HR_MODEL.hr_max_pop;
   const lastT      = trace.length > 0 ? trace[trace.length - 1][0] : 0;
   const steps      = Math.ceil(toMin / dt);
   let totalDrop    = 0;
@@ -258,7 +293,9 @@ function integrateZDrop(trace, fromMin, toMin, hrBase, weightKg) {
     const dY = (hrAbove / tau_HR) - (Y / tau_HR);
     Y = Math.max(0, Y + dY * dt);
 
-    const dZ = (inEx && onsetOk) ? (1 - Z) : (-Z / tau_Z);
+    // D22: relax toward the bout's intensity, not toward 1.0.
+    const zTarget = zIntensityTarget(hr, hrBase, hrMaxEff);
+    const dZ = (inEx && onsetOk) ? (zTarget - Z) : (-Z / tau_Z);
     Z = Math.min(1, Math.max(0, Z + dZ * dt));
 
     const dW = inEx ? Y : (-W / tau_W);
@@ -307,15 +344,16 @@ export function calculateActivityCumulativeEffect(activity, currentTimeMs, pc) {
     return Math.round(bgDir * dropMag * frac * 100) / 100;
   }
 
-  const { hrBase: pHrBase } = getPatientHrDefaults(pc);
+  const { hrBase: pHrBase, hrMax: pHrMax } = getPatientHrDefaults(pc);
   const hrBase  = parseFloat(activity.hr_base ?? pHrBase);
+  const hrMax   = parseFloat(activity.hr_max ?? pHrMax);
   const weightKg = pc?.weight_kg;
   const trace    = getTraceFromActivity(activity, pc);
   const elapsed  = (currentTimeMs - startMs) / 60000;
   const postTail = 4 * HR_MODEL.tau_Z;
   const scanTo   = Math.min(elapsed, parseFloat(activity.duration_minutes ?? 30) + postTail);
 
-  const magnitude = integrateZDrop(trace, 0, scanTo, hrBase, weightKg);
+  const magnitude = integrateZDrop(trace, 0, scanTo, hrBase, weightKg, hrMax);
   return Math.round(bgDir * magnitude * 100) / 100;
 }
 
@@ -330,8 +368,9 @@ export function getActivityOnBoard(activity, currentTimeMs, pc) {
   const intensity      = activity.intensity ?? 'moderate';
   const durationMin    = parseFloat(activity.duration_minutes ?? 30);
   const bgDir          = parseInt(activity.bg_direction ?? -1, 10);
-  const { hrBase: pHrBase } = getPatientHrDefaults(pc);
+  const { hrBase: pHrBase, hrMax: pHrMax } = getPatientHrDefaults(pc);
   const hrBase         = parseFloat(activity.hr_base ?? pHrBase);
+  const hrMax          = parseFloat(activity.hr_max ?? pHrMax);
   const weightKg       = pc?.weight_kg;
   const trace          = getTraceFromActivity(activity, pc);
   const lastTraceT     = trace.length > 0 ? trace[trace.length - 1][0] : durationMin;
@@ -373,8 +412,8 @@ export function getActivityOnBoard(activity, currentTimeMs, pc) {
   }
 
   // ── ODE path (no CGM override) ───────────────────────────────────────────
-  const totalDrop   = integrateZDrop(trace, 0, fullWindow, hrBase, weightKg);
-  const elapsedDrop = integrateZDrop(trace, 0, Math.min(elapsed, fullWindow), hrBase, weightKg);
+  const totalDrop   = integrateZDrop(trace, 0, fullWindow, hrBase, weightKg, hrMax);
+  const elapsedDrop = integrateZDrop(trace, 0, Math.min(elapsed, fullWindow), hrBase, weightKg, hrMax);
 
   const absorbed  = totalDrop > 0 ? Math.min(1, Math.max(0, elapsedDrop / totalDrop)) : 1;
   const remaining = Math.max(0, totalDrop * (1 - absorbed));
@@ -438,10 +477,11 @@ export function calculateActivitySensitivityMultiplier(activities, currentTimeMs
     const elapsedMin = (currentTimeMs - startMs) / 60000;
     if (elapsedMin > 8 * 60) continue; // W fully decayed
 
-    const { hrBase: pHrBase } = getPatientHrDefaults(pc);
+    const { hrBase: pHrBase, hrMax: pHrMax } = getPatientHrDefaults(pc);
     const hrBase   = parseFloat(activity.hr_base ?? pHrBase);
+    const hrMax    = parseFloat(activity.hr_max ?? pHrMax);
     const trace    = getTraceFromActivity(activity, pc);
-    const { Z, W } = simulateHrOde(trace, elapsedMin, hrBase);
+    const { Z, W } = simulateHrOde(trace, elapsedMin, hrBase, hrMax);
     const rawBoost = alpha * W * (1 + Z);
     const boost    = Math.min(rawBoost, max_sensitivity_boost);
     best = Math.max(best, Math.round((1 + boost) * 10000) / 10000);

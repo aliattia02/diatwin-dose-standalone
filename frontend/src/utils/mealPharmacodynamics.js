@@ -53,9 +53,16 @@ export function calculateMealActivity(hoursSinceMeal, profile) {
     return 0.0;
   }
 
-  // Pre-onset phase
+  // D21c: no absorption before gastric emptying completes.
+  //
+  // This used to ramp linearly to 5, and the gamma branch below starts at ~0
+  // because t^(k-1) -> 0 for every k > 1. So absorption rate *fell* by a full
+  // 5 percentage points at the instant onset completed — the opposite of the
+  // physiology onset_hours describes. Returning 0 makes the curve continuous
+  // at onset: before emptying is done, carbohydrate has not reached the
+  // absorptive surface.
   if (hoursSinceMeal < onset_hours) {
-    return (hoursSinceMeal / onset_hours) * 5; // Gradual ramp to 5%
+    return 0.0;
   }
 
   // Adjust time relative to onset
@@ -67,15 +74,31 @@ export function calculateMealActivity(hoursSinceMeal, profile) {
   const normalized_t = t / t_duration;
   const normalized_peak = t_peak / t_duration;
 
-  if (normalized_t <= 0) return 5;
+  if (normalized_t <= 0) return 0.0;
 
   // Gamma function calculation
   const k = shape_param;
   const theta = scale_param * normalized_peak;
 
+  // D21a: normalise by the curve's true maximum, not by its value at
+  // peak_hours.
+  //
+  // The density x^(k-1) * exp(-x/theta) peaks at x = (k-1)*theta. Dividing by
+  // its value at normalized_peak instead only coincides when
+  // (k-1)*scale_param === 1, which holds for none of the shipped profiles — so
+  // the ratio exceeded 1 either side of the true mode and Math.min(100, ...)
+  // clamped it. Between 18.6% and 38.5% of every absorption window sat at
+  // exactly 100, carrying no information at all.
+  //
+  // NOTE (provisional, 2026-09-05): peak_hours still names the normalisation
+  // point rather than the mode. Reparameterising the profiles so peak_hours IS
+  // the mode is a separate decision — see the pre-ML audit §6.
+  let mode = k > 1.0 ? (k - 1.0) * theta : 0.0;
+  mode = Math.min(Math.max(mode, 1e-12), 1.0);
+
   // Gamma PDF: t^(k-1) * e^(-t/θ)
   const activity = Math.pow(normalized_t, k - 1) * Math.exp(-normalized_t / theta);
-  const peak_activity = Math.pow(normalized_peak, k - 1) * Math.exp(-normalized_peak / theta);
+  const peak_activity = Math.pow(mode, k - 1) * Math.exp(-mode / theta);
 
   if (peak_activity > 0) {
     const normalized_activity = (activity / peak_activity) * 100;
@@ -157,7 +180,21 @@ export function calculateAbsorbedFraction(hoursSinceMeal, profile) {
     total_integral += calculateMealActivity(t, profile) * total_dt;
   }
 
-  return total_integral > 0 ? integral / total_integral : 0.0;
+  // Clamp to [0, 1]: this is a *fraction absorbed* and cannot exceed 1.
+  //
+  // Both integrals are 100-step left-Riemann sums, but over different step
+  // sizes (hoursSinceMeal/100 and duration_hours/100), so their discretisation
+  // errors do not cancel and the ratio can drift a few parts in 10,000 either
+  // side of 1 near the end of the window. Removing the pre-onset ramp (D21c)
+  // steepened the curve's rise and made the overshoot newly visible — the
+  // parity harness caught it as three `meal_abs::very_fast` divergences the
+  // moment Python was clamped and these were not.
+  //
+  // Making the estimator itself exact would mean integrating both on a common
+  // fixed grid, which shifts every absorbed-carbohydrate value slightly and is
+  // a separate decision — see the pre-ML audit §6.
+  if (total_integral <= 0) return 0.0;
+  return Math.min(1, Math.max(0, integral / total_integral));
 }
 
 /**

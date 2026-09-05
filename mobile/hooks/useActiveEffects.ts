@@ -78,6 +78,7 @@ import type {
   ActivityPDResult,
   ActivityContribution,
 } from '@/services/api/activity-pharmacodynamics';
+import { getDailyResetTime as timeManagerDailyReset } from '@/utils/time/TimeManager';
 import type { ActivityHistoryResponse } from '@/services/api/activities';
 
 import type { Meal } from '@/types/meal.types';
@@ -1705,16 +1706,18 @@ export function useActiveEffects(
           (netEffect?.cumulativeBaseline || 0) === 0
         );
 
-        // Determine the daily reset boundary so we can count post-reset items
+        // Determine the daily reset boundary so we can count post-reset items.
+        //
+        // D9: this block used to anchor on the *UTC* calendar date
+        // (`utcMidnight`, shifted by the offset), which is right only while the
+        // patient's local date matches the UTC one. East of +07:00 it does not,
+        // and the boundary came out exactly 24 h early — so yesterday's meals
+        // and doses were counted among "post-reset items". The three other
+        // reset computations in this file already worked in patient-local
+        // milliseconds; this one did not.
         const resetHour = constants.daily_reset_hour ?? 7;
         const tzOffset  = constants.timezone_offset_minutes ?? 0;
-        const utcMidnight = new Date(currentTime);
-        utcMidnight.setUTCHours(0, 0, 0, 0);
-        const patientMidnight = new Date(utcMidnight.getTime() - tzOffset * 60 * 1000);
-        const todayResetMs = patientMidnight.getTime() + resetHour * 60 * 60 * 1000;
-        const lastResetMs  = currentTime.getTime() >= todayResetMs
-          ? todayResetMs
-          : todayResetMs - 24 * 60 * 60 * 1000;
+        const lastResetMs = timeManagerDailyReset(currentTime.getTime(), resetHour, tzOffset);
 
         const mealsAfterReset = meals.filter(m => {
           const ts = String((m as any).timestamp ?? '');

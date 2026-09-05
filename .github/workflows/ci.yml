@@ -95,9 +95,15 @@ jobs:
       - name: Install
         working-directory: mobile
         run: npm ci
-      - name: Typecheck
+      # A ratchet, not an absolute gate. `tsc --noEmit` reports 185 errors, so
+      # gating on zero would make this job permanently red — which is how the
+      # register.tsx ValidationResult bug survived in the output, reported six
+      # times with the fix named in the message. The ratchet fails on any
+      # increase, and on a decrease that has not been recorded, so the number
+      # can only go down. See docs/engineering/2026-09-05-pre-ml-audit.md §2.
+      - name: Typecheck (ratchet)
         working-directory: mobile
-        run: npx tsc --noEmit
+        run: node scripts/typecheck-ratchet.mjs
       - name: Tests
         working-directory: mobile
         run: npx jest --ci --testPathIgnorePatterns=parity

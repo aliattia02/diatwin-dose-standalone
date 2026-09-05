@@ -123,26 +123,77 @@ class TestDeleteMealCascade:
         assert response.status_code == 400
 
 
-# ─── 2. Malformed JSON becomes a 500 ─────────────────────────────────────────
+# ─── 2. Malformed JSON is a 400 (D3, fixed) ──────────────────────────────────
 
 class TestMalformedJsonHandling:
     """
-    ``blood_sugar.py:46`` logs ``request.json`` before validating anything.
-    On a malformed body that raises ``BadRequest``, which the handler's own
-    ``except Exception`` converts into a 500.
+    D3, fixed. These assert the fix and fail against the pre-fix code.
 
-    A client sending bad JSON should get a 400. Returning 500 also means the
-    error is logged as a server fault, which hides real faults in the noise.
+    ``blood_sugar.py:46`` logs ``request.json`` before validating anything, so
+    a malformed body raises ``BadRequest`` inside the handler. The
+    ``@api_error_handler`` decorator had one blanket ``except Exception``
+    returning 500, which reported a client's bad JSON as a server fault — and
+    logged it at error level, where it hid real faults in the noise.
+
+    The decorator now re-raises ``HTTPException`` with its own status. That is
+    a global fix: 80 routes carry the decorator, and every ``abort(...)`` inside
+    one of them used to come back as a 500 too.
     """
 
-    def test_malformed_body_returns_500_not_400(self, client, patient, auth):
+    def test_malformed_body_returns_400(self, client, patient, auth):
         response = client.post(
             "/api/blood-sugar",
             data="{not json",
             content_type="application/json",
             headers=auth(patient),
         )
-        assert response.status_code == 500, "DEFECT: should be 400"
+        assert response.status_code == 400
+
+    def test_the_400_carries_werkzeugs_text_and_no_internals(
+            self, client, patient, auth):
+        """
+        The body is Werkzeug's own description, not an application traceback.
+
+        Flask re-raises a bare ``BadRequest`` after JSON decoding fails, so the
+        text is its generic "the browser (or proxy) sent a request that this
+        server could not understand" rather than the underlying
+        ``JSONDecodeError``. That is deliberate on Flask's part and is the safe
+        choice: the decoder message can quote the request body back, and the
+        body is attacker-controlled. What matters here is that a caller gets a
+        readable 400 and no stack trace or file path.
+        """
+        response = client.post(
+            "/api/blood-sugar",
+            data="{not json",
+            content_type="application/json",
+            headers=auth(patient),
+        )
+        error = response.get_json()["error"]
+
+        assert isinstance(error, str) and error.strip()
+        assert "could not understand" in error.lower()
+        for leak in ("Traceback", "site-packages", "C:\\", "/backend/"):
+            assert leak not in error
+
+    def test_a_genuine_server_fault_is_still_a_500_without_detail(
+            self, client, patient, auth, monkeypatch):
+        """
+        The negative case. Narrowing the handler must not turn real server
+        faults into client errors, and must not start leaking their messages.
+        """
+        import blood_sugar as bs_module
+
+        def boom(*a, **k):
+            raise RuntimeError("secret internal detail")
+
+        monkeypatch.setattr(bs_module, "Constants", boom)
+        response = client.post(
+            "/api/blood-sugar",
+            json={"bloodSugar": 120, "bloodSugarTimestamp": "2026-03-01T12:00:00Z"},
+            headers=auth(patient),
+        )
+        assert response.status_code == 500
+        assert "secret internal detail" not in response.get_data(as_text=True)
 
     def test_wellformed_body_still_works(self, client, patient, auth):
         response = client.post(

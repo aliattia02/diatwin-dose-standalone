@@ -124,21 +124,47 @@ describe('calculateGammaAbsorption — curve shape', () => {
     expect(calculateGammaAbsorption(p.durationHours + 1e-9, p)).toBe(0);
   });
 
-  it('ramps linearly to 5 % over the onset window and joins continuously', () => {
-    const p = profileOf('medium');
-    expect(calculateGammaAbsorption(p.onsetHours / 2, p)).toBeCloseTo(2.5, 10);
-    // The pre-onset ramp ends at 5 and the main branch opens at 5 — the two
-    // pieces must meet, or the curve has a step at onset.
-    expect(calculateGammaAbsorption(p.onsetHours - 1e-9, p)).toBeCloseTo(5, 6);
-    expect(calculateGammaAbsorption(p.onsetHours, p)).toBeCloseTo(5, 6);
-  });
-
-  it('reaches exactly 100 % at peak_hours, for every profile', () => {
-    // The curve is normalised by its own value at peak_hours, so this is an
-    // identity of the formula rather than a fitted number.
+  it('D21c (fixed): absorption is zero before onset and continuous across it', () => {
+    // Was: a linear ramp to 5 % over the onset window, while the gamma branch
+    // opens at ~0 because t^(k-1) -> 0 for every k > 1. Absorption rate
+    // therefore *dropped* by a full 5 points at the instant gastric emptying
+    // completed — the opposite of the physiology onsetHours describes.
+    //
+    // Returning 0 before onset is both continuous and what the model says:
+    // before emptying is done, carbohydrate has not reached the absorptive
+    // surface. Same change in the Python and frontend implementations.
     for (const key of PROFILE_KEYS) {
       const p = profileOf(key);
-      expect([key, calculateGammaAbsorption(p.peakHours, p)]).toEqual([key, 100]);
+      expect([key, calculateGammaAbsorption(p.onsetHours / 2, p)]).toEqual([key, 0]);
+      expect([key, calculateGammaAbsorption(p.onsetHours - 1e-9, p)]).toEqual([key, 0]);
+      expect([key, calculateGammaAbsorption(p.onsetHours, p)]).toEqual([key, 0]);
+      // And it rises away from zero rather than stepping down from 5.
+      expect([key, calculateGammaAbsorption(p.onsetHours + 0.01, p) >= 0]).toEqual([key, true]);
+    }
+  });
+
+  it('D21a (fixed): reaches exactly 100 % at the true mode of the curve', () => {
+    // Was: normalised by its own value at peakHours, which is not where the
+    // density peaks. The mode of t^(k-1)·e^(-t/theta) is at (k-1)·theta, and
+    // (k-1)·scaleParam !== 1 for any shipped profile — so the ratio exceeded 1
+    // either side of the mode and the min(100, …) clamp flattened it.
+    //
+    // Normalising by the true maximum is an identity of the formula, not a
+    // fitted number: the curve touches 100 exactly once, at the mode.
+    for (const key of PROFILE_KEYS) {
+      const p = profileOf(key);
+      // The profile type marks these optional; every shipped profile sets
+      // them, and the defaults here match the implementation's own fallbacks.
+      const scaleParam = p.scaleParam ?? 1.0;
+      const shapeParam = p.shapeParam ?? 2.0;
+      const tDuration = p.durationHours - p.onsetHours;
+      const theta = scaleParam * ((p.peakHours - p.onsetHours) / tDuration);
+      const modeHours = p.onsetHours + (shapeParam - 1) * theta * tDuration;
+      expect(calculateGammaAbsorption(modeHours, p)).toBeCloseTo(100, 9);
+      // peakHours is still the *normalisation* parameter, not the mode — see
+      // D21b in docs/engineering/2026-09-05-pre-ml-audit.md §6, still open.
+      expect([key, modeHours < p.peakHours]).toEqual([key, true]);
+      expect([key, calculateGammaAbsorption(p.peakHours, p) < 100]).toEqual([key, true]);
     }
   });
 
@@ -154,42 +180,42 @@ describe('calculateGammaAbsorption — curve shape', () => {
     }
   });
 
-  it('PINS: the maximum is a plateau ending at peak_hours, not a point at it', () => {
-    // Measured, not assumed. The gamma density t^(k-1)·e^(-t/theta) has its mode
-    // at (k-1)·theta, which for every shipped profile lies *before* the
-    // configured peak_hours. Normalising by the value at peak_hours therefore
-    // pushes an interval of the curve above 100, and the min(100, …) clamp
-    // flattens it. The plateau ends exactly at peak_hours because that is the
-    // normalisation point.
+  it('D21a (fixed): the maximum is a point, not a plateau', () => {
+    // Measured before the fix: between 18.6 % (very_fast) and 38.5 %
+    // (very_slow) of every absorption window sat at exactly 100, carrying no
+    // information at all — the model could not distinguish one moment from
+    // another across a fifth to two fifths of each meal.
     //
-    // Shared with backend/utils/pharmacodynamics.py — same formula, same clamp.
-    // Not a port defect. Pinned so that "peak_hours is where the curve peaks"
-    // is never assumed by a caller.
-    const plateauStart: Record<string, number> = {};
+    // Shared with backend/utils/pharmacodynamics.py and the frontend, so the
+    // parity harness was silent on it. Fixed in all three together.
     for (const key of PROFILE_KEYS) {
       const p = profileOf(key);
-      let first = Infinity;
+      let atCeiling = 0;
+      let samples = 0;
       for (let i = 0; i <= 4000; i++) {
         const h = (i / 4000) * p.durationHours;
-        if (calculateGammaAbsorption(h, p) >= 100) { first = h; break; }
+        if (h < p.onsetHours) continue;
+        samples++;
+        if (calculateGammaAbsorption(h, p) >= 100 - 1e-9) atCeiling++;
       }
-      plateauStart[key] = first;
-      expect([key, first < p.peakHours]).toEqual([key, true]);
+      expect([key, samples > 0]).toEqual([key, true]);
+      expect([key, atCeiling <= 2]).toEqual([key, true]);
     }
-    // The plateau is a substantial share of the window, not a rounding artefact:
-    // for `medium` it opens at ~0.83 h and runs to peak_hours = 1.5 h.
-    expect(plateauStart.medium).toBeGreaterThan(0.8);
-    expect(plateauStart.medium).toBeLessThan(0.9);
   });
 
   it('PINS: activity is truncated at duration_hours, not tapered to zero', () => {
-    // very_slow still carries more than half its peak activity when the window
-    // closes, and drops to 0 in one step. Absorbed *fraction* is renormalised
-    // so no carbohydrate is lost, but the instantaneous rate — which feeds the
-    // trend arrow through calculateNetEffect — has a cliff there. Shared with
-    // the Python model.
+    // very_slow still carries a large share of its peak activity when the
+    // window closes, and drops to 0 in one step. Absorbed *fraction* is
+    // renormalised so no carbohydrate is lost, but the instantaneous rate —
+    // which feeds the trend arrow through calculateNetEffect — has a cliff
+    // there. Shared with the Python model, so parity is silent on it.
+    //
+    // Still open. D21a moved the normalisation point to the true mode, so this
+    // measures 47 % rather than the 52 % it did before; the cliff itself is
+    // untouched and is a separate decision — see the pre-ML audit §6.
     const p = profileOf('very_slow');
-    expect(calculateGammaAbsorption(p.durationHours - 1e-6, p)).toBeGreaterThan(50);
+    const atClose = calculateGammaAbsorption(p.durationHours - 1e-6, p);
+    expect(atClose).toBeGreaterThan(40);
     expect(calculateGammaAbsorption(p.durationHours + 1e-6, p)).toBe(0);
   });
 });
@@ -481,12 +507,16 @@ describe('generateMealAbsorptionCurve', () => {
     expect(last.absorbed).toBe(1);
   });
 
-  it('absorbed is non-decreasing on the display grid, to within the quadrature artefact', () => {
-    // Measured: the 5-minute display grid *does* reach the artefact pinned in
-    // calculateAbsorbedFraction — very_fast steps back 1.3e-3 at t = 1.667 h.
-    // Every other profile is strictly monotone on this grid. Asserting a bound
-    // rather than monotonicity is the honest statement: the rendered curve can
-    // dip, by an amount three orders of magnitude below one pixel.
+  it('absorbed is non-decreasing on the display grid, for every profile', () => {
+    // Was: very_fast stepped back 1.3e-3 at t = 1.667 h, so this asserted a
+    // bound rather than monotonicity. The [0, 1] clamp added to
+    // calculateAbsorbedFraction alongside D21c removes that backstep — the
+    // overshoot above 1 was what the dip came back down from — and every
+    // profile is now strictly monotone on the 5-minute grid.
+    //
+    // The underlying quadrature is unchanged: both integrals are still
+    // 100-step left-Riemann sums over different step sizes. The bound below
+    // stays as a guard in case a future change reintroduces the wobble.
     const worst: Record<string, number> = {};
     for (const key of PROFILE_KEYS) {
       const points = generateMealAbsorptionCurve(mealOf(key, 50), PC, 5);
@@ -499,8 +529,7 @@ describe('generateMealAbsorptionCurve', () => {
       worst[key] = backstep;
       expect([key, backstep < 2e-3]).toEqual([key, true]);
     }
-    expect(worst.very_fast).toBeGreaterThan(0);
-    for (const key of ['fast', 'medium', 'slow', 'very_slow', 'mixed']) {
+    for (const key of PROFILE_KEYS) {
       expect([key, worst[key]]).toEqual([key, 0]);
     }
   });
@@ -640,25 +669,22 @@ describe('calculateStackedMealEffect', () => {
       .contributions).toHaveLength(1);
   });
 
-  it('PINS D9: the reset guard is 24 h stale for offsets east of +07:00', () => {
-    // MEASURED, not assumed. calculateStackedMealEffect's inline getLastResetMs
+  it('D9 (fixed): the reset guard holds for offsets east of +07:00 too', () => {
+    // Was: calculateStackedMealEffect kept its own inline getLastResetMs which
     // — like getDailyResetTime in blood-glucose-estimation.ts, and unlike
     // TimeManager, the Python backend and activity-pharmacodynamics.ts —
-    // anchors the reset day on the *UTC* calendar date rather than the
-    // patient's local one, and only ever rolls that candidate back, never
-    // forward. Whenever the patient's local date runs ahead of the UTC date,
-    // the boundary it returns is exactly one day early.
+    // anchored the reset day on the *UTC* calendar date rather than the
+    // patient's local one, and only ever rolled that candidate back, never
+    // forward. Whenever the patient's local date ran ahead of the UTC date the
+    // boundary was exactly one day early, and a meal from the previous window
+    // was admitted with its carbs counted toward today's totals.
     //
-    // Condition: timezone_offset_minutes > daily_reset_hour × 60. The affected
-    // slice of each day is (offset_hours − reset_hour) hours long: +08:00 → 1 h,
-    // +09:00 → 2 h, +12:00 → 5 h, +13:00 → 6 h. Offsets at or west of +07:00 are
-    // never affected, which is why this has not surfaced in use.
+    // Condition was timezone_offset_minutes > daily_reset_hour × 60, affecting
+    // an (offset_hours − reset_hour) slice of each day: +08:00 → 1 h,
+    // +09:00 → 2 h, +12:00 → 5 h, +13:00 → 6 h. Offsets at or west of +07:00
+    // were never affected, which is why it never surfaced in use.
     //
-    // Effect here: a meal from the previous window is admitted and its carbs are
-    // counted toward today's totals.
-    //
-    // When this test starts failing, the defect has been fixed — change the
-    // `toHaveLength(1)` below to `toHaveLength(0)` and delete this note.
+    // Both copies of the arithmetic now delegate to TimeManager.
     const now = new Date(Date.UTC(2026, 2, 1, 20, 0, 0));
 
     const tzEast = 780;   // UTC+13
@@ -667,7 +693,7 @@ describe('calculateStackedMealEffect', () => {
       [mealOf('medium', 60, eastReset - 60_000)], now,
       { ...PC, daily_reset_hour: 7, timezone_offset_minutes: tzEast },
     );
-    expect(east.contributions).toHaveLength(1);   // ← should be 0
+    expect(east.contributions).toHaveLength(0);
 
     // The same meal, same clock, at an offset west of the reset hour: excluded.
     const tzWest = -300;  // UTC−5

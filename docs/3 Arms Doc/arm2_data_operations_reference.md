@@ -247,10 +247,40 @@ post_tail_window    =  40.0   min   (4 × tau_Z)
 
 | Function | Signature | Notes |
 |---|---|---|
-| `calculate_gamma_absorption(hours, profile)` | `→ float` | Returns activity % (0–100); uses gamma distribution |
+| `calculate_gamma_absorption(hours, profile)` | `→ float` | Returns activity % (0–100); gamma density `x^(k-1)·e^(-x/θ)` normalised by its **true maximum** at `x = (k-1)·θ`. Returns **0 before `onset_hours`**. Both were changed on 2026-09-05 (**D21**) — see the note below. |
 | `calculate_meal_activity_percentage(hours, meal_profile, absorption_profiles)` | `→ float` | Resolves absorption type then delegates to `calculate_gamma_absorption` |
 | `get_meal_absorption_profile(meal, patient_constants, absorption_profiles)` | `→ dict` | Resolves type from `calculation_summary` → `nutrition` → `'medium'`; applies patient `absorption_modifiers` |
-| `calculate_absorbed_fraction(hours, profile, absorption_profiles)` | `→ float` (0–1) | 100-step **left-Riemann** sum, normalised by the same sum over the full duration; returns 1.0 after duration. This entry said "trapezoidal" until 2026-09-05; it never was, and `frontend/src/utils/mealPharmacodynamics.js` had implemented a trapezoid to match the description (D16). |
+| `calculate_absorbed_fraction(hours, profile, absorption_profiles)` | `→ float` (0–1) | 100-step **left-Riemann** sum, normalised by the same sum over the full duration; returns 1.0 after duration, and is **clamped to [0, 1]** (D21, 2026-09-05). This entry said "trapezoidal" until 2026-09-05; it never was, and `frontend/src/utils/mealPharmacodynamics.js` had implemented a trapezoid to match the description (D16). |
+
+> **D21 — the meal curve's shape, corrected 2026-09-05.** Three problems sat
+> under one defect number; two are fixed, one is deliberately open.
+>
+> * **The plateau (fixed).** The curve was normalised by its value at
+>   `peak_hours`, but the density peaks at `x = (k-1)·θ`. Those coincide only
+>   when `(k-1)·scale_param == 1`, which held for **none** of the six shipped
+>   profiles — so the ratio exceeded 1 either side of the true mode and
+>   `min(100, …)` clamped it flat. Measured: **18.6% (very_fast) to 38.5%
+>   (very_slow)** of every absorption window sat at exactly 100, carrying no
+>   information. Normalising by the true maximum removes the plateau without
+>   changing the curve's shape, and `calculate_absorbed_fraction` divides by
+>   total area, so it is invariant to the rescaling.
+> * **The discontinuity at onset (fixed).** Below onset the curve ramped
+>   linearly to exactly 5, while the gamma branch opens at ~0 because
+>   `t^(k-1) → 0` for every `k > 1`. Absorption rate therefore *fell* by a full
+>   5 percentage points at the instant gastric emptying completed. It now
+>   returns 0 before onset, which is continuous and matches what `onset_hours`
+>   describes: before emptying is done, carbohydrate has not reached the
+>   absorptive surface.
+> * **`peak_hours` is not the mode (OPEN).** The curve now peaks where the
+>   density peaks, but `peak_hours` still names the *normalisation* parameter.
+>   The gap is up to 1.6 h (`very_slow`: mode 1.90 h, `peak_hours` 3.50 h).
+>   **Editing `peak_hours` changes the curve's shape, not the position of its
+>   peak.** Closing this means reparameterising every profile so
+>   `(k-1)·scale == 1`, which changes each tail — a clinical decision.
+>
+> Changed in all three implementations at once (Python, mobile, web frontend);
+> the parity harness reports no new divergence. Pinned in
+> `backend/tests/test_model_shape_defects.py`.
 | `calculate_meal_active_carbs(meal, current_time, patient_constants, absorption_profiles)` | `→ dict` | Full T1D model: `active_carbs`, `absorbed_carbs`, `current_bg_elevation`, `pending_bg_rise` |
 | `calculate_meal_total_carbs_for_window(meal, current_time, patient_constants, absorption_profiles)` | `→ dict` | Returns total carbs regardless of absorption state; used by MOB comparison panel |
 

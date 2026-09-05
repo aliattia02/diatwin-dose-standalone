@@ -4,7 +4,7 @@
 > **Version:** 2.4 (backend) / 2.4 (frontend TypeScript)
 >
 > **Changelog from v2.3/2.2:**
-> - Bug 1/2/13 resolved: ODE W-state rewritten — Z is now a binary saturation gate (not smooth);
+> - Bug 1/2/13 resolved: ODE W-state rewritten — Z is gated on onset (see §D22 note below);
 >   W accumulates ∫Y dt (not a×Z); W decay applies only in recovery; integration extends past
 >   durationMins to include elapsed recovery time at the moment of the dose calculation.
 > - Bug 16 resolved: Multiple sessions use `max()` across W-states for sensitivity_multiplier
@@ -69,8 +69,9 @@ Y  (HR filter signal — energy expenditure proxy)
    where hrAbove = max(0, HR_bpm − HR_base)   (excess HR; 0 after exercise ends)
    Y ≥ 0
 
-Z  (binary saturation gate — acute IIRd signal)
-   dZ/dt = (1 − Z)   while inExercise AND Y > a·HR_base   (saturates to 1)
+Z  (acute IIRd signal — intensity-tracking since D22, 5 Sep 2026)
+   dZ/dt = (Zt − Z)  while inExercise AND Y > a·HR_base
+   where Zt = clamp((HR − HR_base) / (HR_max − HR_base) / 0.80, 0, 1)
          = (−Z / τ_Z)  otherwise                            (decays back to 0)
    Z ∈ [0, 1]
 
@@ -82,7 +83,35 @@ W  (cumulative load integral — GLUT4 upregulation proxy)
 
 `Y` acts as a low-pass filter with τ_HR = 5 min on the HR signal above resting. It prevents instantaneous spikes from the HR trace having a disproportionate effect on Z and W.
 
-`Z` uses a **binary onset criterion**: the exercise effect "switches on" (dZ/dt = 1 − Z) only once Y crosses `a·HR_base` (threshold = 5% of resting HR), protecting against artefactual start-of-session noise. Z is not a smooth curve — it saturates to 1 within approximately one integration step once the threshold is met.
+`Z` uses a **binary onset criterion**: the exercise effect "switches on" only once
+Y crosses `a·HR_base` (threshold = 5% of resting HR), protecting against
+artefactual start-of-session noise.
+
+**The onset is binary; the level is not.** Until 5 September 2026 `dZ/dt` was
+`(1 − Z)`, which with `dt = 1` min drives Z to exactly 1.0 in a single Euler step
+from any starting value — so heart rate decided only *whether* the gate opened,
+never how far. Measured consequence: a light 45-minute walk and a vigorous
+45-minute session produced **byte-identical** BG drops of 6.4500000000 mg/dL.
+That was **D22**.
+
+Z now relaxes toward a target intensity `Zt`, the Karvonen heart-rate reserve
+fraction `(HR − HR_base)/(HR_max − HR_base)` divided by
+`HR_MODEL.z_reference_hr_reserve` (0.80, the vigorous tier). Vigorous therefore
+still reaches Z = 1 and keeps exactly the drop `acute_rate_per_min` was
+calibrated to produce; only lighter tiers change, and only downward. Measured at
+45 min, HR_base 60, HR_max 190: light **4.03**, moderate **5.24**, vigorous
+**6.45** mg/dL.
+
+The relaxation constant is still one integration step, so Z still reaches its
+target within approximately one step — it is the *target* that changed, not the
+speed.
+
+> **Provisional.** Linear in HR reserve is the simplest defensible choice —
+> monotone, bounded, calibration-preserving — not a validated response. Dalla
+> Man, Breton & Cobelli (*J Diabetes Sci Technol* 2009;3(1):56-67) drive
+> insulin-independent glucose utilisation from %VO₂max; matching their
+> functional form needs the paper and a clinician. Pinned in
+> `backend/tests/test_model_shape_defects.py::TestStillOpen`.
 
 `W` accumulates the area under the `Y` curve (not `a × Z`). This encodes both intensity and duration jointly, which is the physiological basis for the prolonged post-exercise sensitivity window. W decays only in recovery — during exercise it accumulates monotonically.
 

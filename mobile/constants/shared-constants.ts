@@ -133,6 +133,8 @@ export interface HrModel {
   acute_rate_per_min: number;
   hr_max_pop: number;
   hr_base_pop: number;
+  /** D22: HR-reserve fraction at which the acute signal Z reaches 1.0. */
+  z_reference_hr_reserve: number;
 }
 
 export interface MealType {
@@ -1395,7 +1397,8 @@ export const SHARED_CONSTANTS: SharedConstants = {
     "dt": 1.0,
     "acute_rate_per_min": 0.15,
     "hr_max_pop": 190.0,
-    "hr_base_pop": 70.0
+    "hr_base_pop": 70.0,
+    "z_reference_hr_reserve": 0.8
   },
   "INTENSITY_HR_FRACTION": {
     "light": 0.5,

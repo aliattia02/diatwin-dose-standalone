@@ -12,6 +12,7 @@ import type { PharmacodynamicProfile } from '../../types/pharmacodynamics.types'
 import type { AbsorptionType } from '../../types/meal.types';
 import type { MealAbsorptionProfile } from '../../constants/shared-constants';
 import { MEAL_ABSORPTION_PROFILES, DEFAULT_PATIENT_CONSTANTS } from '../../constants/shared-constants';
+import { getDailyResetTime as timeManagerDailyReset } from '@/utils/time/TimeManager';
 
 /**
  * ============================================================================
@@ -257,9 +258,16 @@ export function calculateGammaAbsorption(
     return 0.0;
   }
 
-  // Before onset - gradual ramp to 5%
+  // D21c: no absorption before gastric emptying completes.
+  //
+  // This used to ramp linearly to 5, and the gamma branch below starts at ~0
+  // because t^(k-1) -> 0 for every k > 1. So absorption rate *fell* by a full
+  // 5 percentage points at the instant onset completed — the opposite of the
+  // physiology onsetHours describes. Returning 0 makes the curve continuous
+  // at onset: before emptying is done, carbohydrate has not reached the
+  // absorptive surface.
   if (hoursSinceMeal < onsetHours) {
-    return (hoursSinceMeal / onsetHours) * 5;
+    return 0.0;
   }
 
   // Main absorption phase
@@ -271,17 +279,33 @@ export function calculateGammaAbsorption(
   const normalizedT = t / tDuration;
   const normalizedPeak = tPeak / tDuration;
 
-  if (normalizedT <= 0) return 5;
+  if (normalizedT <= 0) return 0.0;
 
   // Calculate gamma parameters
   const k = shapeParam;
   const theta = scaleParam * normalizedPeak;
 
+  // D21a: normalise by the curve's true maximum, not by its value at
+  // peakHours.
+  //
+  // The density x^(k-1) * exp(-x/theta) peaks at x = (k-1)*theta. Dividing by
+  // its value at normalizedPeak instead only coincides when
+  // (k-1)*scaleParam === 1, which holds for none of the shipped profiles — so
+  // the ratio exceeded 1 either side of the true mode and Math.min(100, ...)
+  // clamped it. Between 18.6% and 38.5% of every absorption window sat at
+  // exactly 100, carrying no information at all.
+  //
+  // NOTE (provisional, 2026-09-05): peakHours still names the normalisation
+  // point rather than the mode. Reparameterising the profiles so peakHours IS
+  // the mode is a separate decision — see the pre-ML audit §6.
+  let mode = k > 1.0 ? (k - 1.0) * theta : 0.0;
+  mode = Math.min(Math.max(mode, 1e-12), 1.0);
+
   // Calculate gamma values
   const activity = calculateGammaValue(normalizedT, k, theta);
-  const peakActivity = calculateGammaValue(normalizedPeak, k, theta);
+  const peakActivity = calculateGammaValue(mode, k, theta);
 
-  // Normalize to 100% at peak
+  // Normalize to 100% at the true peak
   let normalizedActivity = 0;
   if (peakActivity > 0) {
     normalizedActivity = (activity / peakActivity) * 100;
@@ -327,7 +351,21 @@ export function calculateAbsorbedFraction(
     totalIntegral += activity * totalDt;
   }
 
-  return totalIntegral > 0 ? integral / totalIntegral : 0.0;
+  // Clamp to [0, 1]: this is a *fraction absorbed* and cannot exceed 1.
+  //
+  // Both integrals are 100-step left-Riemann sums, but over different step
+  // sizes (hoursSinceMeal/100 and durationHours/100), so their discretisation
+  // errors do not cancel and the ratio can drift a few parts in 10,000 either
+  // side of 1 near the end of the window. Removing the pre-onset ramp (D21c)
+  // steepened the curve's rise and made the overshoot newly visible — the
+  // parity harness caught it as three `meal_abs::very_fast` divergences the
+  // moment Python was clamped and these were not.
+  //
+  // Making the estimator itself exact would mean integrating both on a common
+  // fixed grid, which shifts every absorbed-carbohydrate value slightly and is
+  // a separate decision — see the pre-ML audit §6.
+  if (totalIntegral <= 0) return 0.0;
+  return Math.min(1, Math.max(0, integral / totalIntegral));
 }
 
 /**
@@ -579,19 +617,20 @@ export function calculateStackedMealEffect(
   const resetHour = (patientConstants as any).daily_reset_hour ?? 7;
   const tzOffset  = (patientConstants as any).timezone_offset_minutes ?? 0;
 
-  // Inline reset helper — avoids a circular import with blood-glucose-estimation.ts
-  function getLastResetMs(now: Date): number {
-    const utcMidnight = new Date(now);
-    utcMidnight.setUTCHours(0, 0, 0, 0);
-    const patientMidnight = new Date(utcMidnight.getTime() - tzOffset * 60 * 1000);
-    const todayReset = new Date(patientMidnight.getTime() + resetHour * 60 * 60 * 1000);
-    if (now < todayReset) {
-      return todayReset.getTime() - 24 * 60 * 60 * 1000;
-    }
-    return todayReset.getTime();
-  }
-
-  const lastResetMs = getLastResetMs(currentTime);
+  // D9, fixed: use TimeManager rather than an inline copy of the arithmetic.
+  //
+  // The helper that used to live here anchored the reset day on the *UTC*
+  // calendar date (`utcMidnight`, then shifted by the offset), which is only
+  // right while the patient's local date matches the UTC one. East of +07:00 it
+  // does not — at 20:00 UTC a patient at UTC+13 is already on the next local
+  // day — and because the rollback below it could only ever move the candidate
+  // backwards, the boundary came out exactly 24 h early. Meals from the
+  // previous window were then admitted and counted toward today's totals.
+  //
+  // It was inline "to avoid a circular import with blood-glucose-estimation.ts".
+  // TimeManager has no such cycle: it imports neither of these modules, which is
+  // what makes it usable as the single definition of the boundary.
+  const lastResetMs = timeManagerDailyReset(currentTime.getTime(), resetHour, tzOffset);
 
   for (const meal of meals) {
     // FIX: Skip meals that pre-date today's daily reset.

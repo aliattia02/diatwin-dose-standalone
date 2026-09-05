@@ -1014,7 +1014,7 @@ const UnifiedInsulinInput: React.FC<UnifiedInsulinInputProps> = ({
     if (text && !isNaN(value)) {
       const validation = validateInsulinDose(value);
       if (!validation.isValid) {
-        setError(validation.error || 'Invalid dose');
+        setError(validation.errors.join('. ') || 'Invalid dose');
       }
     }
   };

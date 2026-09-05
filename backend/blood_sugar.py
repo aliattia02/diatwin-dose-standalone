@@ -10,6 +10,8 @@ from routes.medication_routes import calculate_stacked_insulin_effect
 import logging
 import traceback
 
+from werkzeug.exceptions import HTTPException
+
 logger = logging.getLogger(__name__)
 blood_sugar_bp = Blueprint('blood_sugar', __name__)
 
@@ -43,7 +45,9 @@ def add_blood_sugar(current_user):
         logger.info("🩸 BLOOD SUGAR POST ENDPOINT CALLED")
         logger.info(f"📍 Route: /api/blood-sugar")
         logger.info(f"👤 User ID: {current_user.get('_id')}")
-        logger.info(f"📦 Request JSON: {request.json}")
+        # get_json(silent=True) rather than `request.json`: a malformed body
+        # must not raise from inside a *log* statement.
+        logger.info(f"📦 Request JSON: {request.get_json(silent=True)}")
         logger.info(f"🌐 Request Origin: {request.headers.get('Origin', 'Unknown')}")
         logger.info(f"🔑 Authorization: {request.headers.get('Authorization', 'None')[:50]}...")
         logger.info("=" * 80)
@@ -244,6 +248,13 @@ def add_blood_sugar(current_user):
             'bloodSugarTimestamp': parsed_timestamp.isoformat()
         }), 201
 
+    except HTTPException:
+        # D3: a malformed request body makes `request.json` raise BadRequest.
+        # Catching it here turned a client error into a 500 — reported to the
+        # caller as a server fault and logged at error level, where it hid real
+        # faults in the noise. Re-raise so `@api_error_handler` returns the
+        # status the exception already carries.
+        raise
     except Exception as e:
         logger.error("=" * 80)
         logger.error(f"💥 EXCEPTION in add_blood_sugar!")
@@ -252,7 +263,9 @@ def add_blood_sugar(current_user):
         logger.error(f"📚 Traceback:")
         logger.error(traceback.format_exc())
         logger.error("=" * 80)
-        return jsonify({'error': str(e)}), 500
+        # The message is logged above, not returned: `str(e)` on an unexpected
+        # fault can carry connection strings, query fragments or file paths.
+        return jsonify({'error': 'An unexpected error occurred'}), 500
 
 
 def normalize_timestamp(timestamp_str):

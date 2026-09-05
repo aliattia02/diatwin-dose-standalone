@@ -1057,7 +1057,8 @@ export const SHARED_CONSTANTS = {
     "dt": 1.0,
     "acute_rate_per_min": 0.15,
     "hr_max_pop": 190.0,
-    "hr_base_pop": 70.0
+    "hr_base_pop": 70.0,
+    "z_reference_hr_reserve": 0.8
   },
   "INTENSITY_HR_FRACTION": {
     "light": 0.5,

@@ -42,6 +42,84 @@ const API_BASE_URL = getApiBaseUrl();
 console.log('[API Client] Initialized with base URL:', API_BASE_URL);
 console.log('[API Client] Platform:', Platform.OS);
 
+// ─── Diagnosing "no response" ─────────────────────────────────────────────────
+
+/**
+ * Why a request produced no response.
+ *
+ * A CORS block and a cold start are indistinguishable to axios: in both cases
+ * `error.response` is undefined and `error.code` is `ERR_NETWORK`. This module
+ * used to report every one of them as a Render cold start, which cost a full
+ * diagnostic round trip on 5 September — the server was awake and the browser
+ * was discarding the response for a missing `Access-Control-Allow-Origin`.
+ *
+ * The two can be told apart. A `fetch(..., { mode: 'no-cors' })` is dispatched
+ * by the browser without requiring CORS response headers and resolves to an
+ * opaque response whenever the server is reachable. So:
+ *
+ *   probe resolves  → the server answered; the CORS headers are the problem
+ *   probe rejects   → nothing answered; cold start, DNS, or offline
+ *
+ * There is no CORS on native, so that platform keeps the cold-start message.
+ * The probe is diagnostic only: it runs after the request has already failed,
+ * its result is logged rather than returned, and it never throws.
+ */
+const isCrossOriginWeb = (): boolean => {
+  if (Platform.OS !== 'web') return false;
+  try {
+    const pageOrigin = globalThis.location?.origin;
+    if (!pageOrigin) return false;
+    return new URL(API_BASE_URL, pageOrigin).origin !== pageOrigin;
+  } catch {
+    return false;
+  }
+};
+
+const reportNoResponseCause = async (): Promise<void> => {
+  const isLocal =
+    API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
+
+  if (!isCrossOriginWeb()) {
+    console.error(
+      isLocal
+        ? `[API Error] No response from local server — is Flask running on ${API_BASE_URL}?`
+        : '[API Error] No response after retries — Render free tier may need ~60 s to cold-start.',
+    );
+    return;
+  }
+
+  let reachable = false;
+  try {
+    await fetch(`${API_BASE_URL}${HEALTH_ENDPOINT}`, {
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
+    });
+    reachable = true;
+  } catch {
+    reachable = false;
+  }
+
+  if (reachable) {
+    console.error(
+      `[API Error] The server at ${API_BASE_URL} is reachable, but the browser ` +
+        `discarded its response.\n` +
+        `  This is a CORS failure, not a cold start: the response carried no ` +
+        `usable Access-Control-Allow-Origin\n` +
+        `  for origin ${globalThis.location?.origin}.\n` +
+        `  Check CORS_ORIGINS on the backend (backend/config.py) — the deployed ` +
+        `web origin must be listed.`,
+    );
+  } else {
+    console.error(
+      `[API Error] No response from ${API_BASE_URL}, and it did not answer an ` +
+        `opaque probe either.\n` +
+        `  The server is not reachable: Render free tier may need ~60 s to ` +
+        `cold-start, or the host/network is down.`,
+    );
+  }
+};
+
 // ─── Axios client ─────────────────────────────────────────────────────────────
 
 export const apiClient = axios.create({
@@ -119,11 +197,7 @@ apiClient.interceptors.response.use(
     }, null, 2));
 
     if (isNoResponse || isNetwork) {
-      const isLocal = API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1');
-      console.error(isLocal
-        ? `[API Error] No response from local server — is Flask running on ${API_BASE_URL}?`
-        : '[API Error] No response after retries — Render free tier may need ~60 s to cold-start.'
-      );
+      void reportNoResponseCause();
     }
 
     // Clear credentials on 401

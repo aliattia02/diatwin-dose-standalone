@@ -275,28 +275,34 @@ describe('calculateActivityCumulativeEffect — sign, growth and saturation', ()
     }
   });
 
-  it('PINS: the acute effect does not depend on intensity', () => {
-    // MEASURED. light, moderate and vigorous produce byte-identical numbers at
-    // every elapsed time. The cause is in the model, not the port: Z obeys
-    // dZ/dt = (1 - Z) while in-exercise, so with dt = 1 min it saturates to 1
-    // in a single step for any intensity that clears the onset gate, and the
-    // acute integral is Z x acute_rate_per_min. Intensity only changes the peak
-    // HR, which feeds Y and W — so it reaches the sensitivity multiplier and
-    // nothing else.
+  it('D22 (fixed): the acute effect now scales with intensity', () => {
+    // Was: light, moderate and vigorous produced byte-identical numbers at
+    // every elapsed time, because Z obeyed dZ/dt = (1 - Z) while in-exercise
+    // and so saturated to 1 in a single dt = 1 min step for any intensity that
+    // cleared the onset gate. Intensity reached Y and W — and therefore the
+    // sensitivity multiplier — but never the acute drop.
     //
-    // `docs/documentation/activity-pd-implementation.md` describes the gate
-    // ("Z is not a smooth curve — it saturates to 1 within approximately one
-    // integration step") but never states this consequence, and lists intensity
-    // fractions in a way that implies the acute drop scales with effort. It
-    // does not.
+    // Z now relaxes toward the Karvonen HR-reserve fraction scaled by
+    // z_reference_hr_reserve (0.80, the vigorous tier), so vigorous keeps its
+    // previous magnitude exactly and lighter tiers fall below it.
     //
-    // Identical in backend/utils/activity_pharmacodynamics.py, so the parity
-    // harness agrees; this is a model property to decide about, not a port bug.
-    for (const m of [5, 15, 30, 45, 60, 120, 240]) {
-      const byTier = (['light', 'moderate', 'vigorous'] as const).map(intensity =>
-        calculateActivityCumulativeEffect(session({ intensity }), PC, at(m)));
-      expect([m, byTier[1], byTier[2]]).toEqual([m, byTier[0], byTier[0]]);
+    // Same change in backend/utils/activity_pharmacodynamics.py and
+    // frontend/src/utils/activityPharmacodynamics.js; the parity harness shows
+    // no new divergence across the three.
+    for (const m of [15, 30, 45, 60, 120, 240]) {
+      const [light, moderate, vigorous] = (['light', 'moderate', 'vigorous'] as const).map(
+        intensity => Math.abs(calculateActivityCumulativeEffect(session({ intensity }), PC, at(m))));
+      expect(light).toBeLessThan(moderate);
+      expect(moderate).toBeLessThan(vigorous);
     }
+  });
+
+  it('D22 (fixed): the ordering is strict, not a rounding artefact', () => {
+    // The gap has to be big enough to matter clinically, not just to be
+    // non-zero — the previous behaviour was exact equality.
+    const drop = (intensity: 'light' | 'moderate' | 'vigorous') =>
+      Math.abs(calculateActivityCumulativeEffect(session({ intensity }), PC, at(45)));
+    expect(drop('vigorous') - drop('light')).toBeGreaterThan(1.0);
   });
 
   it('produces no effect at all when the session never clears the onset gate', () => {
@@ -632,7 +638,12 @@ describe('shared constants are used, not re-declared', () => {
     expect(Object.keys(HR_MODEL).sort()).toEqual([
       'a', 'acute_rate_per_min', 'alpha', 'dt', 'hr_base_pop', 'hr_max_pop',
       'max_sensitivity_boost', 'tau_HR', 'tau_W', 'tau_Z',
+      'z_reference_hr_reserve',
     ]);
+    // D22: added alongside the intensity-scaled Z. It is generated from
+    // backend/constants.py like every other key here, so a local copy on any
+    // one side would show up as a parity divergence rather than drifting.
+    expect(HR_MODEL.z_reference_hr_reserve).toBe(INTENSITY_HR_FRACTION.vigorous);
     expect(HR_MODEL.dt).toBe(1.0);
     expect(INTENSITY_HR_FRACTION.light).toBeLessThan(INTENSITY_HR_FRACTION.moderate);
     expect(INTENSITY_HR_FRACTION.moderate).toBeLessThan(INTENSITY_HR_FRACTION.vigorous);

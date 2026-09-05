@@ -6,3 +6,7 @@
 pytest==8.3.4
 pytest-cov==6.0.0
 mongomock==4.3.0         # in-memory Mongo for the backend route suite
+responses==0.26.3        # HTTP mocking for the LibreLinkUp and Google Fit sync suites.
+                         # Both _perform_sync functions make outbound calls; the
+                         # schedulers are stubbed in conftest.py, so the tests drive
+                         # those functions directly and mock only the wire.

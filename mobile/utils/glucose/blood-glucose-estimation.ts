@@ -23,6 +23,7 @@ import {
 import type {
   MealAbsorptionProfile,
 } from '@/constants/shared-constants';
+import { getDailyResetTime as timeManagerDailyReset } from '@/utils/time/TimeManager';
 import type {
   InsulinDose
 } from '@/types/insulin.types';
@@ -457,13 +458,32 @@ export function getDailyResetTime(
   resetHour: number,
   timezoneOffsetMinutes: number
 ): Date {
-  const utcMidnight = new Date(date);
-  utcMidnight.setUTCHours(0, 0, 0, 0);
-
-  const patientMidnight = new Date(utcMidnight.getTime() - timezoneOffsetMinutes * 60 * 1000);
-  const resetTime = new Date(patientMidnight.getTime() + resetHour * 60 * 60 * 1000);
-
-  return resetTime;
+  // D9, fixed: delegate to TimeManager rather than recompute the boundary.
+  //
+  // This used to anchor on the *UTC* calendar date:
+  //
+  //     utcMidnight   = midnight UTC of `date`
+  //     patientMidnight = utcMidnight - offset
+  //     resetTime     = patientMidnight + resetHour
+  //
+  // which is only right while the patient's local date matches the UTC date.
+  // East of +07:00 it does not: at 20:00 UTC on 1 March a patient at UTC+13 is
+  // already at 09:00 on 2 March, so their last reset was 18:00 UTC on 1 March —
+  // and the formula above returned 18:00 UTC on 28 February, a full 24 hours
+  // stale. Every "since the daily reset" guard downstream then admitted a whole
+  // extra day of meals, doses and activity.
+  //
+  // TimeManager.getDailyResetTime works in patient-local milliseconds and gets
+  // this right. Three of the six reset implementations in this client had their
+  // own copy of the arithmetic; delegating removes the class of bug rather than
+  // one instance of it, which is what the pre-ML audit recommended.
+  //
+  // Note it already performs the "before the reset hour, use yesterday's"
+  // rollback, so it returns the *last* reset — which is what every caller here
+  // wants and what `getLastResetTime` below now simply forwards.
+  return new Date(
+    timeManagerDailyReset(date.getTime(), resetHour, timezoneOffsetMinutes),
+  );
 }
 
 /**
@@ -480,17 +500,11 @@ export function getLastResetTime(
   resetHour: number,
   timezoneOffsetMinutes: number
 ): Date {
-  // Get today's reset time
-  const todayReset = getDailyResetTime(date, resetHour, timezoneOffsetMinutes);
-
-  // If current time is before today's reset, use yesterday's reset
-  if (date < todayReset) {
-    const yesterday = new Date(date.getTime() - 24 * 60 * 60 * 1000);
-    return getDailyResetTime(yesterday, resetHour, timezoneOffsetMinutes);
-  }
-
-  // Otherwise use today's reset
-  return todayReset;
+  // D9: `getDailyResetTime` now delegates to TimeManager, which already rolls
+  // back to yesterday's reset when the patient's local time is before the reset
+  // hour. The manual rollback that used to live here would apply that a second
+  // time, landing 24 h early — so this is a straight forward.
+  return getDailyResetTime(date, resetHour, timezoneOffsetMinutes);
 }
 
 /**

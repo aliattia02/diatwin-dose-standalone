@@ -41,7 +41,7 @@ Cross-references
 - [§4 The kernel as a simulator](#4-the-kernel-as-a-simulator)
 - [§5 Cross-language parity](#5-cross-language-parity)
 - [§6 Mobile suites](#6-mobile-suites)
-- [§7 Maintenance scripts](#7-maintenance-scripts)
+- [§7 Maintenance scripts](#7-maintenance-scripts) — incl. `measure_drop_rates.py`
 - [§8 Continuous integration](#8-continuous-integration)
 - [§9 Cross-Arm References](#9-cross-arm-references)
 - [§10 Developer Rules](#10-developer-rules)
@@ -71,20 +71,32 @@ description, and supplies the foundation the ML and RL work will be built on.
 ================================================================
 ```
 
-**Test counts as of 2026-09-05**
+**Test counts as of 2026-09-05, after the pre-ML audit**
 
 | Suite | Tests | Runtime | Command |
 |---|---:|---:|---|
-| `backend/tests` | 280 | 21 s | `cd backend && pytest tests -q` |
-| `diatwin/tests` | 65 | 1.6 s | `pytest diatwin/tests -q` |
-| `mobile` (8 suites) | 317 | 7 s | `cd mobile && npx jest` |
-| **Total** | **662** | | |
+| `backend/tests` | 401 | 27 s | `cd backend && pytest tests -q` |
+| `diatwin/tests` | 101 | 1.5 s | `pytest diatwin/tests -q` |
+| `mobile` (12 suites) | 362 | 7 s | `cd mobile && npx jest` |
+| **Total** | **864** | | |
+
+The suites use `backend/venv`, not a bare interpreter. `diatwin/tests` looks
+stdlib-only but is not: `TestPatientSim` imports `diatwin/sim/patient.py`, which
+imports `backend/constants.py`, which imports `bson`. Seven tests error under an
+interpreter without the backend stack — **rule 1 holds for `data`, `core` and
+`verify`, and is violated transitively through `sim`.**
 
 `frontend/src/utils/` has no test suite of its own. Its three pharmacodynamic
 modules are covered by the parity harness (§5) across 1,578 cases each; the
 other thirteen files in that directory are uncovered.
 
-`mobile/` typecheck is not yet a gate: `npx tsc --noEmit` reports 197 errors.
+`mobile/` typecheck is gated by a **ratchet**, not by an absolute threshold:
+`npx tsc --noEmit` reports 185 errors, and `mobile/scripts/typecheck-ratchet.mjs`
+fails when that count rises above `mobile/typecheck-baseline.json` *or* falls
+without the baseline being re-recorded. The count may only go down. CI ran the
+bare `tsc --noEmit` with no `continue-on-error` before this, which meant the
+mobile job could never pass — see the pre-ML audit §5 for why an always-red gate
+is worse than none.
 
 ---
 
@@ -435,13 +447,27 @@ did a plain `new Date(meal.timestamp)`, so a numeric string read as a fully
 absorbed meal and a bare ISO string shifted every figure by the device's UTC
 offset. Fixed.
 
-Three model properties are pinned because they are surprising and shared with
-Python: the activity curve's maximum is a **plateau ending at `peak_hours`**,
-not a point at it; activity is **truncated** at `duration_hours` rather than
-tapering (`very_slow` still carries more than half its peak when the window
-closes); and `calculateAbsorbedFraction` takes a **backward step of up to
-1.4e-3** near the tail, because the quadrature grid changes with the
-integration limit.
+The absorption curve was reshaped on 5 September (**D21**), in all three
+implementations at once, and the pins here now assert the corrected behaviour:
+
+* The maximum is a **point, not a plateau**. The gamma branch is normalised by
+  its own true maximum at `x = (k-1)·theta` rather than by its value at
+  `peak_hours`; those coincide only when `(k-1)·scale_param == 1`, which held
+  for no shipped profile, so 18.6–38.5% of every window used to sit clamped at
+  exactly 100 and carry no information.
+* Absorption is **zero before `onset_hours`** and continuous across it. The old
+  pre-onset ramp ended at 5 while the gamma branch opens at ~0, so the rate fell
+  by a full 5 points at the instant gastric emptying completed.
+* `calculateAbsorbedFraction` is **clamped to [0, 1]** and is now monotone on the
+  5-minute display grid. The quadrature grid still changes with the integration
+  limit, so the underlying wobble is unchanged; the clamp is what removes the
+  visible backward step, which the overshoot above 1 was returning from.
+
+Still pinned as **unfixed**: activity is **truncated** at `duration_hours`
+rather than tapering (`very_slow` carries ~47% of its peak when the window
+closes), and `peak_hours` still names the *normalisation* parameter rather than
+the mode — the two differ by up to 1.6 h. Both are open (**D21b**); see the
+pre-ML audit §6.
 
 ### 6.3 Activity pharmacodynamics
 
@@ -450,13 +476,32 @@ integration limit.
 unsigned), saturation bounds, AOB conservation, and the allometric weight
 scaling.
 
-Two model properties are pinned. **The acute BG effect does not depend on
-intensity** — `Z` is a binary gate that saturates in one Euler step, so
-intensity reaches only the sensitivity multiplier. And **that multiplier
-saturates at its cap for any session of 15 minutes or more**. Together: for
-realistic session lengths the model does not distinguish a gentle walk from a
-hard interval session in either channel. Both are shared with the Python
-implementation and confirmed by the `act_bg` / `act_aob` parity families.
+**The acute BG effect now scales with intensity (D22, fixed 5 September).**
+`dZ/dt` used to be `(1 - Z)`, which with `dt = 1` min drives `Z` to exactly 1.0
+in a single Euler step from any starting value, so heart rate decided only
+*whether* the exercise gate opened and never how far: a light 45-minute walk and
+a vigorous 45-minute session produced byte-identical drops of 6.4500000000 mg/dL.
+
+`Z` now relaxes toward the Karvonen heart-rate reserve fraction
+`(HR - HRbase)/(HRmax - HRbase)`, divided by `HR_MODEL.z_reference_hr_reserve`
+(0.80 — the vigorous tier). Vigorous therefore still reaches `Z = 1` and keeps
+exactly the drop `acute_rate_per_min` was calibrated to produce; only lighter
+intensities change, and only downward. Measured at 45 min, HRbase 60, HRmax 190:
+light 4.03, moderate 5.24, vigorous 6.45 mg/dL.
+
+**This is provisional.** Linear in HR reserve is the simplest defensible
+choice — monotone, bounded, calibration-preserving — not a validated response.
+Dalla Man, Breton & Cobelli (*J Diabetes Sci Technol* 2009;3(1):56-67) drive
+insulin-independent glucose utilisation from %VO₂max; matching their functional
+form needs the paper and a clinician.
+
+Still pinned as unfixed: **the sensitivity multiplier saturates at its cap for
+any session of 15 minutes or more**, so that channel still does not distinguish
+a gentle walk from a hard interval session.
+
+Both changes were made in Python, the mobile client and the web frontend
+together, and the `act_bg` / `act_aob` parity families show **no new
+divergence** across the three.
 
 This module derives the daily reset from the patient's **local** calendar date
 and agrees with TimeManager at every offset from −12:00 to +13:00. That is
@@ -483,12 +528,28 @@ the meal in the other; since both are reached from `calculateNetEffect` on the
 same data, the baseline was computed without the meal and the cumulative term
 then added all of it.
 
-One defect remains characterised rather than fixed, naming the line to change
-when it is (rule 13):
+**D9 is fixed** (5 September). `getDailyResetTime` anchored the reset day on the
+**UTC** calendar date, so for `timezone_offset_minutes > daily_reset_hour × 60`
+it returned a boundary exactly 24 h early for `offset_hours − reset_hour` hours
+of each day, and yesterday's meals and doses were counted in today's baseline.
 
-| | |
+Four sites carried their own copy of that arithmetic and all four now delegate
+to `TimeManager` (rule 16):
+
+| Site | |
 |---|---|
-| **D9** | `getDailyResetTime` anchors the reset day on the **UTC** calendar date, so for `timezone_offset_minutes > daily_reset_hour × 60` it returns a boundary exactly 24 h early for `offset_hours − reset_hour` hours of each day. Yesterday's meals and doses are counted in today's baseline. Same shape in the inline reset inside `calculateStackedMealEffect` and in `hooks/useActiveEffects.ts`. |
+| `blood-glucose-estimation.ts` | `getDailyResetTime` — the original; `getLastResetTime` now forwards to it, since TimeManager already performs the yesterday rollback and doing it twice lands 24 h early in the other direction |
+| `meal-pharmacodynamics.ts` | the inline `getLastResetMs` in `calculateStackedMealEffect`, written that way "to avoid a circular import" — TimeManager imports neither module, so there is no cycle |
+| `calculations/cumulative-effects.ts` | re-exports the first, so fixed transitively |
+| `hooks/useActiveEffects.ts` | one of its four reset computations; the other three already worked in patient-local milliseconds |
+
+`__tests__/daily-reset-consolidation.test.ts` is the guard against the *class*
+of bug rather than its instances: every exported reset path is asserted equal to
+TimeManager across nineteen offsets (−12:00 to +14:00, including the
+half-hours), at every hour of the day and every legal reset hour, plus the
+properties that the boundary is never in the future, never more than a day back,
+lands on the reset hour in the patient's local clock, and advances by exactly
+one day across a boundary. A fifth copy fails here the moment it disagrees.
 
 ### 6.5 Insulin timeline generator
 
@@ -515,6 +576,35 @@ deleted rather than kept.
 ---
 
 ## §7 Maintenance scripts
+
+### 7.0 `scripts/measure_drop_rates.py`
+
+The artifact to read before training anything. Two passes, stdlib only —
+`MongoRepository` takes a database *handle*, so a 30-line fake replaces a driver
+(rule 1).
+
+**Pass 1** builds a synthetic corpus in every shape the collections have held —
+all four `bloodSugarTimestamp` encodings, the insulin dual write, the
+`meals`/`meals_only` split — together with records that *must* be refused
+(out-of-range glucose, carb-less meals, marker documents, sedentary activity).
+The expected legitimate-drop count is known in advance, so a divergence is a
+defect rather than a data-quality finding.
+
+**Pass 2** converts a real corpus and measures it. `--azt1d <path>` points at a
+local copy of AZT1D 2025. That data is **real subject data, is not in this
+repository, and must not be committed**; the script reads it in place and holds
+the corpus in memory only.
+
+Pass 2 also prints a **source coverage** table, and that table matters more than
+the drop rates. `LoadReport` measures records refused against records *offered*.
+Real loss happens upstream of "offered" — a column named differently, a sentinel
+misread, a stream never converted — and a perfect drop rate for a stream is what
+you get when nothing arrives at all. Two independent converter faults were found
+this way, losing 60% of one stream and 4% of another, while every drop rate read
+between 0.00% and 0.38%. See the pre-ML audit §4.
+
+    python scripts/measure_drop_rates.py
+    python scripts/measure_drop_rates.py --azt1d "<path>/AZT1D 2025/CGM Records"
 
 ### 7.1 `backend/sweep_orphaned_meals.py`
 
@@ -560,19 +650,25 @@ legitimate record shape the sweep must not touch.
 | `foundation` | `pytest diatwin/tests -q` |
 | `backend` | `pytest tests -q` with dummy `MONGO_URI` / `SECRET_KEY` |
 | `parity` | generate → Python → TypeScript → frontend → compare |
-| `mobile` | `tsc --noEmit`, then `jest` excluding parity |
+| `mobile` | `scripts/typecheck-ratchet.mjs`, then `jest` excluding parity |
 
 Both Node jobs pin **Node 22**: the frontend evaluator needs
 `module.registerHooks` (22.15) and ES module syntax detection for a package
 with no `"type"` field (22.7), and on Node 20 it fails with a syntax error
 raised from inside a shipped source file.
 
-`pytest` and `mongomock` are declared in `requirements-dev.txt`, kept separate
-from `backend/requirements.txt` so the foundation suite runs without the Flask
-stack. The install pair is `backend/requirements.txt` + `requirements-dev.txt`.
-The **root** `requirements.txt` is an unrelated `pip freeze` that pins a
-conflicting `pytest` and contains neither Flask nor pymongo; CI has always used
-the correct pair, and `SETUP.md` no longer points at the wrong one (D14).
+`pytest`, `mongomock` and `responses` are declared in `requirements-dev.txt`,
+kept separate from `backend/requirements.txt` so the foundation suite runs
+without the Flask stack. The install pair is `backend/requirements.txt` +
+`requirements-dev.txt`. The **root** `requirements.txt` is an unrelated
+`pip freeze` that pins a conflicting `pytest` and shares only 18 of its 64
+packages with the backend manifest — it contains none of flask, pymongo,
+gunicorn, flask-cors or pyjwt. CI has always used the correct pair, and
+`SETUP.md` no longer points at the wrong one (D14). Both requirements files are
+**UTF-16LE with a BOM**; `pip` handles that, most other tooling does not.
+
+The `mobile` job runs a ratchet rather than `tsc --noEmit` directly. See §0's
+test-count note and the pre-ML audit §5.
 
 ---
 

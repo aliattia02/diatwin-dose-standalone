@@ -39,7 +39,7 @@ export default function ForgotPasswordScreen() {
   const handleSubmit = async () => {
     const validation = validateEmail(email);
     if (!validation.isValid) {
-      setError(validation.error || 'Invalid email');
+      setError(validation.errors.join('. ') || 'Invalid email');
       return;
     }
 

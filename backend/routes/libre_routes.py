@@ -12,6 +12,8 @@ Key change in this patch:
 
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
+
+from pymongo.errors import DuplicateKeyError
 from bson.objectid import ObjectId
 from config import mongo
 from utils.auth import token_required
@@ -170,7 +172,22 @@ def _save_single_reading(user_id: str, r: dict, target_glucose: int) -> bool:
             "reason":     "bulk_cgm_import",
         },
     }
-    bs_result  = mongo.db.blood_sugar.insert_one(bs_doc)
+    # D17: the find_one above races when two processes sync the same user at
+    # once — and the scheduler runs once per gunicorn worker.
+    # `unique_libre_cgm_reading` is what stops the duplicate reaching the
+    # collection, but an uncaught DuplicateKeyError propagates out of the
+    # caller's `for r in readings` loop and discards every remaining reading in
+    # the batch. Losing the race means the other worker already stored this
+    # reading — precisely the "already exists" case the find_one handles — so
+    # it is a skip, not an error.
+    try:
+        bs_result = mongo.db.blood_sugar.insert_one(bs_doc)
+    except DuplicateKeyError:
+        logger.debug(
+            "LibreSync user=%s: reading at %s already stored by a concurrent "
+            "sync — skipping", user_id, ts,
+        )
+        return False
     bs_id      = str(bs_result.inserted_id)
 
     meal_doc = {
@@ -250,11 +267,26 @@ def _perform_sync(user_id: str, conn_doc: dict) -> dict:
             utc_offset_hours=utc_offset_hours,
         )
     except LibreTokenExpiredError:
+        # D18: mark the token expired, then re-read the document before asking
+        # for a token.
+        #
+        # `_get_valid_token` decides whether to refresh by reading
+        # `token_expires` off the dict it is handed. The caller's `conn_doc` was
+        # loaded before the update_one above and still carries the original
+        # future expiry, so passing it straight back returns the *same stale
+        # token* and the retry re-sends the identical failing request — measured
+        # as zero calls to the login endpoint. Re-reading is what makes this
+        # branch do what it says.
         mongo.db.libre_connections.update_one(
             {"user_id": user_id},
             {"$set": {"token_expires": datetime.utcnow() - timedelta(hours=1)}}
         )
-        token    = _get_valid_token(conn_doc, user_id)
+        refreshed_doc = mongo.db.libre_connections.find_one({"user_id": user_id})
+        if refreshed_doc is None:
+            # The connection was deleted mid-sync. Fall back to the caller's
+            # copy with the expiry cleared, so a refresh is still attempted.
+            refreshed_doc = {**conn_doc, "token_expires": None}
+        token    = _get_valid_token(refreshed_doc, user_id)
         readings = svc.get_readings(
             token, patient_id,
             include_scans=True, account_id=account_id,

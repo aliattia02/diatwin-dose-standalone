@@ -9,14 +9,21 @@ A mobile and web application for Type 1 Diabetes (T1D) management, featuring adv
 ```bash
 # Backend
 cd backend
-pip install -r requirements.txt
-python app.py
+python -m venv venv && . venv/Scripts/activate   # or: source venv/bin/activate
+pip install -r requirements.txt -r ../requirements-dev.txt
+cp .env.example .env                             # required — config.py raises without MONGO_URI
+python main.py
 
 # Frontend (new terminal)
 cd frontend
 npm install
 npm start
 ```
+
+`SETUP.md` is the authoritative setup guide, including the test and parity
+commands. Note that `pip install -r requirements.txt` must be run from inside
+`backend/`: the **root** `requirements.txt` is an unrelated `pip freeze` that
+contains none of Flask, pymongo or gunicorn.
 
 ---
 

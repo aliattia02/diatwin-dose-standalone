@@ -30,6 +30,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import requests
+from pymongo.errors import DuplicateKeyError
 
 logger = logging.getLogger(__name__)
 
@@ -320,7 +321,8 @@ def _perform_sync(user_id: str, conn: dict) -> dict:
             {"user_id": user_id},
             {"$set": {"last_sync": until.strftime("%Y-%m-%dT%H:%M:%SZ")}},
         )
-        return {"new_count": 0, "skipped_count": 0, "latest_session": None}
+        return {"new_count": 0, "skipped_count": 0,
+                "duplicate_count": 0, "latest_session": None}
 
     # 4. Run autosegmentation — identical to upload_continuous_hr endpoint
     config_override = conn.get("autosegment_config", {})
@@ -334,6 +336,7 @@ def _perform_sync(user_id: str, conn: dict) -> dict:
 
     # 5. Persist sessions
     created = []
+    duplicates = 0
     for sess in sessions:
         doc = session_to_activity_doc(sess, user_id, bg_direction=-1)
         doc["source"] = "google_fit"   # tag so UI can distinguish
@@ -344,6 +347,27 @@ def _perform_sync(user_id: str, conn: dict) -> dict:
         if conn.get("hr_max"):
             doc["hr_max"] = float(conn["hr_max"])
 
+        # D19: the fetch window deliberately overlaps the previous one by five
+        # minutes to survive clock skew, so any bout inside that overlap is
+        # re-segmented on the next cycle and would otherwise be written again.
+        # Unlike the CGM path there was no guard and no unique index, so this
+        # duplicated on every cycle rather than only under a race.
+        #
+        # A session is identified by (user, source, start_time): the segmenter
+        # is deterministic, so the same bout re-segmented yields the same start.
+        existing = mongo.db.activities.find_one({
+            "user_id":   user_id,
+            "source":    "google_fit",
+            "startTime": doc["startTime"],
+        })
+        if existing:
+            duplicates += 1
+            logger.debug(
+                "[watch_sync] user=%s — session at %s already stored, skipping",
+                user_id, doc["startTime"],
+            )
+            continue
+
         try:
             result = mongo.db.activities.insert_one(doc)
             created.append({
@@ -352,6 +376,15 @@ def _perform_sync(user_id: str, conn: dict) -> dict:
                 "start_time":       sess["start_time"].isoformat(),
                 "duration_minutes": sess["duration_minutes"],
             })
+        except DuplicateKeyError:
+            # `unique_google_fit_session` caught what the find_one above raced
+            # past — two workers syncing one user at once. Losing that race
+            # means the other worker stored it, which is the same skip.
+            duplicates += 1
+            logger.debug(
+                "[watch_sync] user=%s — session at %s stored concurrently, skipping",
+                user_id, doc["startTime"],
+            )
         except Exception as insert_err:
             logger.warning("[watch_sync] insert failed: %s", insert_err)
 
@@ -363,14 +396,16 @@ def _perform_sync(user_id: str, conn: dict) -> dict:
 
     latest = created[-1] if created else None
     logger.info(
-        "[watch_sync] user=%s — %d sessions created from %d samples",
-        user_id, len(created), len(samples),
+        "[watch_sync] user=%s — %d sessions created from %d samples "
+        "(%d already stored)",
+        user_id, len(created), len(samples), duplicates,
     )
 
     return {
-        "new_count":      len(created),
-        "skipped_count":  skipped,
-        "latest_session": latest,
+        "new_count":       len(created),
+        "skipped_count":   skipped,
+        "duplicate_count": duplicates,
+        "latest_session":  latest,
     }
 
 

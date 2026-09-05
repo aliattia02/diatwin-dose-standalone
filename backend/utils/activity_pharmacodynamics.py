@@ -324,10 +324,46 @@ def _interpolate_hr(
     return hr_base
 
 
+def _z_intensity_target(hr: float, hr_base: float, hr_max: float) -> float:
+    """
+    The level the acute signal Z relaxes toward, in [0, 1].
+
+    D22. ``dZ/dt`` used to be ``(1 - Z)``, which with ``dt = 1`` minute drives Z
+    to exactly 1.0 in a single Euler step from any starting value. Heart rate
+    decided only *whether* the exercise gate opened, never how far, so a light
+    45-minute walk and a vigorous 45-minute session produced byte-identical BG
+    drops — 6.45 mg/dL each, measured.
+
+    Intensity is expressed as the Karvonen heart-rate reserve fraction,
+    ``(HR - HRbase) / (HRmax - HRbase)``, which is the standard proxy for
+    %VO2max — the quantity Dalla Man, Breton & Cobelli (J Diabetes Sci Technol
+    2009;3(1):56-67) drive insulin-independent glucose utilisation from.
+
+    That fraction is divided by ``z_reference_hr_reserve`` (0.80, the vigorous
+    tier) so vigorous exercise still reaches Z = 1 and keeps exactly the BG drop
+    ``acute_rate_per_min`` was calibrated to produce. Only lighter intensities
+    change, and they change downward — the previous behaviour treated every bout
+    as maximal.
+
+    PROVISIONAL. Linear in HR reserve is the simplest defensible choice and is
+    monotone, bounded and calibration-preserving; the true response is probably
+    not linear. See the pre-ML audit §6.
+    """
+    reserve = hr_max - hr_base
+    if reserve <= 0:
+        return 1.0
+    fraction = (hr - hr_base) / reserve
+    reference = HR_MODEL.get("z_reference_hr_reserve", 0.80)
+    if reference > 0:
+        fraction /= reference
+    return min(1.0, max(0.0, fraction))
+
+
 def _simulate_hr_ode(
     trace: List[Tuple[float, float]],
     elapsed: float,
     hr_base: float,
+    hr_max: Optional[float] = None,
 ) -> Tuple[float, float, float]:
     """
     Euler-integrate the Y/Z/W ODE up to `elapsed` minutes.
@@ -340,6 +376,7 @@ def _simulate_hr_ode(
     tau_W     = HR_MODEL["tau_W"]
     a         = HR_MODEL["a"]
     threshold = hr_base * (1.0 + a)
+    hr_max_eff = float(hr_max) if hr_max else HR_MODEL["hr_max_pop"]
     last_t    = trace[-1][0] if trace else 0.0
     steps     = int(math.ceil(elapsed / dt))
 
@@ -353,7 +390,9 @@ def _simulate_hr_ode(
         dY = (hr_above / tau_HR) - (Y / tau_HR)
         Y  = max(0.0, Y + dY * dt)
 
-        dZ = (1.0 - Z) if (in_exercise and onset_active) else (-Z / tau_Z)
+        # D22: relax toward the bout's intensity, not toward 1.0.
+        z_target = _z_intensity_target(hr, hr_base, hr_max_eff)
+        dZ = (z_target - Z) if (in_exercise and onset_active) else (-Z / tau_Z)
         Z  = min(1.0, max(0.0, Z + dZ * dt))
 
         dW = Y if in_exercise else (-W / tau_W)
@@ -368,6 +407,7 @@ def _integrate_z_drop(
     to_minute: float,
     hr_base: float,
     weight_kg: Optional[float],
+    hr_max: Optional[float] = None,
 ) -> float:
     """
     Integrate Z * acute_rate_per_min from from_minute to to_minute.
@@ -385,6 +425,7 @@ def _integrate_z_drop(
     a                = HR_MODEL["a"]
     acute_rate       = HR_MODEL["acute_rate_per_min"]
     threshold        = hr_base * (1.0 + a)
+    hr_max_eff       = float(hr_max) if hr_max else HR_MODEL["hr_max_pop"]
     last_t           = trace[-1][0] if trace else 0.0
     steps            = int(math.ceil(to_minute / dt))
     total_drop       = 0.0
@@ -399,7 +440,9 @@ def _integrate_z_drop(
         dY = (hr_above / tau_HR) - (Y / tau_HR)
         Y  = max(0.0, Y + dY * dt)
 
-        dZ = (1.0 - Z) if (in_exercise and onset_active) else (-Z / tau_Z)
+        # D22: relax toward the bout's intensity, not toward 1.0.
+        z_target = _z_intensity_target(hr, hr_base, hr_max_eff)
+        dZ = (z_target - Z) if (in_exercise and onset_active) else (-Z / tau_Z)
         Z  = min(1.0, max(0.0, Z + dZ * dt))
 
         dW = Y if in_exercise else (-W / tau_W)
@@ -446,15 +489,16 @@ def calculate_activity_cumulative_effect(
         frac         = min(1.0, max(0.0, elapsed / (dur + tail)))
         return round(bg_direction * drop_mag * frac, 2)
 
-    p_hr_base, _p_hr_max = _get_patient_hr_defaults(patient_constants)
+    p_hr_base, p_hr_max = _get_patient_hr_defaults(patient_constants)
     hr_base   = float(activity.get("hr_base") or p_hr_base)
+    hr_max    = float(activity.get("hr_max") or p_hr_max)
     weight_kg = patient_constants.get("weight_kg")
     trace     = _get_trace_from_activity(activity, patient_constants)
     elapsed   = (current_time - start_time).total_seconds() / 60.0
     post_tail = 4.0 * HR_MODEL["tau_Z"]
     scan_to   = min(elapsed, float(activity.get("duration_minutes", 30)) + post_tail)
 
-    magnitude = _integrate_z_drop(trace, 0.0, scan_to, hr_base, weight_kg)
+    magnitude = _integrate_z_drop(trace, 0.0, scan_to, hr_base, weight_kg, hr_max)
     return round(bg_direction * magnitude, 2)
 
 
@@ -507,16 +551,18 @@ def get_activity_on_board(
     # ─────────────────────────────────────────────────────────────────────────
 
     # ── ODE path (no CGM override) ───────────────────────────────────────────
-    p_hr_base, _p_hr_max = _get_patient_hr_defaults(patient_constants)
+    p_hr_base, p_hr_max = _get_patient_hr_defaults(patient_constants)
     hr_base   = float(activity.get("hr_base") or p_hr_base)
+    hr_max    = float(activity.get("hr_max") or p_hr_max)
     weight_kg = patient_constants.get("weight_kg")
     trace     = _get_trace_from_activity(activity, patient_constants)
 
     last_trace_t = trace[-1][0] if trace else duration_minutes
     full_window  = last_trace_t + 4.0 * HR_MODEL["tau_Z"]
 
-    total_drop   = _integrate_z_drop(trace, 0.0, full_window, hr_base, weight_kg)
-    elapsed_drop = _integrate_z_drop(trace, 0.0, min(elapsed, full_window), hr_base, weight_kg)
+    total_drop   = _integrate_z_drop(trace, 0.0, full_window, hr_base, weight_kg, hr_max)
+    elapsed_drop = _integrate_z_drop(trace, 0.0, min(elapsed, full_window), hr_base,
+                                     weight_kg, hr_max)
 
     absorbed  = (elapsed_drop / total_drop) if total_drop > 0 else 1.0
     absorbed  = min(1.0, max(0.0, absorbed))
@@ -591,11 +637,12 @@ def calculate_activity_sensitivity_multiplier(
         if elapsed > 8.0 * 60.0:
             continue   # W has fully decayed — no sensitivity contribution
 
-        p_hr_base, _p_hr_max = _get_patient_hr_defaults(pc)
+        p_hr_base, p_hr_max = _get_patient_hr_defaults(pc)
         hr_base = float(activity.get("hr_base") or p_hr_base)
+        hr_max  = float(activity.get("hr_max") or p_hr_max)
         trace   = _get_trace_from_activity(activity, pc)
 
-        _Y, Z, W = _simulate_hr_ode(trace, elapsed, hr_base)
+        _Y, Z, W = _simulate_hr_ode(trace, elapsed, hr_base, hr_max)
         raw_boost  = alpha * W * (1.0 + Z)
         boost      = min(raw_boost, max_boost)
         multiplier = round(1.0 + boost, 4)

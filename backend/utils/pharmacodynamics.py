@@ -64,8 +64,16 @@ def calculate_gamma_absorption(hours_since_meal, profile):
     if hours_since_meal < 0 or hours_since_meal > duration:
         return 0.0
 
+    # D21c: no absorption before gastric emptying completes.
+    #
+    # This used to ramp linearly to 5, and the gamma branch below then starts
+    # at ~0 because t**(k-1) -> 0 for every k > 1. So absorption rate *fell* by
+    # a full 5 percentage points at the instant onset completed — the opposite
+    # of the physiology `onset_hours` describes. Returning 0 makes the curve
+    # continuous at onset and matches the model: before gastric emptying is
+    # done, carbohydrate has not reached the absorptive surface.
     if hours_since_meal < onset:
-        return (hours_since_meal / onset) * 5  # Gradual ramp to 5%
+        return 0.0
 
     t = hours_since_meal - onset
     t_peak = peak - onset
@@ -75,13 +83,35 @@ def calculate_gamma_absorption(hours_since_meal, profile):
     normalized_peak = t_peak / t_duration
 
     if normalized_t <= 0:
-        return 5
+        return 0.0
 
     k = shape
     theta = scale * normalized_peak
 
+    # D21a: normalise by the curve's true maximum, not by its value at
+    # `peak_hours`.
+    #
+    # The density x**(k-1) * exp(-x/theta) peaks at x = (k-1)*theta. Dividing
+    # by its value at `normalized_peak` instead only coincides when
+    # (k-1)*scale_param == 1, which holds for none of the shipped profiles — so
+    # the ratio exceeded 1 either side of the true mode and `min(100, ...)`
+    # clamped it. Between 18.6% and 38.5% of every absorption window sat at
+    # exactly 100, carrying no information at all.
+    #
+    # Normalising by the true maximum removes the plateau without altering the
+    # curve's shape, and `calculate_absorbed_fraction` divides by the total
+    # area, so the fraction absorbed is unaffected by the rescaling itself.
+    #
+    # NOTE (provisional, 2026-09-05): `peak_hours` still names the
+    # normalisation point rather than the mode — the curve now peaks at
+    # onset + (k-1)*theta*(duration-onset), which is earlier. Reparameterising
+    # the profiles so `peak_hours` *is* the mode is a separate decision; it
+    # would change every profile's tail and needs clinical review.
+    mode = (k - 1.0) * theta if k > 1.0 else 0.0
+    mode = min(max(mode, 1e-12), 1.0)
+
     activity = (normalized_t ** (k - 1)) * math.exp(-normalized_t / theta)
-    peak_activity = (normalized_peak ** (k - 1)) * math.exp(-normalized_peak / theta)
+    peak_activity = (mode ** (k - 1)) * math.exp(-mode / theta)
 
     if peak_activity > 0:
         activity = (activity / peak_activity) * 100
@@ -188,7 +218,23 @@ def calculate_absorbed_fraction(hours_since_meal, profile, absorption_profiles):
         activity = calculate_meal_activity_percentage(t, profile, absorption_profiles)
         total_integral += activity * total_dt
 
-    return integral / total_integral if total_integral > 0 else 0.0
+    if total_integral <= 0:
+        return 0.0
+
+    # Clamp to [0, 1]: this is a *fraction absorbed* and cannot exceed 1.
+    #
+    # Both integrals are 100-step left-Riemann sums, but over different step
+    # sizes (`hours_since_meal/100` and `duration_hours/100`), so their
+    # discretisation errors do not cancel and the ratio can drift a few parts
+    # in 10,000 either side of 1 near the end of the window. Removing the
+    # pre-onset ramp (D21c) steepened the curve's rise and made the overshoot
+    # newly visible — measured at 1.000316 for `very_fast`.
+    #
+    # The clamp is definitional rather than cosmetic. Making the estimator
+    # itself exact would mean integrating both on a common fixed grid, which
+    # shifts every absorbed-carbohydrate value slightly and is a separate
+    # decision — see the pre-ML audit §6.
+    return min(1.0, max(0.0, integral / total_integral))
 
 
 def calculate_meal_active_carbs(meal, current_time, patient_constants, absorption_profiles):

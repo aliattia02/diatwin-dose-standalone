@@ -108,6 +108,23 @@ WATCH_INDEXES: List[IndexSpec] = [
         name="google_fit_activities_time_range",
         why="activity queries filtered by source, user and time",
     ),
+    IndexSpec(
+        collection="activities",
+        keys=[("user_id", ASCENDING),
+              ("source", ASCENDING),
+              ("startTime", ASCENDING)],
+        name="unique_google_fit_session",
+        unique=True,
+        partial={"source": "google_fit"},
+        why=("D19. _perform_sync deliberately re-fetches an overlapping window "
+             "(since = last_sync - 5 min, to survive clock skew) and re-segments "
+             "it, so a bout inside the overlap was written once per sync that saw "
+             "it — not a race, the ordinary path, every cycle. Activity is the "
+             "stream where a duplicate costs most: two copies of one bout apply "
+             "the exercise term twice over the same interval. This index is the "
+             "backstop behind the find-then-insert guard in the service, and it "
+             "is scoped to google_fit so hand-logged activities are untouched"),
+    ),
 ]
 
 ALL_INDEXES: List[IndexSpec] = LIBRE_INDEXES + WATCH_INDEXES
