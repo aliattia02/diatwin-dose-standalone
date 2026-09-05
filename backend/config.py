@@ -199,6 +199,27 @@ def create_app_config(app):
     app.mongo = mongo
     app.logger = logger
 
+    # Indexes, every startup. create_index is idempotent, so this is cheap on a
+    # database that is already set up — and it means a new deployment cannot
+    # start without the deduplication guarantee, which is what
+    # setup_libre_indexes.py being a manual step used to risk.
+    #
+    # Deliberately non-fatal. A unique index blocked by existing duplicates is
+    # a real finding, but taking the web service down over historical data is
+    # worse than booting and logging it. Run the scripts for strict behaviour.
+    try:
+        from db_indexes import ensure_indexes
+        with app.app_context():
+            if mongo.db is None:
+                logger.error(
+                    "indexes skipped: mongo.db is None — MONGO_URI has no "
+                    "database name. Every route will fail with AttributeError.")
+            else:
+                result = ensure_indexes(mongo.db)
+                logger.info("startup: %s", result.summary())
+    except Exception as exc:
+        logger.error("startup index check could not run: %s", exc)
+
     return app, mongo, logger
 
 

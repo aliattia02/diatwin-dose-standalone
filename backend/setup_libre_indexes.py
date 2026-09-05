@@ -1,21 +1,30 @@
 """
 setup_libre_indexes.py
 ============================================================================
-Run this once after deploying the LibreLinkUp integration to create
-the necessary MongoDB indexes.
+Create the MongoDB indexes the LibreLinkUp integration depends on.
 
-Usage:
     python setup_libre_indexes.py
 
-Or call setup_indexes() from your app startup if you prefer.
+You do NOT normally need to run this: `create_app()` calls `ensure_indexes()`
+at startup and `create_index` is idempotent. Run it when you want a failure to
+stop you rather than land in a log — it uses strict=True, so a unique index
+blocked by existing duplicates exits non-zero instead of being reported and
+skipped.
+
+The index definitions live in `db_indexes.py`, once, so the app and this script
+cannot drift apart.
 ============================================================================
 """
 
-import os
 import logging
-from pymongo import MongoClient, ASCENDING, DESCENDING
-from pymongo.server_api import ServerApi
+import os
+import sys
+
 from dotenv import load_dotenv
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+
+from db_indexes import LIBRE_INDEXES, ensure_indexes
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -29,46 +38,14 @@ def setup_indexes():
         raise ValueError("MONGO_URI not set")
 
     client = MongoClient(uri, server_api=ServerApi("1"))
-    db = client.get_default_database()
-
-    # ── libre_connections ────────────────────────────────────────────────────
-    # One connection document per user
-    db.libre_connections.create_index(
-        [("user_id", ASCENDING)],
-        unique=True,
-        name="unique_user_libre_connection",
-    )
-    logger.info("✅ libre_connections: unique index on user_id")
-
-    # ── blood_sugar ──────────────────────────────────────────────────────────
-    # Deduplication: prevent the same CGM reading being inserted twice.
-    # (user_id, source, bloodSugarTimestamp) must be unique for CGM readings.
-    db.blood_sugar.create_index(
-        [
-            ("user_id",             ASCENDING),
-            ("source",              ASCENDING),
-            ("bloodSugarTimestamp", ASCENDING),
-        ],
-        unique=True,
-        partialFilterExpression={"source": "libre_cgm"},
-        name="unique_libre_cgm_reading",
-    )
-    logger.info("✅ blood_sugar: unique partial index on (user_id, source='libre_cgm', bloodSugarTimestamp)")
-
-    # Fast query by user + time window (used by GET /api/libre/readings)
-    db.blood_sugar.create_index(
-        [
-            ("user_id",             ASCENDING),
-            ("source",              ASCENDING),
-            ("bloodSugarTimestamp", DESCENDING),
-        ],
-        name="libre_cgm_time_range_query",
-    )
-    logger.info("✅ blood_sugar: compound index for CGM time range queries")
-
-    client.close()
-    logger.info("🎉 All LibreLinkUp indexes created successfully")
+    try:
+        result = ensure_indexes(client.get_default_database(),
+                                LIBRE_INDEXES, strict=True)
+        logger.info("All LibreLinkUp indexes created successfully")
+        return result
+    finally:
+        client.close()
 
 
 if __name__ == "__main__":
-    setup_indexes()
+    sys.exit(0 if setup_indexes().ok else 1)
