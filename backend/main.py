@@ -78,6 +78,7 @@ def create_app():
         from routes.watch_hr_routes import watch_hr_bp
         from routes.watch_sync_routes import watch_sync_bp
         from routes.fhir_routes import fhir_bp          # ← ADDED
+        from routes.ml_routes import ml_routes
 
         blueprints = [
             (food_routes,      ''),
@@ -98,6 +99,7 @@ def create_app():
             (watch_hr_bp,      ''),
             (watch_sync_bp,    ''),
             (fhir_bp,          ''),                      # ← ADDED
+            (ml_routes,        ''),
         ]
 
         for blueprint, url_prefix in blueprints:

@@ -1,6 +1,6 @@
 import API_BASE_URL from './config';
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useParams } from 'react-router-dom';
 import SignIn from './components/SignIn';
 import Register from './components/Register';
 import PatientDashboard from './components/PatientDashboard';
@@ -10,10 +10,20 @@ import { ConstantsProvider } from './contexts/ConstantsContext';
 import { BloodSugarDataProvider } from './contexts/BloodSugarDataContext';
 import { TimeProvider } from './contexts/TimeContext';
 import { LibreProvider } from './contexts/LibreContext';
-import GlycemicResponseTracker from './components/GlycemicResponseTracker';
+import MealHistory from './components/MealHistory';
 import TimeManager from './utils/TimeManager';
 import axios from 'axios';
 import './App.css';
+
+// D25: both meal-history routes used to render GlycemicResponseTracker, which
+// was a 0-byte module — the route threw at render rather than showing anything.
+// MealHistory is the working component for the same data, and it takes the
+// patient id as a prop, so the doctor route reads it off the URL instead of
+// leaving it null the way the old route did.
+function PatientMealHistory() {
+  const { patientId } = useParams();
+  return <MealHistory isDoctor={true} patientId={patientId} />;
+}
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -118,11 +128,11 @@ function App() {
                   loggedIn ? renderDashboard() : <Navigate to="/login" />
                 } />
                 <Route path="/meal-history" element={
-                  loggedIn ? <GlycemicResponseTracker /> : <Navigate to="/login" />
+                  loggedIn ? <MealHistory /> : <Navigate to="/login" />
                 } />
                 <Route path="/patient/:patientId/meal-history" element={
                   loggedIn && (userType === 'doctor' || userType === 'admin') ?
-                    <GlycemicResponseTracker isDoctor={true} /> :
+                    <PatientMealHistory /> :
                     <Navigate to="/login" />
                 } />
                 <Route path="/" element={<Navigate to="/login" />} />

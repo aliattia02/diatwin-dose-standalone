@@ -479,7 +479,7 @@ const EffectsVisualization = ({
 
     // ── Compute activity values synchronously for every time point ─────────────
     const activityDataPerPoint = timePoints.map(time => {
-      const isAtReset      = TimeManager.isAtResetTime(time, resetHour);
+      const isAtReset      = TimeManager.isAtResetTime(time, resetHour, tzOffset);
       const dailyResetTime = TimeManager.getDailyResetTime(time, resetHour, tzOffset);
 
       let totalDeliveredDrop = 0;

@@ -404,8 +404,17 @@ def get_activity_history(current_user):
 @activity_bp.route('/api/patient/<patient_id>/activity-history', methods=['GET'])
 @token_required
 def get_patient_activity_history(current_user, patient_id):
-    if current_user['user_type'] != 'doctor':
-        return jsonify({"error": "Unauthorized access"}), 403
+    # D27: this used to check only `user_type == 'doctor'` — ANY doctor
+    # account could read ANY patient's activity history by guessing or
+    # enumerating patient ids, unlike every other /api/doctor/patient/<id>/*
+    # route, which confirms the caller is on that specific patient's
+    # authorized_doctors list. check_doctor_patient_access is that same check,
+    # imported from doctor_routes.py rather than duplicated; it also grants
+    # admins access, matching every other doctor-facing endpoint.
+    from routes.doctor_routes import check_doctor_patient_access
+    has_access, error_response, status_code = check_doctor_patient_access(current_user, patient_id)
+    if not has_access:
+        return jsonify(error_response), status_code
 
     try:
         logger.info(f"Doctor {str(current_user['_id'])} fetching activity history for patient {patient_id}")

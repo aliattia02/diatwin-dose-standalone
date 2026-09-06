@@ -172,8 +172,15 @@ export function calculateStableBaseline(
 
   // ✅ REFACTOR v3.1: Use TimeManager.getDailyResetTime (consolidated in TimeManager v3.1)
   // ✅ v4.0: Support configurable reset hour from patientConstants
+  // ✅ D24: the boundary must be anchored on the PATIENT's local date, not the
+  //    browser's. Omitting this argument gave a clinician reviewing a patient
+  //    in another timezone their own reset hour applied to the patient's day,
+  //    and made this path disagree with the charts on the same screen.
   const resetHour = patientConstants?.daily_reset_hour || 7;
-  const dailyResetTime = TimeManager.getDailyResetTime(readingTime, resetHour);
+  const tzOffsetMinutes = patientConstants?.timezone_offset_minutes != null
+    ? patientConstants.timezone_offset_minutes
+    : -(new Date(readingTime).getTimezoneOffset());
+  const dailyResetTime = TimeManager.getDailyResetTime(readingTime, resetHour, tzOffsetMinutes);
 
   if (meals && Array.isArray(meals)) {
     if (DEBUG_BASELINE || DEBUG_CUMULATIVE) {
@@ -205,7 +212,7 @@ export function calculateStableBaseline(
 
       // ✅ REFACTOR v3.1: Use TimeManager.isWithinCurrentDay (consolidated in TimeManager v3.1)
       // ✅ v4.0: Pass resetHour from patientConstants
-      if (!TimeManager.isWithinCurrentDay(mealTimestamp, readingTime, resetHour)) {
+      if (!TimeManager.isWithinCurrentDay(mealTimestamp, readingTime, resetHour, tzOffsetMinutes)) {
         if (DEBUG_BASELINE) {
           console.log(`  ⏭️ Meal ${idx}: SKIPPED (before ${resetHour}:00 reset at ${new Date(dailyResetTime).toLocaleTimeString()})`);
         }
@@ -389,7 +396,7 @@ export function calculateStableBaseline(
 
       // ✅ REFACTOR v3.1: Use TimeManager.isWithinCurrentDay
       // ✅ v4.0: Pass resetHour from patientConstants
-      if (!TimeManager.isWithinCurrentDay(doseTimestamp, readingTime, resetHour)) {
+      if (!TimeManager.isWithinCurrentDay(doseTimestamp, readingTime, resetHour, tzOffsetMinutes)) {
         if (DEBUG_BASELINE) {
           console.log(`  ⏭️ Insulin ${idx}: SKIPPED (before ${resetHour}:00 reset at ${new Date(dailyResetTime).toLocaleTimeString()})`);
         }
@@ -839,9 +846,14 @@ export function estimateGlucoseAtTime(
   // ✅ NORMALIZE: Target time to SECOND boundary
   const normalizedTargetTime = TimeManager.normalize(targetTimestamp, TimeManager.precision.SECOND);
 
+  // ✅ D24: anchor the day on the patient's offset, not the browser's.
+  const tzOffsetMinutes = patientConstants?.timezone_offset_minutes != null
+    ? patientConstants.timezone_offset_minutes
+    : -(new Date(normalizedTargetTime).getTimezoneOffset());
+
   // ✅ v3.2: Check if we're at the reset point
   // ✅ v4.0: Use configurable resetHour
-  const isAtReset = TimeManager.isAtResetTime(normalizedTargetTime, resetHour);
+  const isAtReset = TimeManager.isAtResetTime(normalizedTargetTime, resetHour, tzOffsetMinutes);
 
   if (DEBUG_ESTIMATE) {
     console.log('🔬 estimateGlucoseAtTime (v3.2 cumulative):', {
@@ -912,7 +924,7 @@ export function estimateGlucoseAtTime(
 
       // ✅ v3.2: Apply daily reset filter — only include meals from current day
       // ✅ v4.0: Use configurable resetHour
-      if (!TimeManager.isWithinCurrentDay(mealTimestamp, normalizedTargetTime, resetHour)) {
+      if (!TimeManager.isWithinCurrentDay(mealTimestamp, normalizedTargetTime, resetHour, tzOffsetMinutes)) {
         return;
       }
 
@@ -1017,7 +1029,7 @@ export function estimateGlucoseAtTime(
 
       // ✅ v3.2: Apply daily reset filter — only include doses from current day
       // ✅ v4.0: Use configurable resetHour
-      if (!TimeManager.isWithinCurrentDay(doseTimestamp, normalizedTargetTime, resetHour)) {
+      if (!TimeManager.isWithinCurrentDay(doseTimestamp, normalizedTargetTime, resetHour, tzOffsetMinutes)) {
         return;
       }
 

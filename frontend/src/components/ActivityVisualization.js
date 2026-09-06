@@ -285,6 +285,7 @@ function normalizeHrTrace(raw) {
 
 const ActivityVisualization = ({
   patientId    = null,
+  isDoctor     = false,
   height       = 600,
   showControls = true,
   embedded     = false,
@@ -294,7 +295,47 @@ const ActivityVisualization = ({
   // ===== CONTEXT & HOOKS =====
   const timeContext = useContext(TimeContext);
   const { fetchLast24hData, handleViewModeChange } = useBloodSugarData();
-  const { patientConstants } = useConstants();
+  const { patientConstants: ownConstants } = useConstants();
+
+  // D28: this component previously took an `isDoctor`/`patientId` pair from
+  // the doctor dashboard and ignored both — it always fetched from
+  // /api/activity-history (the CALLER's own activities, i.e. the doctor's,
+  // not the selected patient's) and always read `useConstants()` (the
+  // doctor's own reset hour, HR base/max), which every PD calculation below
+  // depends on. A doctor viewing a patient's activity tab therefore saw
+  // either their own (usually empty) activity history recomputed with their
+  // own physiology, or nothing — under that patient's name.
+  //
+  // Fetched via /api/doctor/patient/<id>/constants, the same endpoint
+  // ClinicalValidationDashboard already uses (D24's fix made it return
+  // timezone_offset_minutes too). `patientConstants` below is shadowed so the
+  // ~15 downstream reads of it need no further changes — each already
+  // resolves to the right patient's constants for whichever mode is active.
+  const [doctorViewConstants, setDoctorViewConstants] = useState(null);
+
+  useEffect(() => {
+    if (!isDoctor || !patientId) {
+      setDoctorViewConstants(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const response = await axios.get(
+          `${API_BASE_URL}/api/doctor/patient/${patientId}/constants`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!cancelled) setDoctorViewConstants(response.data?.constants ?? null);
+      } catch (err) {
+        if (!cancelled) setDoctorViewConstants(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isDoctor, patientId]);
+
+  const patientConstants = (isDoctor && patientId) ? doctorViewConstants : ownConstants;
 
   // ===== STATE =====
   const [viewMode, setViewMode]           = useState(defaultView);
@@ -385,7 +426,19 @@ const ActivityVisualization = ({
 
       const lookbackHours = Math.max(viewConfig.mealLookback || 24, 8);
 
-      const response = await axios.get(`${API_BASE_URL}/api/activity-history`, {
+      // D28: /api/doctor/patient/<id>/activity-history (the sibling doctor
+      // endpoint) returns a materially different, narrower shape —
+      // activityType/activityLevel rather than type/level/intensity/
+      // duration_minutes/bg_direction — which normalizeActivityRecord cannot
+      // read at all; every record from it maps to null and is filtered out.
+      // /api/patient/<id>/activity-history (fixed for authorization as D27)
+      // returns the same shape /api/activity-history does, so the normalizer
+      // needs no branch of its own.
+      const url = (isDoctor && patientId)
+        ? `${API_BASE_URL}/api/patient/${patientId}/activity-history`
+        : `${API_BASE_URL}/api/activity-history`;
+
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
         params:  { limit: 200, lookback_hours: lookbackHours },
       });
@@ -404,7 +457,7 @@ const ActivityVisualization = ({
     } catch (err) {
       console.warn('[ActivityViz v2] activity-history fetch failed:', err.message);
     }
-  }, [viewConfig.mealLookback]);
+  }, [viewConfig.mealLookback, isDoctor, patientId]);
 
   useEffect(() => {
     fetchActivities();
@@ -479,7 +532,7 @@ const ActivityVisualization = ({
       //    correctly apply the patient's own reset time on every calendar day.
       const resetHour      = patientConstants?.daily_reset_hour ?? 7;
       const tzOffset       = patientConstants?.timezone_offset_minutes ?? null;
-      const isAtReset      = TimeManager.isAtResetTime(time, resetHour);
+      const isAtReset      = TimeManager.isAtResetTime(time, resetHour, tzOffset);
       const dailyResetTime = TimeManager.getDailyResetTime(time, resetHour, tzOffset);
 
       let totalDeliveredDrop = 0;
@@ -729,9 +782,15 @@ const ActivityVisualization = ({
   const handleRefresh = useCallback(async () => {
     setLoading(true);
     await fetchActivities();
-    if (fetchLast24hData) fetchLast24hData();
+    // D28: fetchLast24hData reads/writes the shared BloodSugarDataContext,
+    // which is scoped to whoever is logged in — the doctor, in this mode.
+    // Calling it here would pull the doctor's own glucose data into state
+    // that BloodSugarVisualization (rendered alongside this component in the
+    // doctor dashboard) also reads, for the SAME patient slot. Harmless in
+    // patient mode, where "whoever is logged in" is the right person.
+    if (fetchLast24hData && !isDoctor) fetchLast24hData();
     setTimeout(() => setLoading(false), 800);
-  }, [fetchActivities, fetchLast24hData]);
+  }, [fetchActivities, fetchLast24hData, isDoctor]);
 
   const handleChartClick = (data) => {
     if (data?.activePayload?.length) {
@@ -755,8 +814,10 @@ const ActivityVisualization = ({
   const handleViewChange = useCallback((newMode) => {
     if (newMode === viewMode) return;
     setViewMode(newMode);
-    if (handleViewModeChange) handleViewModeChange(newMode);
-  }, [viewMode, handleViewModeChange]);
+    // Same reasoning as handleRefresh above: this drives the shared
+    // patient-scoped context, which is the doctor's own in doctor mode.
+    if (handleViewModeChange && !isDoctor) handleViewModeChange(newMode);
+  }, [viewMode, handleViewModeChange, isDoctor]);
 
 
   // ===== FORMATTERS =====
@@ -1766,6 +1827,7 @@ const ActivityVisualization = ({
 
 export default React.memo(ActivityVisualization, (prev, next) =>
   prev.patientId === next.patientId &&
+  prev.isDoctor  === next.isDoctor  &&
   prev.embedded  === next.embedded  &&
   prev.height    === next.height
 );

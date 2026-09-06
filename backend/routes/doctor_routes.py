@@ -118,6 +118,16 @@ def get_patient_constants(current_user, patient_id):
             'fat_factor': patient.get('fat_factor', default_constants['fat_factor']),
             'carb_to_bg_factor': patient.get('carb_to_bg_factor', default_constants['carb_to_bg_factor']),
             'daily_reset_hour': patient.get('daily_reset_hour', default_constants.get('daily_reset_hour', 7)),
+            # D24: daily_reset_hour is meaningless to a caller without the
+            # offset it is anchored in. This response carried the hour but not
+            # the offset, so a doctor's client had no way to learn the
+            # patient's timezone and fell back to the browser's — applying a
+            # clinician's own reset boundary and wall clock to someone else's
+            # day. Both are stored on the patient document (constants.py:285,
+            # migrate_timezone_offset.py); only this response dropped one.
+            'timezone_offset_minutes': patient.get(
+                'timezone_offset_minutes',
+                default_constants.get('timezone_offset_minutes', 0)),
             'activity_coefficients': patient.get('activity_coefficients', default_constants['activity_coefficients']),
             'absorption_modifiers': patient.get('absorption_modifiers', default_constants['absorption_modifiers']),
             'insulin_timing_guidelines': patient.get('insulin_timing_guidelines',

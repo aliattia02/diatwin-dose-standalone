@@ -122,3 +122,9 @@ docs/Clinical validation/
 *.env
 !*.env.example
 !.easignore
+
+# ML training snapshots. Written by diatwin/ml/export.py at the repo root by
+# default; may contain patient-derived rows and is regenerable from Mongo, so
+# it is never committed. GET /api/ml/snapshots (backend/routes/ml_routes.py)
+# reads whatever is here, or wherever ML_SNAPSHOTS_DIR points instead.
+/snapshots/

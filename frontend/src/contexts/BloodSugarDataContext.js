@@ -1501,7 +1501,13 @@ const calculateAdjustedBaselineForProjection = useCallback(() => {
     // This eliminates the 40 mg/dL divergence caused by the frontend abandoning a
     // valid same-day reading while the backend still uses it.
     const resetHour = patientConstants?.daily_reset_hour || 7;
-    const resetTimeMs = TimeManager.getDailyResetTime(now, resetHour);
+    // ✅ D24: the patient's own offset, not the browser's — otherwise a doctor
+    // reviewing a patient abroad decides "previous day's period" on their own
+    // clock and falls back to target_glucose a day early or late.
+    const resetTzOffsetMinutes = patientConstants?.timezone_offset_minutes != null
+      ? patientConstants.timezone_offset_minutes
+      : -(new Date(now).getTimezoneOffset());
+    const resetTimeMs = TimeManager.getDailyResetTime(now, resetHour, resetTzOffsetMinutes);
     const readingIsInCurrentPeriod = readingTimestamp >= resetTimeMs;
 
     if (!readingIsInCurrentPeriod) {

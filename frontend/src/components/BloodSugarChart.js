@@ -28,7 +28,12 @@ const BloodSugarChart = ({ isDoctor = false, patientId = null }) => {
 
       let url = `${API_BASE_URL}/api/blood-sugar?start_date=${startDate}&end_date=${endDate}&unit=${unit}`;
       if (isDoctor && patientId) {
-        url = `${API_BASE_URL}/doctor/patient/${patientId}/blood-sugar?start_date=${startDate}&end_date=${endDate}&unit=${unit}`;
+        // D26: this was missing the /api segment. Every backend route lives
+        // under /api/* (backend/routes/doctor_routes.py registers
+        // /api/doctor/patient/<id>/blood-sugar), so the request 404'd and the
+        // catch block below reported a generic "failed to fetch" — which
+        // looked exactly like "this patient has no data".
+        url = `${API_BASE_URL}/api/doctor/patient/${patientId}/blood-sugar?start_date=${startDate}&end_date=${endDate}&unit=${unit}`;
       }
 
       const response = await axios.get(url, {

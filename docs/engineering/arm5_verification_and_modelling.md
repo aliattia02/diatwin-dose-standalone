@@ -41,6 +41,7 @@ Cross-references
 - [§4 The kernel as a simulator](#4-the-kernel-as-a-simulator)
 - [§5 Cross-language parity](#5-cross-language-parity)
 - [§6 Mobile suites](#6-mobile-suites)
+- [§6A Web frontend suites](#6a-web-frontend-suites)
 - [§7 Maintenance scripts](#7-maintenance-scripts) — incl. `measure_drop_rates.py`
 - [§8 Continuous integration](#8-continuous-integration)
 - [§9 Cross-Arm References](#9-cross-arm-references)
@@ -71,14 +72,18 @@ description, and supplies the foundation the ML and RL work will be built on.
 ================================================================
 ```
 
-**Test counts as of 2026-09-05, after the pre-ML audit**
+**Test counts as of 2026-09-06, after the frontend safety-net session**
 
 | Suite | Tests | Runtime | Command |
 |---|---:|---:|---|
-| `backend/tests` | 401 | 27 s | `cd backend && pytest tests -q` |
-| `diatwin/tests` | 101 | 1.5 s | `pytest diatwin/tests -q` |
+| `backend/tests` | 437 | 42 s | `cd backend && pytest tests -q` |
+| `diatwin/tests` | 101 | 2 s | `pytest diatwin/tests -q` |
 | `mobile` (12 suites) | 362 | 7 s | `cd mobile && npx jest` |
-| **Total** | **864** | | |
+| `frontend` (10 suites) | 117 | ~35 s | `cd frontend && npx react-scripts test --watchAll=false --ci` |
+| **Total** | **1,017** | | |
+
+(`mobile`'s 362 already includes the parity job's 4 mobile-side parity tests;
+`backend/tests` additionally has 1 test skipped, not counted above.)
 
 The suites use `backend/venv`, not a bare interpreter. `diatwin/tests` looks
 stdlib-only but is not: `TestPatientSim` imports `diatwin/sim/patient.py`, which
@@ -161,6 +166,14 @@ than a tidied one. It also sets both link fields (`meals_only.meal_id` and
 | `test_known_defects.py` | 16 | D1 regression, D2/D3 characterization |
 | `test_sweep_orphaned_meals.py` | 22 | Orphan classification (§7) |
 | `test_smoke.py` | 6 | Harness sanity |
+| `test_doctor_patient_constants.py` | 11 | `timezone_offset_minutes` on the doctor constants endpoint (6 September, D24) |
+| `test_ml_snapshot_routes.py` | 16 | The cohort-quality endpoints (§7.0), against a real exported manifest |
+| `test_patient_activity_history_route.py` | 9 | D27's authorization fix and the PD-model response shape (6 September) |
+
+This table predates several suites added since (`test_cors_origins.py`,
+`test_db_indexes.py`, `test_libre_sync.py`, `test_model_shape_defects.py`,
+`test_watch_sync.py` among them) and is not a complete inventory — see §0 for
+the current total.
 
 **The route inventory is the highest-leverage file.** It discovers rules from
 the live URL map rather than listing them, so a new blueprint is covered the
@@ -573,6 +586,58 @@ deleted rather than kept.
 
 ---
 
+## §6A Web frontend suites
+
+`frontend/` had no tests at all until 6 September — one Create React App
+boilerplate file asserting the page renders "learn react", which `App.js` does
+not render, so it would have failed had anything run it. Ten suites now,
+**117 tests**, run by `react-scripts test` in the `frontend` CI job.
+
+| Suite | Tests | Covers |
+|---|---:|---|
+| `__tests__/daily-reset-consolidation.test.js` | 10 | D24/D24b — the reset boundary uses the patient's offset |
+| `__tests__/time-manager-format.test.js` | 10 | `formatDate` → `formatDateInZone`, and the equivalence of the refactor |
+| `__tests__/suggestion-review.test.js` | 28 | The suggestion review contract's four rules |
+| `__tests__/dashboard-tabs.test.js` | 21 | D25 — no tab points at an empty module |
+| `__tests__/clinical-validation-dashboard.test.js` | 9 | The review surface renders and names its producer |
+| `__tests__/cohort-quality.test.js` | 18 | The cohort-quality arithmetic — zero-fetched detection, dual-write check |
+| `__tests__/cohort-quality-view.test.js` | 8 | The view against a mocked `/api/ml/snapshots*` API |
+| `__tests__/bloodsugar-chart-doctor-url.test.js` | 2 | D26 — the doctor-mode request targets a route this backend registers |
+| `__tests__/activity-visualization-doctor-mode.test.js` | 6 | D28 — the activity fetch and PD constants come from the selected patient |
+| `__tests__/bloodsugar-visualization-doctor-mode.test.js` | 5 | D28 — an honest gap replaces the doctor's own data under a patient's header |
+
+Three things about this harness are worth knowing before adding to it.
+
+**`axios` must be mapped to its CommonJS build.** axios v1 resolves to an ES
+module at its package entry and CRA's jest does not transform `node_modules`, so
+requiring any component that imports axios fails with "Cannot use import
+statement outside a module". `frontend/package.json` carries a
+`jest.moduleNameMapper` entry pointing `^axios$` at `axios/dist/node/axios.cjs`.
+
+**jsdom has neither `ResizeObserver` nor element layout**, and recharts'
+`ResponsiveContainer` needs both — without them every chart component throws on
+mount. `src/setupTests.js` stubs both. The observer never fires, deliberately:
+these suites assert on the numbers and labels around a chart, not on SVG
+geometry, and a stub that invented sizes would make them depend on made-up
+layout.
+
+**The suites are timezone-independent.** Nothing reads the host clock, so the
+verdict is the same on a developer machine at UTC+02:00 and on a CI runner at
+UTC. The CI job still sets `TZ=UTC`, which only pins anything added later that
+is not.
+
+`dashboard-tabs.test.js` is the one shaped to outlive its defect: it scans for
+any 0-byte source file under `src/`, and reads `PatientDashboard.js`'s import
+list out of the source rather than hard-coding it, so a component added later is
+covered without anyone remembering. It carries a guard test on the parse itself,
+because a regex that stops matching would make the suite pass vacuously.
+
+The frontend's `utils/` modules are additionally the third side of the parity
+harness (§5) — `netEffectCalculationService.js` and the two pharmacodynamics
+modules — evaluated by `diatwin/verify/frontend_eval.mjs` as a bare Node script
+rather than through this jest harness, because the parity job should not depend
+on the CRA toolchain.
+
 ---
 
 ## §7 Maintenance scripts
@@ -605,6 +670,15 @@ between 0.00% and 0.38%. See the pre-ML audit §4.
 
     python scripts/measure_drop_rates.py
     python scripts/measure_drop_rates.py --azt1d "<path>/AZT1D 2025/CGM Records"
+
+This script's terminal output and `diatwin/ml/export.py`'s `manifest.json` are
+the same accounting — both come from `LoadReport`/`aggregate_reports`. Since
+6 September the manifest is also served over HTTP:
+`GET /api/ml/snapshots` and `GET /api/ml/snapshots/<id>/manifest`
+(`backend/routes/ml_routes.py`, admin-only), read by the frontend's cohort
+quality view (§6A). Nothing about this script changed — the manifest it would
+help a reader interpret was already being written by `export_snapshot`;
+serving it was the missing piece.
 
 ### 7.1 `backend/sweep_orphaned_meals.py`
 
@@ -643,7 +717,7 @@ legitimate record shape the sweep must not touch.
 
 ## §8 Continuous integration
 
-`.github/workflows/ci.yml`. Four jobs:
+`.github/workflows/ci.yml`. Five jobs:
 
 | Job | Runs |
 |---|---|
@@ -651,8 +725,13 @@ legitimate record shape the sweep must not touch.
 | `backend` | `pytest tests -q` with dummy `MONGO_URI` / `SECRET_KEY` |
 | `parity` | generate → Python → TypeScript → frontend → compare |
 | `mobile` | `scripts/typecheck-ratchet.mjs`, then `jest` excluding parity |
+| `frontend` | `react-scripts test`, then `scripts/lint-ratchet.mjs` (build + lint) |
 
-Both Node jobs pin **Node 22**: the frontend evaluator needs
+The workflow triggers on `pull_request` and on pushes to `master` or `main`. It
+listed `main` alone until 6 September, and the default branch is `master`, so
+**no push ever triggered it** — only pull requests did.
+
+All three Node jobs pin **Node 22**: the frontend evaluator needs
 `module.registerHooks` (22.15) and ES module syntax detection for a package
 with no `"type"` field (22.7), and on Node 20 it fails with a syntax error
 raised from inside a shipped source file.
@@ -667,8 +746,22 @@ gunicorn, flask-cors or pyjwt. CI has always used the correct pair, and
 `SETUP.md` no longer points at the wrong one (D14). Both requirements files are
 **UTF-16LE with a BOM**; `pip` handles that, most other tooling does not.
 
-The `mobile` job runs a ratchet rather than `tsc --noEmit` directly. See §0's
-test-count note and the pre-ML audit §5.
+**Two of the five jobs ratchet rather than gate**, for the same reason in both
+cases: the absolute gate is unreachable today, and a job that can only be red
+trains everyone to ignore it.
+
+* `mobile` runs `scripts/typecheck-ratchet.mjs` rather than `tsc --noEmit`
+  directly — 185 errors. See §0's test-count note and the pre-ML audit §5.
+* `frontend` runs `scripts/lint-ratchet.mjs` rather than `CI=true npm run
+  build` — 174 eslint warnings, which `CI=true` promotes to errors. The script
+  runs the build **once** and serves both purposes: a genuine compile error
+  fails the job, and the warning count may only go down. Running the build twice
+  to lint and then build would double the slowest job in the workflow.
+
+Both baselines are committed (`mobile/typecheck-baseline.json`,
+`frontend/lint-baseline.json`) and both scripts fail on an *unrecorded
+improvement* as well as a regression, so a number that drops cannot drift back
+up.
 
 ---
 
@@ -679,7 +772,7 @@ test-count note and the pre-ML audit §5.
 | Arm 0 | `main.py`, `config.py`, auth, schedulers | §2 stubs the schedulers and the Atlas ping. The blueprint registration order in `main.py` is enforced by the route-inventory duplicate check. |
 | Arm 1 | `constants.py`, stored schemas, ingestion | §3 normalizes the shapes Arm 1 writes. §5 embeds Arm 1's pharmacokinetic profiles in the case file. §7's classification depends on the link fields documented in Arm 1 §12. |
 | Arm 2 | `pharmacodynamics.py`, the TS calculation stack | §4 wraps Arm 2's kernel unchanged. §5 compares its three implementations pairwise. `test_pharmacodynamics.py` asserts Arm 2 §9's sign conventions. |
-| Arm 3 | Charts, `useActiveEffects` | No dependency. Arm 3's components remain untested. |
+| Arm 3 | Charts, `useActiveEffects` | §6A covers the web frontend's `utils/` and its dashboard wiring. Arm 3's chart components themselves remain untested. |
 | Arm 4 | `TimeManager`, services, stores | §6.1 covers `TimeManager`. The other services remain untested. |
 
 ---
@@ -771,3 +864,19 @@ These are permanent invariants. They are stated as rules, not history.
     implementations; three of them still anchor on the UTC date and are wrong
     east of +07:00 (D9). A reset computed any other way silently changes which
     day's doses and meals count, and no display makes that visible.
+
+    Anything that decides *whether a moment is at the boundary* derives it from
+    that function rather than comparing a wall clock. The web frontend's
+    `isAtResetTime` read `getHours()`/`getMinutes()` and took no offset at all,
+    which made it a second definition and made every one of its call sites wrong
+    for a patient outside the viewer's timezone (D24b).
+
+17. **A timestamp shown to a clinician is rendered in the patient's timezone,
+    not the viewer's.** Use `TimeManager.formatDateInZone(date, format,
+    tzOffsetMinutes)`; the plain `formatDate` falls back to the browser and is
+    correct only for someone reading their own data. A doctor in London
+    reviewing an Auckland patient otherwise sees that patient's breakfast
+    stamped 20:00 the previous day, which is wrong in a way that looks
+    plausible. Any API response carrying `daily_reset_hour` must carry
+    `timezone_offset_minutes` beside it for the same reason — the hour alone
+    does not name an instant.

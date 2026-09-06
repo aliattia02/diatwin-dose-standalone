@@ -236,7 +236,7 @@ const clampedIdx = Math.max(0, Math.min(timePoints.length - 1, Math.floor(rawIdx
       // FIX: pass patient's stored timezone offset so reset boundary matches their
       // local clock even when the browser timezone differs (e.g. travelling patient)
       const tzOffset = patientConstants?.timezone_offset_minutes ?? null;
-      const isAtReset = TimeManager.isAtResetTime(time, resetHour);
+      const isAtReset = TimeManager.isAtResetTime(time, resetHour, tzOffset);
       const dailyResetTime = TimeManager.getDailyResetTime(time, resetHour, tzOffset);
 
       // Calculate three insulin effects at this timepoint

@@ -6,7 +6,7 @@ import BloodSugarVisualization from './BloodSugarVisualization';
 import MealHistory from './MealHistory';
 import EnhancedPatientConstantsUI from './EnhancedPatientConstantsUI';
 import ActivityVisualization from './ActivityVisualization';
-import GlycemicResponseTracker from './GlycemicResponseTracker';
+import ClinicalValidationDashboard from './ClinicalValidationDashboard';
 import DataImport from './ImportExport';
 import './Charts/dashboard-components.css';
 import { FaSync, FaUserShield, FaClock, FaUsers } from 'react-icons/fa';
@@ -24,7 +24,9 @@ const AdminDashboard = ({ handleLogout }) => {
   const [loading, setLoading] = useState({ patients: false, data: false });
   const [errors, setErrors] = useState({ patients: '', data: '' });
   const [errorMessage, setErrorMessage] = useState('');
-  const [timeRange, setTimeRange] = useState('7d');
+  // The time-range control moved into ClinicalValidationDashboard, which
+  // owns the window its own queries use. This is only the initial value.
+  const [timeRange] = useState('7d');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState('meals');
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -236,24 +238,16 @@ const AdminDashboard = ({ handleLogout }) => {
                 </div>
 
                 <div className="dash-doctor-data-charts">
+                  {/* D25: this slot rendered GlycemicResponseTracker, a 0-byte
+                      module, unconditionally as soon as a patient was selected
+                      — so the chart area threw at render and, with no error
+                      boundary anywhere above it, took the whole view down. It
+                      now holds the clinical validation surface, which owns its
+                      own time-range control. */}
                   <div className="dash-doctor-correlation-chart">
-                    <div className="dash-doctor-chart-header">
-                      <h3>Combined Meal Analytics</h3>
-                      <div className="dash-doctor-chart-controls">
-                        <select
-                          value={timeRange}
-                          onChange={(e) => setTimeRange(e.target.value)}
-                          className="dash-doctor-time-range-select"
-                        >
-                          <option value="24h">Last 24 Hours</option>
-                          <option value="7d">Last 7 Days</option>
-                          <option value="30d">Last 30 Days</option>
-                        </select>
-                      </div>
-                    </div>
-                    <GlycemicResponseTracker
+                    <ClinicalValidationDashboard
                       patientId={selectedPatient.id}
-                      userType="admin"
+                      isDoctor={true}
                       timeRange={timeRange}
                       refreshTrigger={refreshTrigger}
                     />

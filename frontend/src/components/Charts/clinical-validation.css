@@ -1,0 +1,329 @@
+/* ============================================
+   CLINICAL VALIDATION / SUGGESTION REVIEW
+   Styles for ClinicalValidationDashboard and InsulinDisagreementView.
+
+   Kept in its own file rather than appended to global-visualization.css
+   because these are the clinician review surfaces rather than the patient
+   charts, and the two are edited for different reasons. The palette follows
+   the existing visualisation styles: the same surface gradient, radius and
+   shadow, and #2563eb as the accent.
+   ============================================ */
+
+.viz-container {
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  max-width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Nested: the disagreement view sits inside the dashboard, and two stacked
+   cards read as a boxed-in box. The inner one drops its own chrome. */
+.viz-container .viz-container {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+/* ---------- Header ---------- */
+
+.viz-header h2,
+.viz-header h3 {
+  margin: 0 0 4px;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.viz-subtitle {
+  margin: 0 0 16px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+/* ---------- Tab bar ---------- */
+
+.viz-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.viz-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  margin-bottom: -1px;
+  font-size: 0.92rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.viz-tab:hover {
+  color: #1f2937;
+}
+
+.viz-tab-active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+
+.viz-time-range-select {
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 0.88rem;
+}
+
+/* ---------- Stat tiles ---------- */
+
+.viz-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.viz-stat {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.viz-stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  font-variant-numeric: tabular-nums;
+}
+
+.viz-stat-label {
+  font-size: 0.78rem;
+  color: #6b7280;
+  line-height: 1.3;
+}
+
+/* The secondary row is the over/under/within split — supporting detail, so it
+   is visually quieter than the headline figures above it. */
+.viz-stat-row-secondary .viz-stat {
+  background: #f9fafb;
+}
+
+.viz-stat-row-secondary .viz-stat-value {
+  font-size: 1.15rem;
+}
+
+/* ---------- Table ---------- */
+
+.viz-table-wrap {
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.viz-table-wrap h4 {
+  margin: 0 0 8px;
+  color: #1f2937;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.viz-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.viz-table th,
+.viz-table td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+}
+
+.viz-table th {
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.viz-table td {
+  color: #374151;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Over and under are coloured differently on purpose: the direction of a
+   disagreement is the clinical finding, and a single neutral colour would
+   throw it away. Both keep their sign in the text, so colour is reinforcing
+   rather than carrying the meaning alone. */
+.viz-delta-over {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.viz-delta-under {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* ---------- States ---------- */
+
+.viz-loading,
+.viz-empty {
+  padding: 28px 8px;
+  color: #6b7280;
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.viz-error {
+  padding: 14px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.viz-error .viz-note-list {
+  color: inherit;
+  margin: 6px 0 0;
+}
+
+/* A softer version of .viz-error — worth checking, not a confirmed problem.
+   Used for the insulin dual-write check, which flags a suspicious absence
+   rather than a measured defect. */
+.viz-warning-block {
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+/* A table row worth a second look — paired with .viz-delta-over on the cell
+   that triggered it so the same red used for "took more than suggested"
+   consistently means "look here" across both views. */
+.viz-row-warning {
+  background: #fef2f2;
+}
+
+.viz-empty p {
+  margin: 0 0 8px;
+}
+
+.viz-note,
+.viz-note-list {
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.viz-note-list {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.viz-note-list li {
+  margin-bottom: 8px;
+}
+
+/* ---------- Tooltip ---------- */
+
+.viz-tooltip {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+/* ---------- Provenance ---------- */
+
+/* Deliberately present rather than tucked away: contract rule 2 says a
+   displayed suggestion names its producer, and rule 4 that a view naming a
+   snapshot names it visibly. */
+.viz-provenance {
+  display: block;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.viz-provenance code {
+  background: #f3f4f6;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+.viz-warning {
+  color: #b45309;
+}
+
+.viz-provenance-panel h3 {
+  margin: 20px 0 8px;
+  font-size: 0.95rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.viz-provenance-panel h3:first-child {
+  margin-top: 0;
+}
+
+.viz-definition-list {
+  margin: 0;
+}
+
+.viz-definition-list dt {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.88rem;
+  margin-top: 12px;
+}
+
+.viz-definition-list dd {
+  margin: 4px 0 0;
+  color: #4b5563;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.viz-definition-list dd code {
+  background: #f3f4f6;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.viz-definition-list dd .viz-note {
+  margin: 4px 0 0;
+}

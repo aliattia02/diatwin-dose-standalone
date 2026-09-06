@@ -303,8 +303,11 @@ function isWithinCurrentDay(doseTimestamp, currentTimestamp, resetHour = 7, tzOf
  * ✅ REFACTOR v3.1: This now uses TimeManager.isAtResetTime() (consolidated in TimeManager v3.1)
  * Kept as wrapper function to maintain backward compatibility with existing exports
  */
-function isAtResetTime(currentTimestamp) {
-  return TimeManager.isAtResetTime(currentTimestamp);
+function isAtResetTime(currentTimestamp, resetHour = 7, tzOffsetMinutes = null) {
+  // ✅ D24b: this wrapper used to swallow both resetHour and the patient's
+  // offset, so every caller silently got the 7 AM default on the browser's
+  // clock. It forwards them now, like the two wrappers above it.
+  return TimeManager.isAtResetTime(currentTimestamp, resetHour, tzOffsetMinutes);
 }
 
 /**

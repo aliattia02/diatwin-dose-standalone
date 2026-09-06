@@ -86,6 +86,7 @@ const DEBUG_MODE = false;
 
 const BloodGlucoseVisualization = ({
   patientId = null,
+  isDoctor = false,
   height = 500,
   showControls = true,
   embedded = false,
@@ -702,6 +703,34 @@ const BloodGlucoseVisualization = ({
   }, []);
 
   // ===== RENDER =====
+
+  // D28's other half. Every data field this component reads —
+  // combinedData/bloodSugarData, targetGlucose, activeEffects,
+  // recentMealsData, recentInsulinData, last24hData,
+  // adjustedBaselineForProjection — comes from BloodSugarDataContext, which
+  // is scoped to whoever is logged in, not to `patientId`. Retrofitting a
+  // patient-scoped variant would mean re-implementing a large share of that
+  // 2,400-line context, which is a separate piece of work from finishing the
+  // doctor dashboard. Until it exists, this must not silently render the
+  // DOCTOR's own (typically empty) glucose data under a selected patient's
+  // header — the D25 judgment applies here too: wrong data attributed to a
+  // patient is worse than an honest gap. `BloodSugarChart` (fixed as D26 in
+  // the same session) already covers this doctor's-view slot with a simpler
+  // chart that fetches per-patient data directly rather than through this
+  // context, so nothing here is presently the doctor's ONLY view of glucose.
+  if (isDoctor && patientId) {
+    return (
+      <div className="visualization-loading">
+        <p>
+          Detailed glucose visualization is not yet available in doctor view.
+        </p>
+        <p style={{ fontSize: 13, color: '#666', marginTop: 8 }}>
+          See the blood sugar chart above for this patient&rsquo;s readings.
+        </p>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="visualization-error">

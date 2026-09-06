@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # The default branch here is `master`, not `main` — with `main` alone this
+    # job never ran on a push, only on pull requests. Both are listed so a
+    # rename in either direction keeps the push trigger working.
+    branches: [master, main]
   pull_request:
 
 jobs:
@@ -107,3 +110,39 @@ jobs:
       - name: Tests
         working-directory: mobile
         run: npx jest --ci --testPathIgnorePatterns=parity
+
+  frontend:
+    name: web frontend build and tests
+    runs-on: ubuntu-latest
+    # The frontend is 51,080 lines that nothing checked: not built here, no
+    # tests, no typecheck. The parity job already evaluates 3 of its 16 utils
+    # modules as the third side of the model comparison, but that is the only
+    # thing standing between this tree and a silent break. This job is the rest
+    # of the net — see docs/engineering/2026-09-05-web-frontend-parity-audit.md.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # Kept in step with the parity and mobile jobs so all three run the
+          # same runtime.
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+      - name: Tests
+        working-directory: frontend
+        env:
+          # The daily-reset suite is written to be timezone-independent, so this
+          # only pins the host clock for anything added later that is not.
+          TZ: UTC
+        run: npx react-scripts test --watchAll=false --ci
+      # Build and lint in one step. `CI=true npm run build` would turn all 175
+      # eslint warnings on this tree into errors and make the job red from the
+      # day it was added — the same trap the mobile typecheck fell into. This
+      # ratchets instead: the build must succeed, and the warning count may only
+      # go down. See frontend/scripts/lint-ratchet.mjs.
+      - name: Build and lint (ratchet)
+        working-directory: frontend
+        run: node scripts/lint-ratchet.mjs

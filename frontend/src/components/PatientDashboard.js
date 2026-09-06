@@ -9,7 +9,6 @@ import InsulinVisualization from './InsulinVisualization';
 import CombinedGlucoseInsulinChart from './CombinedGlucoseInsulinChart';
 import ActivityRecording from './ActivityRecording';
 import ActivityVisualization from './ActivityVisualization';
-import GlycemicResponseTracker from './GlycemicResponseTracker';
 import MealVisualization from './MealVisualizationmealsonly';
 import FoodDatabase from './FoodDatabase';
 import PatientConstants from './PatientConstants';
@@ -21,7 +20,6 @@ import ClinicalValidationDashboard from './ClinicalValidationDashboard';
 import CGMMonitoringDashboard from './CGMMonitoringDashboard';
 import PureGlucoseVisualization from './PureGlucoseVisualization';
 import SMBGMonitoringDashboard from './SMBGMonitoringDashboard';
-import TestComponent from './Test';
 import './Charts/dashboard-components.css';
 
 const PatientDashboard = ({ handleLogout }) => {
@@ -95,8 +93,6 @@ const PatientDashboard = ({ handleLogout }) => {
       // Meal Management Tab
       case 'MealInput':
         return <MealInput key="meal-input" />;
-      case 'SimpleMealEffectChart':
-        return <GlycemicResponseTracker key="Meal-Visualization" userType="patient" />;
       case 'FoodDatabase':
         return <FoodDatabase key="food-database" />;
       case 'mealHistory':
@@ -131,8 +127,6 @@ const PatientDashboard = ({ handleLogout }) => {
         return <PatientConstants key="patient-constants" />;
       case 'DoctorManagement':
         return <DoctorManagement key="doctor-management" />;
-      case 'TestComponent':
-        return <TestComponent key="test-component" />;
 
       default:
         return null;
@@ -148,7 +142,6 @@ const PatientDashboard = ({ handleLogout }) => {
       title: '🍽️ Meal Management',
       items: [
         { name: 'MealInput', label: 'Meal Input' },
-        { name: 'SimpleMealEffectChart', label: 'Combined Meal Analytics' },
         { name: 'FoodDatabase', label: 'Meal Management' },
         { name: 'mealHistory', label: 'Meal History' }
       ]
@@ -177,8 +170,7 @@ const PatientDashboard = ({ handleLogout }) => {
       title: '⚙️ Settings & Management',
       items: [
         { name: 'PatientConstants', label: 'Patient Constants' },
-        { name: 'DoctorManagement', label: '👨‍⚕️ Manage My Doctors' },
-        { name: 'TestComponent', label: '🧪 Test Component' }
+        { name: 'DoctorManagement', label: '👨‍⚕️ Manage My Doctors' }
       ]
     }
   };

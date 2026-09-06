@@ -604,6 +604,34 @@ class TimeManager {
    * @returns {string} Formatted date string
    */
   static formatDate(date, format) {
+    // Delegates so there is one implementation of the token replacement.
+    // Passing null selects the browser's own offset, which is what this method
+    // has always used.
+    return this.formatDateInZone(date, format, null);
+  }
+
+  /**
+   * Format a date in a SPECIFIC timezone offset rather than the browser's.
+   *
+   * Every display formatter here reads the browser's wall clock, which is right
+   * for a patient looking at their own data and wrong for a clinician looking
+   * at someone else's: a doctor in London reviewing a patient in Auckland sees
+   * that patient's breakfast stamped 20:00 the previous day. That is the
+   * display-side counterpart of D24, and the fix is the same — take the
+   * patient's offset as an argument instead of assuming it.
+   *
+   * Implemented by shifting the instant by the offset and reading UTC fields.
+   * With `tzOffsetMinutes = null` the offset used is the browser's own
+   * (instant-specific, so DST is handled), which makes this exactly equivalent
+   * to the local-getter version it replaced.
+   *
+   * @param {Date|number|string} date - Date to format
+   * @param {string} format - Format string (see TimeManager.formats)
+   * @param {number} [tzOffsetMinutes=null] - Patient's UTC offset in minutes,
+   *        positive east. Null falls back to the browser's offset.
+   * @returns {string} Formatted date string
+   */
+  static formatDateInZone(date, format, tzOffsetMinutes = null) {
     if (!date) return '';
     if (!format) format = this.formats.DATETIME_DISPLAY;
 
@@ -614,15 +642,21 @@ class TimeManager {
       return '';
     }
 
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const hours = String(d.getHours()).padStart(2, '0');
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const seconds = String(d.getSeconds()).padStart(2, '0');
+    const effectiveTzOffset = (tzOffsetMinutes != null)
+      ? tzOffsetMinutes
+      : -(d.getTimezoneOffset());
 
-    const displayMonth = (d.getMonth() + 1).toString();
-    const displayDay = d.getDate().toString();
+    const shifted = new Date(d.getTime() + effectiveTzOffset * 60 * 1000);
+
+    const year = shifted.getUTCFullYear();
+    const month = String(shifted.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(shifted.getUTCDate()).padStart(2, '0');
+    const hours = String(shifted.getUTCHours()).padStart(2, '0');
+    const minutes = String(shifted.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(shifted.getUTCSeconds()).padStart(2, '0');
+
+    const displayMonth = (shifted.getUTCMonth() + 1).toString();
+    const displayDay = shifted.getUTCDate().toString();
 
     return format
       .replace('YYYY', year)
@@ -1254,24 +1288,35 @@ static hoursToTimeString(totalHours) {
    *
    * @param {number} currentTimestamp - Current time in milliseconds
    * @param {number} [resetHour=7] - Hour of day for reset (0-23). Defaults to 7 AM
+   * @param {number} [tzOffsetMinutes=null] - Patient's UTC offset in minutes.
+   *        Falls back to the browser's own offset when null, matching
+   *        getDailyResetTime.
    * @returns {boolean} True if at reset time
    *
    * @example
-   * // At 7:00 AM -> true
+   * // At 7:00 AM in the PATIENT's local clock -> true
    * // At 6:59 AM -> false
    * // At 7:01 AM -> false
-   * const atReset = TimeManager.isAtResetTime(Date.now());
+   * const atReset = TimeManager.isAtResetTime(Date.now(), 7, tzOffsetMinutes);
    */
-  static isAtResetTime(currentTimestamp, resetHour = 7) {
-    // Validate resetHour (must be 0-23)
-    const validResetHour = (typeof resetHour === 'number' && resetHour >= 0 && resetHour <= 23) ? resetHour : 7;
+  static isAtResetTime(currentTimestamp, resetHour = 7, tzOffsetMinutes = null) {
+    // ✅ D24b: this used to read getHours()/getMinutes() — the *browser's* wall
+    // clock — and took no timezone argument at all, so no caller could have
+    // supplied the patient's. That made it a second, independent definition of
+    // the reset boundary, which is what rule 16 forbids: a clinician reviewing
+    // a patient in another timezone got their own reset hour, not the
+    // patient's. It now derives the answer from getDailyResetTime, so there is
+    // one definition and the offset flows through it.
+    //
+    // getDailyResetTime never returns a boundary later than currentTimestamp,
+    // so the difference is >= 0 and this is the same one-minute window the
+    // hours/minutes comparison described — identical whenever the patient's
+    // offset equals the browser's, which is the case that used to work.
+    const utcMs = (currentTimestamp instanceof Date)
+      ? currentTimestamp.getTime()
+      : currentTimestamp;
 
-    const currentDate = new Date(currentTimestamp);
-    const hours = currentDate.getHours();
-    const minutes = currentDate.getMinutes();
-
-    // Check if it's at configured reset hour (within 1 minute)
-    return hours === validResetHour && minutes === 0;
+    return utcMs - this.getDailyResetTime(utcMs, resetHour, tzOffsetMinutes) < 60 * 1000;
   }
 
   /**
