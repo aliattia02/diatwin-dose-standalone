@@ -251,6 +251,15 @@ class ConstantConfig:
     hr_base: float = 70.0
     hr_max: float = 190.0
 
+    # ── Dose delivery (clinician decision 26 Sep 2026) ───────────────────────
+    # A suggested dose is rounded DOWN to the device step: 0.5 U for pens, 0.1 U for pumps
+    # (dose_step_units overrides). A suggestion below min_dose_units is not given at all (0 U):
+    # it replaces the old floor that raised small doses to 0.5 U even when active insulin
+    # already exceeded the need.
+    insulin_delivery: str = 'pen'           # 'pen' | 'pump'
+    dose_step_units: Optional[float] = None  # None → 0.5 (pen) / 0.1 (pump)
+    min_dose_units: float = 0.5
+
     # User-configurable daily reset hour for cumulative effects
     # Range: 0-23 (represents hour of day in local time)
     # Default: 7 (7:00 AM) - typical wake-up time for most patients
@@ -1054,6 +1063,10 @@ class Constants:
         'weight_kg':         config.weight_kg,
         'hr_base':           config.hr_base,
         'hr_max':            config.hr_max,
+        # ── Dose delivery ─────────────────────────────────────────────────
+        'insulin_delivery':  config.insulin_delivery,
+        'dose_step_units':   config.dose_step_units,
+        'min_dose_units':    config.min_dose_units,
         # ──────────────────────────────────────────────────────────────────
         'daily_reset_hour': config.daily_reset_hour,
         'timezone_offset_minutes': config.timezone_offset_minutes,

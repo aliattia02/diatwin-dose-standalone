@@ -233,6 +233,22 @@ def update_patient_constants(current_user, patient_id):
             if field in constants:
                 update_data[field] = constants[field]
 
+        # Dose delivery settings (clinician decision 26 Sep 2026)
+        if 'insulin_delivery' in constants:
+            if constants['insulin_delivery'] not in ('pen', 'pump'):
+                return jsonify({'message': "Invalid insulin_delivery. Must be 'pen' or 'pump'"}), 400
+            update_data['insulin_delivery'] = constants['insulin_delivery']
+        if 'dose_step_units' in constants:
+            step = constants['dose_step_units']
+            if step is not None and (not isinstance(step, (int, float)) or isinstance(step, bool) or not 0 < step <= 1):
+                return jsonify({'message': 'Invalid dose_step_units. Must be null or a number > 0 and <= 1'}), 400
+            update_data['dose_step_units'] = step
+        if 'min_dose_units' in constants:
+            m = constants['min_dose_units']
+            if not isinstance(m, (int, float)) or isinstance(m, bool) or not 0 <= m <= 2:
+                return jsonify({'message': 'Invalid min_dose_units. Must be a number between 0 and 2'}), 400
+            update_data['min_dose_units'] = m
+
         if not update_data:
             return jsonify({'message': 'No valid constants provided'}), 400
 

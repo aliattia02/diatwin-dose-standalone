@@ -5,10 +5,29 @@ loads the patient's constants and calls compute_suggested_insulin(); tests/test_
 2,592-case grid is unchanged. The hub's dose tool (tools/dose_cli.py) calls the same function with constants it is given.
 """
 import logging
+import math
 
 from utils.pharmacodynamics import project_iob_at_time, project_mob_at_time
 
 logger = logging.getLogger(__name__)
+
+
+DELIVERY_STEPS = {'pen': 0.5, 'pump': 0.1}
+
+
+def dose_step(patient_constants) -> float:
+    step = patient_constants.get('dose_step_units')
+    if step is None:
+        step = DELIVERY_STEPS.get(patient_constants.get('insulin_delivery', 'pen'), 0.5)
+    return float(step)
+
+
+def finalise_dose(raw_total: float, patient_constants) -> float:
+    """Clinician decision 26 Sep 2026: below min_dose_units → 0 U; otherwise round DOWN to the device step."""
+    if raw_total < float(patient_constants.get('min_dose_units', 0.5)):
+        return 0.0
+    step = dose_step(patient_constants)
+    return round(math.floor(raw_total / step + 1e-9) * step, 2)
 
 
 class InvalidCalculationFactors(ValueError):
@@ -186,12 +205,9 @@ def compute_suggested_insulin(patient_constants, absorption_profiles, nutrition,
     # Apply health multiplier
     final_insulin = predictive_adjusted_total * health_multiplier
 
-    # max(0, ...) only at FINAL step
-    total_insulin = max(0, round(final_insulin, 1))
-
-    # Safety threshold
-    if pre_active_total > 0 and total_insulin < 0.5:
-        total_insulin = 0.5
+    # max(0, ...) only at FINAL step; then the minimum-dose and device-step rules (finalise_dose)
+    raw_total = max(0.0, final_insulin)
+    total_insulin = finalise_dose(raw_total, patient_constants)
 
     peak_time_map = {
         'very_fast': 0.5, 'fast': 1.0, 'medium': 1.5, 'slow': 2.5, 'very_slow': 3.5
@@ -201,6 +217,11 @@ def compute_suggested_insulin(patient_constants, absorption_profiles, nutrition,
     result = {
         'total': total_insulin,
         'breakdown': {
+            'raw_total': raw_total,  # unrounded: the dose rule is applied to exactly this
+            'insulin_delivery': patient_constants.get('insulin_delivery', 'pen'),
+            'dose_step_units': dose_step(patient_constants),
+            'min_dose_units': float(patient_constants.get('min_dose_units', 0.5)),
+            'rounding': 'down_to_step',
             'carbs': round(total_carbs, 2) if total_carbs is not None else 0,
             'protein_carb_equiv': round(protein_carb_equiv, 2) if protein_carb_equiv is not None else 0,
             'fat_carb_equiv': round(fat_carb_equiv, 2) if fat_carb_equiv is not None else 0,
