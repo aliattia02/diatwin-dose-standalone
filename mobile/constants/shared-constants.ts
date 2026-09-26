@@ -234,6 +234,12 @@ export interface PatientConstants {
   hr_base?: number;
   /** Patient maximum HR in bpm (default 190.0) */
   hr_max?: number;
+  /** Dose delivery device: 'pen' rounds suggestions down to 0.5 U, 'pump' to 0.1 U (clinician decision 26 Sep 2026) */
+  insulin_delivery?: 'pen' | 'pump';
+  /** Overrides the device step (U); null → 0.5 (pen) / 0.1 (pump) */
+  dose_step_units?: number | null;
+  /** Suggestions below this (U) are not given at all (0 U); default 0.5 */
+  min_dose_units?: number;
 }
 
 export interface ViewModeConfig {

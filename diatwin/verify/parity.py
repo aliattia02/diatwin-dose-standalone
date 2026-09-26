@@ -146,6 +146,8 @@ TOLERANCE: Dict[str, float] = {
     # larger: anything above it means the ODEs themselves disagree.
     "act_bg": 1.01e-2,  # mg/dL, both sides rounded to 2 dp
     "act_aob": 1.01e-1, # mg/dL, both sides rounded to 1 dp
+    # Final dose rule (clinician decision 26 Sep 2026): a discrete step function, so the sides must agree exactly.
+    "dose_final": 1e-9, # insulin units
 }
 
 #: Insulin types spanning every curve shape the constants define, so a change
@@ -357,6 +359,26 @@ def _load_profiles() -> Dict[str, Dict[str, Any]]:
     return profiles
 
 
+#: Unrounded doses around every threshold and step edge, including float traps (0.3/0.1, 1.1/0.1).
+DOSE_RAW = [0.0, 0.05, 0.3, 0.4999999, 0.5, 0.5000001, 0.55, 0.95, 0.99999999, 1.0, 1.1, 1.14, 1.15, 1.26,
+            2.2499999, 2.25, 3.7, 9.99, 12.345]
+DOSE_SETTINGS = [
+    {}, {"insulin_delivery": "pen"}, {"insulin_delivery": "pump"},
+    {"insulin_delivery": "pump", "dose_step_units": 0.05}, {"insulin_delivery": "pen", "min_dose_units": 1.0},
+    {"insulin_delivery": "pump", "min_dose_units": 0}, {"dose_step_units": 1.0}, {"insulin_delivery": "pump", "min_dose_units": 0.3},
+]
+
+
+def _dose_final_cases() -> List[Dict[str, Any]]:
+    """Final dose rule: min_dose_units then round DOWN to the device step (backend dose_math.finalise_dose)."""
+    cases: List[Dict[str, Any]] = []
+    for i, settings in enumerate(DOSE_SETTINGS):
+        for raw in DOSE_RAW:
+            cases.append({"id": f"dose_final::s{i}::{raw}", "fn": "dose_finalise", "raw": raw,
+                          "patient_constants": settings})
+    return cases
+
+
 def generate() -> Dict[str, Any]:
     """
     Build the shared case file.
@@ -409,6 +431,7 @@ def generate() -> Dict[str, Any]:
             })
 
     cases.extend(_activity_cases())
+    cases.extend(_dose_final_cases())
 
     payload = {
         "version": 2,
@@ -479,6 +502,9 @@ def evaluate_python() -> Dict[str, float]:
             else:
                 value = apk.get_activity_on_board(
                     activity, current, case["patient_constants"])["remaining_bg_drop"]
+        elif fn == "dose_finalise":
+            from utils.dose_math import finalise_dose
+            value = finalise_dose(case["raw"], case["patient_constants"])
         else:
             raise ValueError(f"unknown fn {fn!r}")
         results[case["id"]] = float(value)

@@ -197,6 +197,10 @@ const RESET_HR = 7;
 const TZ_OFFSET = 0;
 
 const PATIENT_CONSTANTS = {
+  // These suites test the insulin/meal physics, which were written against 0.1 u dose resolution. Since the
+  // clinician's dose-rounding decision (26 Sep 2026) a pen rounds DOWN to 0.5 u, which alone moves 3c by ~14 mg/dL,
+  // so the test patient is a pump user (0.1 u steps). Rounding itself is pinned in __tests__/dose-rules.test.ts.
+  insulin_delivery: 'pump',
   correction_factor: 40,
   carb_to_bg_factor: 4.0,
   target_glucose: 100,

@@ -46,6 +46,7 @@ import {
   HR_MODEL,
   type NormalizedActivity,
 } from '../utils/activity/activity-pharmacodynamics';
+import { finaliseDose } from '../utils/insulin/dose-rules';
 
 const FIXTURES = path.resolve(__dirname, '..', '..', 'diatwin', 'verify', 'fixtures');
 const CASES_FILE = path.join(FIXTURES, 'cases.json');
@@ -59,7 +60,8 @@ function parseNaiveUtc(s: string): number {
 interface ParityCase {
   id: string;
   fn: 'insulin_activity' | 'iob' | 'meal_activity' | 'meal_absorbed'
-    | 'activity_effect' | 'activity_aob';
+    | 'activity_effect' | 'activity_aob' | 'dose_finalise';
+  raw?: number;
   hours_since_dose?: number;
   hours_since_meal?: number;
   dose?: number;
@@ -104,6 +106,9 @@ function evaluateCase(c: ParityCase): number {
       return getActivityOnBoard(activity, c.patient_constants as any, target)
         .sessions[0].remaining_bg_drop;
     }
+
+    case 'dose_finalise':
+      return finaliseDose(c.raw as number, c.patient_constants as any);
 
     default:
       throw new Error(`unknown fn: ${(c as ParityCase).fn}`);
@@ -160,6 +165,6 @@ describe('cross-language parity harness', () => {
     // cannot detect on its own.
     const families = new Set((raw.cases as ParityCase[]).map(c => c.id.split('::')[0]));
     expect([...families].sort()).toEqual(
-      ['act_aob', 'act_bg', 'activity', 'iob', 'meal_abs', 'meal_act']);
+      ['act_aob', 'act_bg', 'activity', 'dose_final', 'iob', 'meal_abs', 'meal_act']);
   });
 });

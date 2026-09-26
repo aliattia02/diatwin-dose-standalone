@@ -158,6 +158,12 @@ export interface PatientConstants {
   hr_base?: number;
   /** Patient maximum heart rate in bpm — used to normalise wearable HR traces */
   hr_max?: number;
+  /** Dose delivery device: 'pen' rounds suggestions down to 0.5 U, 'pump' to 0.1 U (clinician decision 26 Sep 2026) */
+  insulin_delivery?: 'pen' | 'pump';
+  /** Overrides the device step (U); null/undefined → 0.5 (pen) or 0.1 (pump) */
+  dose_step_units?: number | null;
+  /** Suggestions below this (U) are not given at all (0 U); default 0.5 */
+  min_dose_units?: number;
   /** Hour of day (0-23) when daily cumulative effects reset (default: 7 for 7 AM) */
   daily_reset_hour: number;
   /** Patient timezone offset from UTC in minutes (e.g., -300 for EST) */

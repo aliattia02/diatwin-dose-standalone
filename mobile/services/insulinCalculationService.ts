@@ -94,6 +94,10 @@ export interface PatientConstants {
   disease_factors?: Record<string, { factor?: number; description?: string }>;
   medication_factors?: Record<string, MedicationFactor>;
   medication_schedules?: Record<string, MedicationSchedule>;
+  /** Dose delivery (clinician decision 26 Sep 2026): pen rounds down to 0.5 u, pump to 0.1 u; see dose-rules.ts */
+  insulin_delivery?: 'pen' | 'pump';
+  dose_step_units?: number | null;
+  min_dose_units?: number;
 }
 
 export interface MedicationFactor {
@@ -120,6 +124,7 @@ export interface AbsorptionProfile {
 // ─────────────────────────────────────────────────────────────────────────────
 // HR / EXERCISE ODE MODEL  (mirrors activity_pharmacodynamics.py)
 // ─────────────────────────────────────────────────────────────────────────────
+import { finaliseDose, doseStep, minDose } from '../utils/insulin/dose-rules';
 import {
   HR_MODEL,
   LEVEL_TO_INTENSITY,
@@ -827,6 +832,11 @@ export interface InsulinCalculationBreakdown {
    * Means the patient should NOT dose — and may need extra fast carbs to offset
    * the incoming insulin and avoid a low.
    */
+  /** Unrounded dose after every adjustment (>= 0); `total` = finaliseDose(rawTotal). */
+  rawTotal?:        number;
+  insulinDelivery?: string;
+  doseStepUnits?:   number;
+  minDoseUnits?:    number;
   iobSurplusWarning?: {
     /** Units of IOB that exceed the total meal + correction need. */
     surplusUnits:     number;
@@ -1057,13 +1067,11 @@ export function calculateInsulinDose(params: CalculateInsulinDoseParams): Insuli
   const healthMultiplier = calculateHealthFactors(constants, currentTime);
   let totalInsulin = Math.max(0, predictiveAdjustedTotal * healthMultiplier);
 
-  // ── Step 8: Round + safety floor ─────────────────────────────────────────
-  totalInsulin = Math.round(totalInsulin * 10) / 10;
-  // Guard with adjustedInsulin (base meal dose) not preActiveTotal — correction
-  // insulin can make preActiveTotal negative for low BG, wrongly skipping the floor.
-  // Also gate on postActiveTotal > 0: if IOB already exceeds the need, the correct
-  // answer is 0 u — forcing 0.5 u would stack on top of excess insulin.
-  if (adjustedInsulin > 0 && postActiveTotal > 0 && totalInsulin < 0.5) totalInsulin = 0.5;
+  // ── Step 8: final dose rules (utils/insulin/dose-rules.ts, clinician decision 26 Sep 2026) ──
+  // Below min_dose_units → 0 u (no floor that raises a small dose); otherwise round DOWN to the
+  // device step (pen 0.5 u, pump 0.1 u). Same rule as backend dose_math.finalise_dose (parity: dose_final).
+  const rawTotal = totalInsulin;
+  totalInsulin = finaliseDose(rawTotal, constants);
 
   // ── Build breakdown ───────────────────────────────────────────────────────
   const profile = getAbsorptionProfile(absorptionType);
@@ -1130,6 +1138,10 @@ export function calculateInsulinDose(params: CalculateInsulinDoseParams): Insuli
     },
 
     iobSurplusWarning,
+    rawTotal,
+    insulinDelivery: (constants?.insulin_delivery ?? 'pen') as string,
+    doseStepUnits:   doseStep(constants),
+    minDoseUnits:    minDose(constants),
   };
 
   return { total: totalInsulin, breakdown };

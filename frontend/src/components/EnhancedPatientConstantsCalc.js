@@ -60,6 +60,7 @@ import {
   convertToGrams as baseConvertToGrams,
   convertToMl as baseConvertToMl
 } from '../constants';
+import { finaliseDose, doseStep, minDose } from '../utils/doseRules';
 
 // ============================================================================
 // CONVERSION UTILITIES
@@ -919,17 +920,19 @@ export const calculateInsulinDose = async ({
   const healthMultiplier = calculateHealthFactors(patientConstants, currentTime);
   let totalInsulin = Math.max(0, predictiveAdjustedTotal * healthMultiplier);
 
-  // Round to nearest 0.1 units
-  totalInsulin = Math.round(totalInsulin * 10) / 10;
-
-  // Safety threshold
-  if (preActiveTotal > 0 && totalInsulin < 0.5) {
-    totalInsulin = 0.5;
-  }
+  // Final dose rules (utils/doseRules.js, clinician decision 26 Sep 2026): below min_dose_units → 0 U
+  // (no floor that raises a small dose, which used to stack on excess active insulin); otherwise round
+  // DOWN to the device step (pen 0.5 U, pump 0.1 U). Same rule as backend dose_math.finalise_dose.
+  const rawTotal = totalInsulin;
+  totalInsulin = finaliseDose(rawTotal, patientConstants);
 
   return {
     total: totalInsulin,
     breakdown: {
+      rawTotal,
+      insulinDelivery: patientConstants?.insulin_delivery ?? 'pen',
+      doseStepUnits: doseStep(patientConstants),
+      minDoseUnits: minDose(patientConstants),
       carbsActual: Math.round(carbEquivalents.carbsActual * 100) / 100,
       proteinCarbEquiv: Math.round(carbEquivalents.proteinCarbEquiv * 100) / 100,
       fatCarbEquiv: Math.round(carbEquivalents.fatCarbEquiv * 100) / 100,

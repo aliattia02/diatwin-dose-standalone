@@ -34,7 +34,7 @@ import pytest
 from diatwin.verify import parity
 
 
-EXPECTED_FAMILIES = {"activity", "iob", "meal_act", "meal_abs", "act_bg", "act_aob"}
+EXPECTED_FAMILIES = {"activity", "iob", "meal_act", "meal_abs", "act_bg", "act_aob", "dose_final"}
 
 
 @pytest.fixture
@@ -88,6 +88,11 @@ class TestCaseFile:
                 assert "start_time" in case and "elapsed_minutes" in case, case["id"]
                 assert "duration_minutes" in case["activity"], case["id"]
                 assert "hr_base" in case["patient_constants"], case["id"]
+            elif fn == "dose_finalise":
+                # the unrounded dose and the delivery settings travel with the case; {} means "the rule's defaults",
+                # which are part of the rule under comparison (pen 0.5 U step, 0.5 U minimum)
+                assert isinstance(case["raw"], (int, float)), case["id"]
+                assert isinstance(case["patient_constants"], dict), case["id"]
             else:
                 pytest.fail(f"unknown fn {fn!r} in {case['id']}")
 

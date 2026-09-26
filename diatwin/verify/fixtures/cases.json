@@ -7,7 +7,8 @@
     "meal_act": 1e-09,
     "meal_abs": 1e-09,
     "act_bg": 0.0101,
-    "act_aob": 0.101
+    "act_aob": 0.101,
+    "dose_final": 1e-09
   },
   "hr_model": {
     "tau_HR": 5.0,
@@ -22942,6 +22943,1260 @@
         "hr_base": 70.0,
         "hr_max": 190.0,
         "weight_kg": 70.0
+      }
+    },
+    {
+      "id": "dose_final::s0::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s0::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {}
+    },
+    {
+      "id": "dose_final::s1::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s1::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {
+        "insulin_delivery": "pen"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s2::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {
+        "insulin_delivery": "pump"
+      }
+    },
+    {
+      "id": "dose_final::s3::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s3::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "dose_step_units": 0.05
+      }
+    },
+    {
+      "id": "dose_final::s4::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s4::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {
+        "insulin_delivery": "pen",
+        "min_dose_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s5::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s6::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {
+        "dose_step_units": 1.0
+      }
+    },
+    {
+      "id": "dose_final::s7::0.0",
+      "fn": "dose_finalise",
+      "raw": 0.0,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.05",
+      "fn": "dose_finalise",
+      "raw": 0.05,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.3",
+      "fn": "dose_finalise",
+      "raw": 0.3,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.4999999",
+      "fn": "dose_finalise",
+      "raw": 0.4999999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.5",
+      "fn": "dose_finalise",
+      "raw": 0.5,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.5000001",
+      "fn": "dose_finalise",
+      "raw": 0.5000001,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.55",
+      "fn": "dose_finalise",
+      "raw": 0.55,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.95",
+      "fn": "dose_finalise",
+      "raw": 0.95,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::0.99999999",
+      "fn": "dose_finalise",
+      "raw": 0.99999999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::1.0",
+      "fn": "dose_finalise",
+      "raw": 1.0,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::1.1",
+      "fn": "dose_finalise",
+      "raw": 1.1,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::1.14",
+      "fn": "dose_finalise",
+      "raw": 1.14,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::1.15",
+      "fn": "dose_finalise",
+      "raw": 1.15,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::1.26",
+      "fn": "dose_finalise",
+      "raw": 1.26,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::2.2499999",
+      "fn": "dose_finalise",
+      "raw": 2.2499999,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::2.25",
+      "fn": "dose_finalise",
+      "raw": 2.25,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::3.7",
+      "fn": "dose_finalise",
+      "raw": 3.7,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::9.99",
+      "fn": "dose_finalise",
+      "raw": 9.99,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
+      }
+    },
+    {
+      "id": "dose_final::s7::12.345",
+      "fn": "dose_finalise",
+      "raw": 12.345,
+      "patient_constants": {
+        "insulin_delivery": "pump",
+        "min_dose_units": 0.3
       }
     }
   ]

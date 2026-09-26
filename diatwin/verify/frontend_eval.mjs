@@ -90,6 +90,7 @@ if (typeof globalThis.window === 'undefined') globalThis.window = {};
 const insulin = await import(`${UTILS}insulinPharmacodynamics.js`);
 const meal = await import(`${UTILS}mealPharmacodynamics.js`);
 const activity = await import(`${UTILS}activityPharmacodynamics.js`);
+const doseRules = await import(`${UTILS}doseRules.js`);
 
 /** Naive-UTC ISO string -> epoch ms. The case file's clock convention. */
 function parseNaiveUtc(s) {
@@ -126,6 +127,9 @@ function evaluateCase(c) {
       }
       return activity.getActivityOnBoard(record, currentMs, c.patient_constants).remaining_bg_drop;
     }
+
+    case 'dose_finalise':
+      return doseRules.finaliseDose(c.raw, c.patient_constants);
 
     default:
       throw new Error(`unknown fn: ${c.fn}`);
