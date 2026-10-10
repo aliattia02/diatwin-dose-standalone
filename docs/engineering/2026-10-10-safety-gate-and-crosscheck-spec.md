@@ -403,7 +403,7 @@ it does not declare a pass.
 
 ## 6. What was and was not done
 
-Done: baseline runs (section 1), read-only inventory with 19 probe calls of `dose_cli` as shipped, gate and
+Done: baseline runs (section 1), read-only inventory with 20 probe calls of `dose_cli` as shipped, gate and
 adapter specifications, the packaged install attempt of SimGlucose. Not done, by instruction or by lack of
 approval: no code written (gate, adapter), no dose logic, constant, pharmacodynamic parameter or clinical rule
 changed, no test edited, no `requirements-ml.txt` install, no `npm install`, no mobile jest, no database
