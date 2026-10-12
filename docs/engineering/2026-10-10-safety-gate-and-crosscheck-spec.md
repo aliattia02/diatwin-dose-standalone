@@ -19,6 +19,21 @@ Every limit and threshold the gate or the cross-check needs is a question. I cho
 states a value" gives the file and line; that value is quoted, not recommended. Values written as "e.g." are only
 there to make an option concrete.
 
+### 0.0 Owner's answers received (12 Oct 2026)
+
+| Question | Answer |
+|---|---|
+| G10 | A new `diatwin/safety/` package |
+| G11 | Python first, then mobile and web. **Until then app users (mobile, web) are not covered by any gate** (section 7) |
+| X1 | `setuptools` in the throwaway venv first; a separate Python 3.11 only if that fails (result: section 4.1) |
+| X3 | Both pen and pump, as two arms |
+| X4 | All 30 patients, reported by age group |
+| X5 | True glucose first, then the 5-minute sensor |
+| X6 | Our kernel's active insulin |
+| X7 | Report only, no thresholds |
+| X8, X9, X10 | As the specification proposes |
+| **Still open** | G1 to G9 and X2. The gate is not built and the cross-check is not run until they are answered |
+
 ### 0.1 Safety gate
 
 | # | Question | Options | What each would change | Already stated in the repo |
@@ -54,14 +69,14 @@ there to make an option concrete.
 
 | # | Finding | Where | Label |
 |---|---|---|---|
-| D1 | `dose_cli` accepts `dose_step_units: 0` and then crashes with `ZeroDivisionError`, exit code 1, no JSON. The API range check (above 0, up to 1) is not applied in the CLI | `dose_cli.py:42-46,59-66`; `dose_math.py:30`; `doctor_routes.py:241-245` | [V] probe K |
-| D2 | A JSON body that is not an object (e.g. `[1,2]`) gives a traceback, exit 1, no JSON; only `ValueError`, `TypeError`, `KeyError` give `{"error"}` and exit 2 | `dose_cli.py:62` | [V] probe T |
-| D3 | `blood_glucose` of 0 or a negative number is accepted and lowers the dose (BG 0 with 60 g gives 3.5 U instead of 6.0 U). The mobile engine only computes a correction when BG is above 0 | `dose_math.py:111-113` vs `insulinCalculationService.ts:1002` | [V] probes G, H |
-| D4 | Negative `active_insulin` raises the dose (-3 U gives 3.0 U at BG 100); nothing checks the sign | `dose_math.py:200` | [V] probe J |
+| D1 | **Fixed in `dose_cli.py` on 12 Oct 2026 (input validation only; `dose_math.py` untouched).** Before: `dose_cli` accepts `dose_step_units: 0` and then crashes with `ZeroDivisionError`, exit code 1, no JSON. The API range check (above 0, up to 1) is not applied in the CLI | `dose_cli.py:42-46,59-66`; `dose_math.py:30`; `doctor_routes.py:241-245` | [V] probe K |
+| D2 | **Fixed (same change).** Before: A JSON body that is not an object (e.g. `[1,2]`) gives a traceback, exit 1, no JSON; only `ValueError`, `TypeError`, `KeyError` give `{"error"}` and exit 2 | `dose_cli.py:62` | [V] probe T |
+| D3 | **Fixed in `dose_cli` (0 or below refused, null still means no reading); `dose_math.py` itself still accepts such values.** Before: `blood_glucose` of 0 or a negative number is accepted and lowers the dose (BG 0 with 60 g gives 3.5 U instead of 6.0 U). The mobile engine only computes a correction when BG is above 0 | `dose_math.py:111-113` vs `insulinCalculationService.ts:1002` | [V] probes G, H |
+| D4 | **Fixed in `dose_cli` (negative refused, also negative carbs); `dose_math.py` itself still accepts such values.** Before: Negative `active_insulin` raises the dose (-3 U gives 3.0 U at BG 100); nothing checks the sign | `dose_math.py:200` | [V] probe J |
 | D5 | `health_multiplier` is unbounded (x5 gives 18.5 U for BG 250 only) | `dose_math.py:206` | [V] probe M |
 | D6 | `insulin-suggestion-logic.md` Step 8 says "round to 0.1 u, floor at 0.5 u" (and the flow chart at line 592). The code (all three languages) rounds **down to the device step** and gives **0 U** below the minimum, per the 26 Sep 2026 decision | doc `:248-258,592`; code `dose_math.py:25-30`, `dose-rules.ts`, `insulinCalculationService.ts:1070-1074` | [V] |
 | D7 | The same document says the IOB surplus warning exists "in both modes"; the Python path has none (`grep surplus backend` finds nothing) | doc `:507`; `backend/` | [V] |
-| D8 | `docs/15` (AI-agent) and `docs/25` state a `SafetyGate` in `diatwin/safety/`; this repository has no `diatwin/safety/` and no mention of `SafetyGate` in any `.py`, `.md`, `.ts` or `.js` file | `diatwin/` | [V] |
+| D8 | `docs/15` (AI-agent repository) describes a `SafetyGate` in `diatwin/safety/constraints.py` [C]; this repository has no `diatwin/safety/` and no mention of `SafetyGate` in any `.py`, `.md`, `.ts` or `.js` file. AI-agent `docs/25` section 6 states this correctly (the gate is absent here); only `docs/15` describes a gate as if it existed. (Corrected 12 Oct 2026: the first version of this row blamed `docs/25` as well.) | `diatwin/` | [V] |
 | D9 | `docs/16` findings F1 (0.5 U floor stacks insulin) and F2 (implicit rounding) are resolved in the code by the 26 Sep rule; F3 (refuse missing constants) is implemented in `dose_cli.py:42-44` | `dose_math.py:25-30`, `dose_cli.py` | [V] |
 | D10 | `SETUP.md` expects 280 passed + 1 skipped (backend) and 65 passed (`diatwin/tests`); the suites now have more tests (section 1). The ten backend failures need packages that `SETUP.md` does not install (section 1) | `SETUP.md` | [V] |
 
@@ -306,6 +321,26 @@ repositories. Command: `pip install /mnt/c/Users/attia20/Projects/external/simgl
 re-read here]. So the packaged install does not work on the system Python of this PC's Ubuntu, and also not on
 3.14 (docs/26). I stopped here as instructed and tried nothing else. Options are question X1. Not tested: whether
 `pkg_resources` (used by five modules, `docs/26`) would be the next failure.
+
+### 4.1 Retry with setuptools (owner's answer to X1, 12 Oct 2026)
+
+Same venv `~/venvs/simglucose-pkg`; the clone was not touched. Only change: `setuptools` installed from PyPI.
+
+| Step | Result [V] |
+|---|---|
+| `pip install setuptools==84.0.0` (latest, wheel 818,216 bytes) | Installed. `distutils` now resolves (`setuptools/_distutils`). `import simglucose` **fails next**: `gym/envs/registration.py:2: import pkg_resources` gives `ModuleNotFoundError: No module named 'pkg_resources'` (setuptools 84 no longer ships it) |
+| `pip install setuptools==80.9.0` (wheel 1,201,486 bytes; replaces 84.0.0) | Installed. `import simglucose` **works** (a `UserWarning` that `pkg_resources` is deprecated and "slated for removal ... pin to Setuptools<81") |
+| One-day smoke test (`smoke_simglucose.py`, no stubs) | **480 steps, glucose min / mean / max 96.9 / 128.9 / 159.1 mg/dL, last time 2026-01-02 00:00, 11.0 s** |
+
+The numbers are identical to the run with two stubs on Windows in AI-agent `docs/26` (96.9 / 128.9 / 159.1, 480 steps;
+13.6 s there) [V]. So the dynamics are unchanged by the stubs, and the packaged install on Ubuntu 3.12 now works with
+`setuptools<81`. The python 3.11 option of X1 was **not needed**.
+
+What this means for the record: "unmodified" now means simglucose `a6f6777` as shipped, `gym==0.9.4` as shipped,
+**plus `setuptools==80.9.0` in the venv**; the version limit is a property of this environment and has to be
+pinned wherever the cross-check is run. The clone itself: no tracked file changed (`git status` clean from
+Windows); `build/` and `simglucose.egg-info/` exist in it as ignored build output of my `pip install` (not
+removed). Not yet run: any adapter, dose_cli or kernel (the cross-check is blocked on X2 and G1 to G9).
 
 ---
 
