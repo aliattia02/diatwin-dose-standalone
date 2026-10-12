@@ -5,7 +5,7 @@
 - `MealForm.tsx` — meal-context dose calculation + insulin type/timing UI
 - `UnifiedInsulinInput.tsx` — standalone correction suggestion card
 
-**Version:** 2.4 — reflects QA-verified fixes: Bug 6 (fiber factor), Bugs 1/2/13/16 (ODE rewrite),
+**Version:** 2.5 (12 Oct 2026: Step 8 now describes the 26 Sep 2026 minimum-dose and round-down rule; the IOB surplus warning is stated as mobile-only; no logic changed). 2.4 — reflects QA-verified fixes: Bug 6 (fiber factor), Bugs 1/2/13/16 (ODE rewrite),
 Bug 5 (carb_to_bg_factor fallback), Bugs 3/8 (trend rate), Bug 7 (teal τ_Z decay),
 **Cross-file audit fix (2026):** `insulinCalculationService.ts` sensitivity multiplier formula
 corrected from `α × W` to `α × W × (1 + Z)` to match Python ground truth and
@@ -203,7 +203,13 @@ remaining        = totalDrop × (1 − absorbedFraction)
 
 where `elapsedDrop` is the integral capped at `min(elapsed, fullWindow)`. Multiple sessions are **summed** independently (each delivers its own distinct remaining BG drop — additive, matching backend `total_aob` behaviour).
 
-### Step 5b — IOB Surplus Warning
+### Step 5b — IOB Surplus Warning (mobile only)
+
+> **Where it exists:** only in the mobile engine (`mobile/services/insulinCalculationService.ts`, the
+> `iobSurplusWarning` object). The web frontend (`frontend/src/`) and the Python backend (`dose_math.py`,
+> `dose_cli.py`) have **no** surplus warning: they subtract active insulin, clamp the dose at 0 U and apply the
+> minimum-dose rule, and the breakdown carries `post_active_total` (negative when active insulin exceeds the
+> need), nothing more.
 
 When `postActiveTotal < −0.5u`, the patient's existing IOB already exceeds their total meal + correction need. Injecting more insulin risks hypoglycaemia. The calculation triggers a warning:
 
@@ -245,17 +251,27 @@ multiplier   = Π(diseaseFactor) × Π(medFactor)
 totalInsulin = max(0, predictiveTotal × healthMultiplier)
 ```
 
-### Step 8 — Rounding + Safety Floor
+### Step 8 — Minimum dose and rounding down to the device step
+
+Clinician decision of 26 Sep 2026. One definition per language, compared by the parity harness (family
+`dose_final`): `mobile/utils/insulin/dose-rules.ts::finaliseDose`, `frontend/src/utils/doseRules.js::finaliseDose`,
+`backend/utils/dose_math.py::finalise_dose`.
 
 ```
-totalInsulin = round(totalInsulin × 10) / 10   // 0.1 u precision
+rawTotal = max(0, predictiveTotal × healthMultiplier)
 
-// Safety floor: only when there IS a real meal need and IOB isn't already covering it
-if (adjustedInsulin > 0 && postActiveTotal > 0 && totalInsulin < 0.5):
-    totalInsulin = 0.5
+if rawTotal < min_dose_units (default 0.5):   totalInsulin = 0
+else:                                         totalInsulin = floor(rawTotal / step) × step
+        step = dose_step_units, or 0.5 for pens / 0.1 for pumps (insulin_delivery)
 ```
 
-The floor guards against the calculation suggesting 0.1–0.4 u, which is below most pen/syringe resolution. The dual guard (`adjustedInsulin > 0` **and** `postActiveTotal > 0`) prevents forcing a 0.5 u dose when IOB has correctly brought the net need to zero.
+A suggestion below the minimum is **not given at all (0 U)**; it is not raised to the minimum. The old rule
+("round to 0.1 u, then floor at 0.5 u when `adjustedInsulin > 0` and `postActiveTotal > 0`") was removed because it
+could add insulin on top of excess active insulin. Rounding is always **down** to the step, so the displayed dose is
+never larger than the computed need.
+
+> History: versions up to 2.4 of this document described the removed floor and 0.1 u rounding. The code and the
+> three languages above agree on the rule in this section.
 
 ---
 
@@ -504,9 +520,9 @@ The `bgSource` flag adds a "🌙 BG from circadian baseline" note when the mode 
 
 ---
 
-## 8. IOB Surplus Warning (Both Modes)
+## 8. IOB Surplus Warning (mobile only; both mobile entry points)
 
-Triggered in `calculateInsulinDose` when `postActiveTotal < −0.5u` and surfaced in both the MealForm dose card and `UnifiedInsulinInput` (via `iobSurplusWarning` prop).
+Triggered in the mobile `calculateInsulinDose` when `postActiveTotal < −0.5u` and surfaced in both the MealForm dose card and `UnifiedInsulinInput` (via `iobSurplusWarning` prop). The web frontend and the Python backend do not have this warning (see Step 5b).
 
 **What the patient sees:**
 - "⚠️ IOB Covers This Meal" banner with left/right layout.
@@ -517,7 +533,7 @@ Triggered in `calculateInsulinDose` when `postActiveTotal < −0.5u` and surface
 - The bolus insulin type recommendation.
 - All timing and dosing strategy cards.
 
-The dose number itself is still shown so the patient understands the magnitude of the surplus.
+The dose number itself is still shown (0.0 units) so the patient understands the magnitude of the surplus. The warning is triggered by excess active insulin only; it is not a low-glucose or a large-dose warning.
 
 ---
 
@@ -589,7 +605,7 @@ calculateInsulinDose()
     ├─ Step 5b: iobSurplusWarning if postActiveTotal < −0.5
     ├─ Step 6: × overlapAdjustmentFactor [0.5–1.5]
     ├─ Step 7: × healthMultiplier (conditions + medications)
-    └─ Step 8: round to 0.1u, floor at 0.5u if needed
+    └─ Step 8: below min_dose_units → 0 u, else round DOWN to the device step (pen 0.5 u / pump 0.1 u)
     │
     ▼
 Dose card render

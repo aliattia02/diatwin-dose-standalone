@@ -10,8 +10,18 @@ python -m venv venv
 venv/Scripts/activate          # Windows;  source venv/bin/activate on macOS/Linux
 pip install -r requirements.txt -r ../requirements-dev.txt
 cp .env.example .env           # required: see the note in that file
-pytest tests -q                # expect: 280 passed, 1 skipped
+pip install -r ../requirements-ml.txt   # pyarrow, pandas, numpy, scikit-learn: see the note below
+pytest tests -q                # expect: 493 passed, 1 skipped  (see the counts below)
 ```
+
+**Counts (12 Oct 2026, WSL Ubuntu 24.04, Python 3.12.3, `MONGO_URI` unreachable).** *Measured* without the
+`requirements-ml.txt` step: **483 passed, 1 skipped, 10 failed**. The ten failures are all in
+`tests/test_ml_snapshot_routes.py` and raise `ImportError: pyarrow is required for snapshot export`
+(`diatwin/ml/export.py:85`): snapshot export writes Parquet. With the step above they are expected to pass, giving
+493 passed and 1 skipped; that figure is an estimate, I did not install the modelling packages. The earlier figure
+of 280 passed was written before the suite grew. In my runs `MONGO_URI` pointed at an unreachable host and the app fixture waited for index-creation timeouts:
+about 6 minutes of setup in the first test that needs it, about 7 minutes for the whole suite [V]. I did not test whether
+another value makes it faster.
 
 The manifest is `backend/requirements.txt` — the runtime stack — plus the root
 `requirements-dev.txt`. The root `requirements.txt` is **not** part of this: it
@@ -31,9 +41,13 @@ holds throwaway values; the test suite never connects to a real database
 pytest diatwin/tests -q        # from the repository root
 ```
 
-Expect **65 passed** once the parity fixtures have been generated (step 4).
-Before that, 50 pass and 15 skip — those fifteen read the three languages'
-result files, which are derived artifacts and deliberately not committed.
+Measured on 12 Oct 2026: **86 passed, 15 skipped** (the fifteen read the three languages' result files, which are
+derived artifacts and deliberately not committed). Generating the Python and frontend results (step 4) does not
+change this: the fifteen also need the mobile result file, which needs `npm install` and jest. With all three result
+files present I expect 101 passed and no skips [E, not run here]. The "65 passed" figure that stood here
+was written when `diatwin/tests` held fewer tests, and the same applies to the "40 tests" in `diatwin/README.md`.
+Running this suite on a Python without the backend requirements (for example the Windows system Python) gives
+errors from `import jwt` in `TestPatientSim`: install the backend requirements first.
 
 ## 3. Mobile
 
