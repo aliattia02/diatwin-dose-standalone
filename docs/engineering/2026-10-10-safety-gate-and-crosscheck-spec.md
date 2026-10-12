@@ -408,3 +408,35 @@ adapter specifications, the packaged install attempt of SimGlucose. Not done, by
 approval: no code written (gate, adapter), no dose logic, constant, pharmacodynamic parameter or clinical rule
 changed, no test edited, no `requirements-ml.txt` install, no `npm install`, no mobile jest, no database
 connection, no provider call, `KEYS.txt` not read. No commit to `main`; nothing pushed.
+
+---
+
+## 7. Device paths: what a mobile or web user is shown (read-only check, 12 Oct 2026)
+
+**Until a gate exists in the mobile and web engines (owner decision G11: Python first, then mobile and web), app
+users are not covered by any gate.** Everything below was read in the code; **none of it was run**. The parity
+harness covers insulin curves, meal absorption, activity and `dose_finalise` (`diatwin/verify/parity.py:372-434`)
+but not the dose pipeline with glucose, carbs and active insulin as inputs, and both dose functions import
+`config`, `axios` or the `@/` path alias (`insulinCalculationService.ts:127-158`,
+`EnhancedPatientConstantsCalc.js:1-63`), so they cannot be called from plain Node without new shims or installs.
+The arithmetic numbers below are my hand calculation with the default constants (ICR 10, CF 40, target 100) [E].
+
+| Case | Mobile (`mobile/`) | Web (`frontend/src/`) | Dose shown? |
+|---|---|---|---|
+| **Glucose 40, 60 g meal** | Value saved (it is above 0): `MealForm.tsx:1469-1471`. Used as an actual reading: `:1125`. Correction goes negative, meal dose stays: `insulinCalculationService.ts:1002-1005`. The input only shows a coloured "Below target range" badge below 0.7 x target: `UnifiedBloodSugarInput.tsx:83-84,116-118,243-245,254-256`. Dose card: "X units" with no low-glucose banner: `MealForm.tsx:2022`. Hand result 6.0 - 1.5 = **4.5 U** [E] | `BloodSugarInput.js:48-60` rejects only below 0 and above 600 (no low warning); used as `actual`: `MealInput.js:140-146`; negative correction allowed: `EnhancedPatientConstantsCalc.js:892-895`; shown as "{N} units": `MealInput.js:1439,1528`. No hypo or low text in `MealInput.js` or `BloodSugarInput.js` (grep) | **Displayed**, no warning, in both |
+| **500 g meal** | No upper bound: text accepts digits (`SelectedFoodsList.tsx:189-194`), blur only enforces a minimum of 0.5 (`:197-215`), plus/minus buttons add 0.5 (`:381-388`). Dose shown as computed. The 100 U maximum and 30 U warning of `INSULIN_LIMITS` (`utils/validation/input-validators.ts:42-46`) are applied to the *typed* dose (`UnifiedInsulinInput.tsx:1009-1018`), while the suggestion pre-fills the field through `useState` (`:637`) and is not validated | No upper bound found on the amount (`MealInput.js`); the same unconditional "units" display | **Displayed**, no warning, in both. Python equivalent: 500 g at BG 250 gives 53.5 U ([V] probe F) |
+| **Glucose 0 or negative** | Cannot be saved: `MealForm.tsx:1469-1471` needs a value above 0; if it were present, `:1125` (`userEnteredBG > 0`) skips it. The dose then uses the estimate or the target fallback, with a banner such as "Using target glucose - no blood sugar data available" (`:1186-1200`, fallback block) | Negative is rejected on blur with "Blood sugar cannot be negative" (`BloodSugarInput.js:51`); **0 is accepted** by that check, then `parseFloat(...) || 0` and `> 0` (`MealInput.js:140-146`) treat it as no reading and use the estimate, silently | **Displayed**, computed from an estimate or the target, not from the 0 |
+| **Negative active insulin** | Not user-enterable: it is computed (`MealForm.tsx` `activeInsulinValue = r.activeInsulinUnits \|\| activeInsulin`). `calculateInsulinDose` does not clamp it: `insulinCalculationService.ts:1022`. A logged dose below 0 is flagged on the typed field (`input-validators.ts:111-113`) | Not user-enterable: from `fetchActiveInsulin` or the caller, no clamp (`EnhancedPatientConstantsCalc.js:810-816`); dose field has `min="0"` (`InsulinInput.js:633`) | **Displayed**; whether the kernel can return a negative IOB I did not find a path for [E: `calculate_iob` returns 0 outside its window, `pharmacodynamics.py:512-513`] |
+
+### What this shows [V read]
+
+- The only protective behaviour on the device in these four cases is the **surplus warning** (mobile only,
+  `insulinCalculationService.ts:1036-1043`, banner `MealForm.tsx:1959-1990`): it replaces the type and timing
+  guidance and tells the user to eat, **but the dose number is still shown** (0.0 units, `:2022`). It fires on
+  excess active insulin, not on low glucose or a large meal. **The web engine has no such warning** (no
+  `iobSurplus` in `frontend/src`; D7).
+- The mobile app has glucose limits that are never used: `GLUCOSE_LIMITS` (MIN 20, MAX 600, LOW_WARNING 70,
+  HIGH_WARNING 250) and `validateGlucoseReading` exist in `input-validators.ts:32-37,54-82`, but a search of
+  `mobile/` (excluding tests) finds no caller outside the re-export in `validation.ts`. I quote these values
+  because they exist, not as a recommendation; they bear on questions G4, G8 and G1 (`INSULIN_LIMITS.MAX` 100).
+- A low reading changes **a colour and a label**, never the suggestion.
